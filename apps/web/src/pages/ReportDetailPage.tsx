@@ -6,6 +6,8 @@ import { Badge } from "../components/ui/Badge.js";
 import { Button } from "../components/ui/Button.js";
 import { Modal } from "../components/ui/Modal.js";
 import { Tabs } from "../components/ui/Tabs.js";
+import type { Report } from "@stackdoctor/schemas";
+import { buildIssueDraft } from "@stackdoctor/core/issue-draft";
 
 export function ReportDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -158,6 +160,18 @@ export function ReportDetailPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem" }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (run) {
+                const draft = buildIssueDraft(run as unknown as Report);
+                copyToClipboard(draft.body, "issue_draft");
+              }
+            }}
+          >
+            {copiedKey === "issue_draft" ? "✓ Copied Issue Draft" : "Copy Issue Draft"}
+          </Button>
           <Button
             variant="secondary"
             size="sm"

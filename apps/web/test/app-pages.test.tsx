@@ -270,6 +270,82 @@ describe("StackDoctor Web Application Pages (Run 3E)", () => {
       fireEvent.click(highTab);
       expect(screen.getByText("Dependencies not installed in node_modules")).toBeInTheDocument();
     });
+
+    it("renders Copy Issue Draft button and copies draft markdown using shared buildIssueDraft", async () => {
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock
+        }
+      });
+
+      const mockRun: DiagnosticRunItem = {
+        id: "run_report_draft",
+        projectId: "proj_abc",
+        ownerId: "usr_12345",
+        toolVersion: "0.1.0",
+        operatingSystem: "linux",
+        startedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        status: "failed",
+        summary: { totalChecks: 5, passedChecks: 4, failedChecks: 1 },
+        findings: [
+          {
+            id: "f_draft_1",
+            ruleId: "NODE_DEPS_NOT_INSTALLED",
+            title: "Dependencies missing",
+            category: "dependency",
+            severity: "high",
+            confidence: "confirmed",
+            status: "failed",
+            evidence: [
+              {
+                id: "ev_draft",
+                kind: "filesystem",
+                description: "node_modules is missing",
+                observed: "Directory not found"
+              }
+            ],
+            possibleCauses: [
+              {
+                id: "pc_draft",
+                description: "Forgot npm install",
+                likelihood: "high"
+              }
+            ]
+          }
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      vi.spyOn(api.runs, "get").mockResolvedValue({ run: mockRun });
+
+      renderWithProviders(
+        <Routes>
+          <Route path="/reports/:id" element={<ReportDetailPage />} />
+        </Routes>,
+        "/reports/run_report_draft"
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Copy Issue Draft")).toBeInTheDocument();
+      });
+
+      const copyBtn = screen.getByText("Copy Issue Draft");
+      fireEvent.click(copyBtn);
+
+      await waitFor(() => {
+        expect(writeTextMock).toHaveBeenCalledTimes(1);
+      });
+
+      const copiedText = writeTextMock.mock.calls[0][0];
+      expect(copiedText).toContain("## Summary");
+      expect(copiedText).toContain("## Observed Evidence");
+      expect(copiedText).toContain("## Possible Causes (Hypotheses)");
+      expect(copiedText).toContain("NODE_DEPS_NOT_INSTALLED");
+      expect(screen.getByText("✓ Copied Issue Draft")).toBeInTheDocument();
+    });
   });
 
   describe("4. Finding Details Page", () => {

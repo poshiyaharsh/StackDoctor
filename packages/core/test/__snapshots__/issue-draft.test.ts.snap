@@ -1,0 +1,93 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GitHub Issue Draft Generator (packages/core) > snapshot matches expected draft layout 1`] = `
+{
+  "body": "## Summary
+- **Project**: my-web-app
+- **Status**: \`failed\`
+- **Total Checks**: 1
+- **Total Findings**: 2 (critical: 1, high: 0, medium: 1, low: 0, info: 0)
+- **Timestamp**: 2026-10-26T12:00:05.000Z
+
+## Environment
+- **Operating System**: linux
+- **Tool Version**: StackDoctor v0.1.0
+- **Runtime Versions**: Node.js: v20.11.0 in engines field, Node.js Version Check: v18.16.0
+- **Schema Version**: 1.0.0
+
+## Detected Technologies
+- **Node.js** (Confidence: \`confirmed\`)
+
+## Findings
+| Rule ID | Severity | Category | Title |
+|---|---|---|---|
+| \`NODE_VERSION_MISMATCH\` | **CRITICAL** | runtime | Node.js Version Mismatch |
+| \`ENV_EXAMPLE_NO_ENV\` | **MEDIUM** | configuration | Missing .env File |
+
+## Observed Evidence
+> [!NOTE]
+> **Observed Only:** The following details were directly observed by StackDoctor diagnostic probes during environment inspection. No speculation is included in this section.
+
+### Node.js Version Mismatch (\`NODE_VERSION_MISMATCH\`)
+- **Source**: \`package.json / process\`
+- **Kind**: \`file\`
+- **Description**: Observed engine mismatch
+- **Observed**:
+\`\`\`
+Required >=20.0.0, running v18.16.0
+\`\`\`
+
+### Missing .env File (\`ENV_EXAMPLE_NO_ENV\`)
+- **Source**: \`fs.existsSync\`
+- **Kind**: \`filesystem\`
+- **Description**: .env.example found but .env does not exist
+- **Observed**:
+\`\`\`
+.env.example present with 5 variables
+\`\`\`
+
+## Possible Causes (Hypotheses)
+> [!IMPORTANT]
+> **Hypotheses Only:** The following are automated hypotheses based on diagnostic heuristics. They are possible explanations, not verified facts.
+
+### Node.js Version Mismatch (\`NODE_VERSION_MISMATCH\`)
+- Global Node.js version in PATH takes precedence over nvmrc
+- Node version manager not loaded in shell session
+
+### Missing .env File (\`ENV_EXAMPLE_NO_ENV\`)
+- Developer forgot to copy .env.example after cloning
+
+## Steps Already Suggested
+### Node.js Version Mismatch (\`NODE_VERSION_MISMATCH\`)
+- **Problem**: Current Node.js version is v18.16.0 but project requires >=20.0.0
+- **Suggested Action**:
+  \`\`\`bash
+  nvm use 20 || n 20
+  \`\`\`
+- **Expected Result**: node -v prints v20.x.x
+- **Undo Action**: \`nvm use 18\`
+
+### Missing .env File (\`ENV_EXAMPLE_NO_ENV\`)
+- **Problem**: .env is missing
+- **Suggested Action**:
+  \`\`\`bash
+  cp .env.example .env
+  \`\`\`
+- **Expected Result**: .env file created with default values
+
+## Steps to Reproduce
+<!-- Please describe the steps to reproduce this environment state: -->
+1. 
+2. 
+3. 
+
+## Additional Context
+<!-- Add any other context, recent changes to configuration, or error logs here: -->",
+  "labels": [
+    "environment",
+    "stackdoctor",
+    "bug",
+  ],
+  "title": "[Environment Issue] my-web-app: Node.js Version Mismatch (+1 more)",
+}
+`;

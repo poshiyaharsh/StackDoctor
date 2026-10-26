@@ -2,15 +2,17 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import readline from "node:readline";
+import os from "node:os";
 import {
   runDiagnostics,
   validateDirectory,
   scanProject,
+  buildIssueDraft,
   type DiagnosticRule,
   type DiagnosticCheck
 } from "@stackdoctor/core";
 import { createDefaultRuleRegistry } from "@stackdoctor/rules";
-import { validateReport, type Report, CURRENT_TOOL_VERSION } from "@stackdoctor/schemas";
+import { validateReport, type Report, type Severity, CURRENT_TOOL_VERSION } from "@stackdoctor/schemas";
 import { formatTerminalReport } from "./format.js";
 import { collectEvaluationContext } from "./collector.js";
 import {
@@ -20,9 +22,10 @@ import {
   validateServerUrl
 } from "./config-store.js";
 import { formatReportPreview, uploadReport } from "./uploader.js";
+import { copyToClipboard } from "./clipboard.js";
 
 export interface CliOptions {
-  command: "scan" | "rules" | "login" | "logout" | "upload" | "help" | "version";
+  command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "help" | "version";
   targetPath: string;
   json: boolean;
   outFile?: string;
@@ -35,10 +38,13 @@ export interface CliOptions {
   token?: string;
   yes?: boolean;
   projectName?: string;
+  minSeverity?: Severity;
+  copy?: boolean;
+  noEvidence?: boolean;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
-  let command: "scan" | "rules" | "login" | "logout" | "upload" | "help" | "version" = "scan";
+  let command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "help" | "version" = "scan";
   let targetPath = ".";
   let json = false;
   let outFile: string | undefined;
@@ -51,6 +57,9 @@ export function parseCliArgs(argv: string[]): CliOptions {
   let token: string | undefined;
   let yes = false;
   let projectName: string | undefined;
+  let minSeverity: Severity | undefined;
+  let copy = false;
+  let noEvidence = false;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -69,6 +78,18 @@ export function parseCliArgs(argv: string[]): CliOptions {
       allowProjectCode = true;
     } else if (arg === "--yes" || arg === "-y") {
       yes = true;
+    } else if (arg === "--copy") {
+      copy = true;
+    } else if (arg === "--no-evidence") {
+      noEvidence = true;
+    } else if (arg === "--min-severity") {
+      if (i + 1 < argv.length) {
+        minSeverity = argv[++i] as Severity;
+      } else {
+        throw new Error("Missing value for --min-severity flag");
+      }
+    } else if (arg?.startsWith("--min-severity=")) {
+      minSeverity = arg.slice(15) as Severity;
     } else if (arg === "--server") {
       if (i + 1 < argv.length) {
         serverUrl = argv[++i];
@@ -120,6 +141,11 @@ export function parseCliArgs(argv: string[]): CliOptions {
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         targetPath = argv[++i] as string;
       }
+    } else if (arg === "issue") {
+      command = "issue";
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        targetPath = argv[++i] as string;
+      }
     } else if (arg === "scan") {
       command = "scan";
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
@@ -143,7 +169,10 @@ export function parseCliArgs(argv: string[]): CliOptions {
     serverUrl,
     token,
     yes,
-    projectName
+    projectName,
+    minSeverity,
+    copy,
+    noEvidence
   };
 }
 
@@ -158,6 +187,7 @@ USAGE:
   stackdoctor login --server <url> [flags]
   stackdoctor logout
   stackdoctor upload [reportFile | path] [flags]
+  stackdoctor issue [reportFile | path] [flags]
 
 COMMANDS:
   scan [path]        Scan and diagnose a project directory (default: current directory, 100% offline)
@@ -165,14 +195,18 @@ COMMANDS:
   login              Authenticate with a StackDoctor server and securely store API token
   logout             Remove stored server credentials
   upload [target]    Upload a diagnostic report with interactive preview and confirmation
+  issue [target]     Generate sanitized GitHub issue draft (100% offline, never sends data)
 
 FLAGS:
   --server <url>     StackDoctor server URL (HTTPS required for remote servers; HTTP only for localhost)
   --token <token>    API token for authentication (or use STACKDOCTOR_TOKEN env var)
   --yes, -y          Skip interactive confirmation prompt on report upload
   --project <name>   Target project name for upload
+  --min-severity <s> Filter issue draft findings by minimum severity (info|low|medium|high|critical)
+  --copy             Copy generated issue draft to clipboard
+  --no-evidence      Omit observed evidence section from issue draft
   --json             Print valid JSON report to stdout
-  --out <file>       Write valid JSON report to a file
+  --out <file>       Write report or issue draft to a file
   --db-url-env <VAR> Opt-in to authenticated database checks using the named environment variable
   --allow-project-code Allow running safe, read-only project inspection commands
   --no-color         Disable ANSI terminal colors
@@ -473,6 +507,103 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
       console.error(`Upload error: ${err instanceof Error ? err.message : String(err)}`);
       return 1;
     }
+  }
+
+  // --- COMMAND: issue (purely local, 100% offline, never makes network calls) ---
+  if (opts.command === "issue") {
+    let report: Report;
+    const resolvedTarget = path.resolve(opts.targetPath);
+
+    // If target is an existing json report file
+    if (fs.existsSync(resolvedTarget) && fs.statSync(resolvedTarget).isFile()) {
+      try {
+        const fileContent = fs.readFileSync(resolvedTarget, "utf-8");
+        const parsedJson = JSON.parse(fileContent);
+        const validated = validateReport(parsedJson);
+        if (!validated.success) {
+          console.error(`Error: File "${opts.targetPath}" is not a valid StackDoctor report:`);
+          for (const err of validated.errors) {
+            console.error(`  - ${err}`);
+          }
+          return 2;
+        }
+        report = validated.data;
+      } catch (err) {
+        console.error(`Error reading report file: ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+    } else {
+      // Target is a directory: generate report offline
+      let realDir: string;
+      try {
+        realDir = validateDirectory(opts.targetPath);
+      } catch (err) {
+        console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+
+      try {
+        report = await generateDirectoryReport(realDir, opts);
+      } catch (err) {
+        console.error(`Diagnostic execution failed: ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+    }
+
+    if (opts.projectName) {
+      report.projectName = opts.projectName;
+    }
+
+    const draft = buildIssueDraft(report, {
+      minSeverity: opts.minSeverity,
+      includeEvidence: !opts.noEvidence,
+      projectPath: path.resolve(opts.targetPath),
+      homeDir: os.homedir(),
+      username: process.env.USERNAME || process.env.USER,
+      hostname: os.hostname()
+    });
+
+    const divider = "=".repeat(70);
+    const subDivider = "-".repeat(70);
+    const preview = [
+      divider,
+      "  StackDoctor - GitHub Issue Draft Preview",
+      divider,
+      `Title:  ${draft.title}`,
+      `Labels: ${draft.labels.join(", ")}`,
+      "",
+      "Review before posting. Nothing was sent.",
+      subDivider,
+      draft.body,
+      subDivider,
+      "Review before posting. Nothing was sent.",
+      divider
+    ].join("\n");
+
+    console.log(preview);
+
+    if (opts.outFile) {
+      try {
+        fs.writeFileSync(path.resolve(opts.outFile), draft.body + "\n", "utf-8");
+        console.log(`\n✓ Issue draft written to ${opts.outFile}`);
+      } catch (err) {
+        console.error(
+          `Failed to write issue draft to file "${opts.outFile}": ${err instanceof Error ? err.message : String(err)}`
+        );
+        return 2;
+      }
+    }
+
+    if (opts.copy) {
+      const copied = copyToClipboard(draft.body);
+      if (copied) {
+        console.log("\n✓ Issue draft copied to clipboard!");
+      } else {
+        console.log("\nNotice: Clipboard tool not available. The issue draft is printed above.");
+      }
+    }
+
+    return 0;
   }
 
   // --- COMMAND: scan (purely local, 100% offline) ---

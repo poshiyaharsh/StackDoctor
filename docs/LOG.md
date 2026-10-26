@@ -536,7 +536,47 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Problems / errors:** Handled workspace mongoose resolution in standalone E2E script by utilizing the API's database connector; attached CSRF token to login request during session fixation test.
 - **Decisions made:** Docker Compose bound strictly to 127.0.0.1; complete anti-enumeration policy returns 404 for foreign tenant resources; automated end-to-end check script tests full lifecycle from registration through deletion.
 - **Next step:** Phase 4: Integrations (GitHub issue drafts, CI JSON, report compare).
+### [2026-10-26] Phase 4, Run 4A: GitHub Issue Draft Generation
+- **Prompt used:** PHASE4.md > Run 4A: GitHub issue draft generation
+- **What was done:**
+  1. Implemented isomorphic `buildIssueDraft(report, options)` in `packages/core/src/issue-draft.ts` returning `{ title, body, labels }`.
+     - Structured markdown with mandatory sections: Summary, Environment (OS, runtime versions, tool version), Detected technologies, Findings (title, severity, rule ID, category), Observed Evidence (OBSERVED only, with note banner), Possible Causes (Hypotheses only, with note banner), Steps already suggested, Steps to reproduce (template placeholder), and Additional context (placeholder).
+     - Strict size truncation at 60,000 characters (respecting GitHub issue body 65,536 limit) with clean boundary cutting and warning banner.
+     - Comprehensive sanitization via `sanitizeDraftContent`: normalizes project paths to `<project>`, home directory to `~`, masks usernames and hostnames to `<user>` and `<host>`, masks IPv4/IPv6 addresses to `[REDACTED_IP]`, and runs core secret redaction `redactText`.
+     - Filter findings by minimum severity via `options.minSeverity`.
+     - Toggle observed evidence via `options.includeEvidence`.
+  2. Enhanced `redactText` in `packages/core/src/redact.ts`:
+     - Expanded `SECRET_KV_REGEX` to match prefixed secret variable assignments like `export DB_PASSWORD=...`, `APP_SECRET=...`.
+  3. Added subpath export `./issue-draft` in `packages/core/package.json` and re-exported in `packages/core/src/index.ts`.
+  4. Added cross-platform safe clipboard utility `apps/cli/src/clipboard.ts` supporting Windows (`clip`), macOS (`pbcopy`), and Linux (`xclip` / `wl-copy`).
+  5. Implemented CLI command `stackdoctor issue [reportFile | path]` in `apps/cli/src/index.ts`:
+     - Accepts JSON report file or directory (runs offline diagnostics).
+     - Flags: `--min-severity <severity>`, `--out <file>`, `--copy`, `--no-evidence`.
+     - Prints clear preview with boundary dividers and states "Review before posting. Nothing was sent."
+     - Guaranteed 100% offline with zero network calls.
+  6. Added "Copy Issue Draft" button to Web Diagnostic Report page (`apps/web/src/pages/ReportDetailPage.tsx`):
+     - Uses the shared `buildIssueDraft` core function without duplication.
+     - Copies to clipboard and updates button state to "✓ Copied Issue Draft".
+  7. Added unit and integration tests:
+     - `packages/core/test/issue-draft.test.ts`: Snapshot test, canary secret redaction, absolute path and username/hostname/IP masking, strict separation of evidence vs hypotheses, `--min-severity` filtering, `--no-evidence`, and size truncation.
+     - `apps/cli/test/issue.test.ts`: Preview output, 100% offline network isolation (mocking `fetch`, `http.request`, `https.request` and asserting 0 calls), `--min-severity`, `--no-evidence`, `--out <file>`, and error handling.
+     - `apps/web/test/app-pages.test.tsx`: Tests rendering of "Copy Issue Draft" button and clipboard copy with shared function.
+- **Files created/changed:** `packages/core/src/issue-draft.ts`, `packages/core/src/redact.ts`, `packages/core/src/index.ts`, `packages/core/package.json`, `packages/core/test/issue-draft.test.ts`, `apps/cli/src/clipboard.ts`, `apps/cli/src/index.ts`, `apps/cli/test/issue.test.ts`, `apps/web/package.json`, `apps/web/vite.config.ts`, `apps/web/src/components/ui/Badge.tsx`, `apps/web/src/pages/ReportDetailPage.tsx`, `apps/web/test/app-pages.test.tsx`, `apps/api/test/security-matrix.test.ts`, `vitest.config.ts`, `docs/PHASE4.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (247/247 tests across 39 suites passed)
+  - `npm run eval`: Passed (100% detection, 0% false positives)
+  - Draft contains no secrets, usernames, hostnames, or absolute home paths: Verified
+  - Evidence and possible causes stay in separate, labeled sections: Verified
+  - `issue` makes no network calls: Verified
+  - Web button and CLI produce identical drafts (shared function): Verified
+- **Problems / errors:** Fixed regex in `redact.ts` to capture prefixed key names like `DB_PASSWORD`; added badge variant normalization for `danger`, `warning`, and `default`.
+- **Decisions made:** Exported `buildIssueDraft` from `@stackdoctor/core/issue-draft` with zero Node dependencies for seamless browser/Vite bundling; set body truncation limit to 60,000 characters with warning alert.
+- **Next step:** Phase 4, Run 4B: CI mode, stable output, GitHub Actions integration.
 - **Status:** Done
+
 
 
 

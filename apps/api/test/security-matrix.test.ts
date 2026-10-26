@@ -86,7 +86,7 @@ describe("StackDoctor Security Hardening & Authorization Matrix (Run 3F)", () =>
       ];
 
       for (const ep of endpoints) {
-        let req = request(app)[ep.method as "get" | "post" | "patch" | "delete"](ep.path);
+        const req = request(app)[ep.method as "get" | "post" | "patch" | "delete"](ep.path);
         const res = await req;
         expect(res.status, `Expected 401 for anonymous ${ep.method.toUpperCase()} ${ep.path}`).toBe(401);
       }

@@ -19,9 +19,9 @@ const AUTH_BASIC_REGEX = /(Authorization\s*:\s*Basic\s+)[^\r\n,;]+/gi;
 // URL credentials: proto://username:password@host...
 const URL_CREDENTIALS_REGEX = /([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)([^:\s/@]+):([^@\s/]+)@/g;
 
-// Key-value pairs for secret assignments (e.g. password=..., "token": "...", api_key=...)
+// Key-value pairs for secret assignments (e.g. password=..., DB_PASSWORD=..., "token": "...", api_key=...)
 // Uses lookahead/word-boundaries to avoid false positives like "tokenizer" or "tokenized"
-const SECRET_KV_REGEX = /\b((?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|secret[_-]?key|password|passwd|secret|token))(\s*[:=]\s*["']?)([^"'\s\r\n,;]+)(["']?)/gi;
+const SECRET_KV_REGEX = /\b((?:[a-zA-Z0-9_]*[_-])?(?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|secret[_-]?key|password|passwd|secret|token))(\s*[:=]\s*["']?)([^"'\s\r\n,;]+)(["']?)/gi;
 
 // JSON formatted secrets (e.g. "password": "value")
 const JSON_SECRET_REGEX = /("(?:\w*[_-])?(?:password|passwd|secret|token|api[_-]?key)"\s*:\s*")([^"\\]*(?:\\.[^"\\]*)*)(")/gi;
