@@ -2,3 +2,8 @@ export * from "./config.js";
 export * from "./app.js";
 export * from "./lib/db.js";
 export * from "./models/user.js";
+export * from "./models/project.js";
+export * from "./models/diagnostic-run.js";
+export * from "./middleware/auth.js";
+export * from "./middleware/csrf.js";
+export * from "./lib/sanitize-report.js";

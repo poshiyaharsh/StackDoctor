@@ -11,6 +11,9 @@ import { csrfProtection } from "./middleware/csrf.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { healthRouter } from "./routes/health.js";
 import { authRouter } from "./routes/auth.js";
+import { projectsRouter } from "./routes/projects.js";
+import { diagnosticRunsRouter } from "./routes/diagnostic-runs.js";
+import { rulesRouter } from "./routes/rules.js";
 
 export function buildApp(config: ApiConfig): Express {
   const app = express();
@@ -90,6 +93,9 @@ export function buildApp(config: ApiConfig): Express {
   // 7. API Routes
   app.use("/api/v1/health", healthRouter);
   app.use("/api/v1/auth", authRouter);
+  app.use("/api/v1/projects", projectsRouter);
+  app.use("/api/v1/diagnostic-runs", diagnosticRunsRouter);
+  app.use("/api/v1/rules", rulesRouter);
 
   // 8. 404 Handler
   app.use((req: Request, res: Response) => {

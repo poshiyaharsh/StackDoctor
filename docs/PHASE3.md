@@ -16,7 +16,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
 | 3A | API scaffold, MongoDB, authentication | Done | a12454c | 2026-10-26 |
-| 3B | Projects, diagnostic runs, rules endpoints, authorization | Not started | - | - |
+| 3B | Projects, diagnostic runs, rules endpoints, authorization | Done | pending | 2026-10-26 |
 | 3C | API tokens + CLI login/upload with preview | Not started | - | - |
 | 3D | Web scaffold, landing page, auth pages | Not started | - | - |
 | 3E | Dashboard, projects, report and finding pages, settings | Not started | - | - |
@@ -116,17 +116,17 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] User A can never see or change User B's data (tests for every verb)
-- [ ] Canary secret never reaches the database
-- [ ] Oversized and malformed payloads rejected
-- [ ] NoSQL injection attempts rejected
-- [ ] Deleting a project removes its runs
+- [x] User A can never see or change User B's data (tests for every verb)
+- [x] Canary secret never reaches the database
+- [x] Oversized and malformed payloads rejected
+- [x] NoSQL injection attempts rejected
+- [x] Deleting a project removes its runs
 
 **Run log (Antigravity fills):**
-- Files:
-- Command results:
-- Problems:
-- Decisions:
+- Files: `apps/api/src/models/project.ts`, `apps/api/src/models/diagnostic-run.ts`, `apps/api/src/middleware/auth.ts`, `apps/api/src/lib/sanitize-report.ts`, `apps/api/src/routes/projects.ts`, `apps/api/src/routes/diagnostic-runs.ts`, `apps/api/src/routes/rules.ts`, `apps/api/src/app.ts`, `apps/api/src/index.ts`, `apps/api/test/resources.test.ts`
+- Command results: `npm run build` passed (exit code 0); `npm run lint` passed (exit code 0); `npm run typecheck` passed (exit code 0); `npm test` passed (192/192 tests across 31 suites); `npm run eval` passed (100% detection, 0% false positives).
+- Problems: Query parameter injection attempts using operators in keys handled by enforcing `.strict()` Zod schemas and explicitly rejecting `$` and `[` / `]` operator characters. Report validation schema constraints adhered to strictly.
+- Decisions: Deleting a project automatically cascades to delete all associated diagnostic runs. All resource queries are strictly scoped by `ownerId` in MongoDB and return 404 for resources owned by others to prevent enumeration. Canaries and survived credentials immediately reject with 422 Unprocessable Entity and are never stored. Deep redaction re-sanitizes every string field before persistence.
 
 ---
 

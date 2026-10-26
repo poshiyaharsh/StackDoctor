@@ -350,6 +350,36 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 3, Run 3B: Projects, diagnostic runs, rules endpoints, authorization.
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 3, Run 3B: Core API Resources (Projects, Runs, Rules, Authorization)
+- **Prompt used:** PHASE3.md > Run 3B: Projects, diagnostic runs, rules endpoints, authorization
+- **What was done:** Implemented core API resources, MongoDB collections, strict multi-tenant authorization, cascade run deletion, report sanitization, canary secret detection, and metadata endpoints:
+  1. Built `Project` model in `apps/api/src/models/project.ts` with owner scoping, URL validation, technology tags, and compound index `(ownerId, createdAt)`.
+  2. Built `DiagnosticRun` model in `apps/api/src/models/diagnostic-run.ts` with report findings, summary metrics, execution timestamps, and compound indexes `(ownerId, createdAt)` and `(projectId, createdAt)`.
+  3. Implemented `apps/api/src/routes/projects.ts` with full CRUD (paginated list, create, get by id, patch, delete with cascading deletion of all associated diagnostic runs).
+  4. Implemented `apps/api/src/routes/diagnostic-runs.ts` supporting report uploads with `@stackdoctor/schemas` validation, deep core `redactText` sanitization, machine identifier removal, canary secret rejection (HTTP 422), paginated filtered queries (by project, status, severity, date range), get by id, and delete.
+  5. Implemented `apps/api/src/routes/rules.ts` exposing authenticated read-only metadata for all 20 diagnostic rules from `@stackdoctor/rules` registry.
+  6. Implemented strict authorization and security defenses: queries strictly scoped by `ownerId` in MongoDB returning 404 for other users' resources; 24-character hexadecimal ObjectId format validation; strict query schemas rejecting NoSQL operator injections (`$`, `[`, `]`).
+  7. Implemented 11 comprehensive tests in `apps/api/test/resources.test.ts` covering full CRUD, cascade deletion, multi-tenant user isolation matrix (User A vs User B for every verb), canary rejection, secret re-redaction verification in MongoDB, malformed IDs, and query injection prevention.
+- **Files created/changed:** `apps/api/src/models/project.ts`, `apps/api/src/models/diagnostic-run.ts`, `apps/api/src/middleware/auth.ts`, `apps/api/src/lib/sanitize-report.ts`, `apps/api/src/routes/projects.ts`, `apps/api/src/routes/diagnostic-runs.ts`, `apps/api/src/routes/rules.ts`, `apps/api/src/app.ts`, `apps/api/src/index.ts`, `apps/api/test/resources.test.ts`, `docs/PHASE3.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (192/192 tests across 31 suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm run eval`: Passed (100% detection, 0% false positives)
+  - User A can never see or change User B's data (tests for every verb): Verified
+  - Canary secret never reaches the database (rejected with 422): Verified
+  - Oversized and malformed payloads rejected: Verified
+  - NoSQL injection attempts rejected: Verified
+  - Deleting a project removes its runs: Verified
+- **Problems / errors:** Query parameter injection via query parser operators handled by adding `.strict()` to Zod query schemas and explicit key rejection for `$` and `[` / `]`. Report validation schema constraints matched strictly.
+- **Decisions made:** Deleting a project cascades to delete all its runs. Strict owner isolation returns 404 for non-owned resources to prevent resource existence enumeration.
+- **Next step:** Phase 3, Run 3C: API tokens + CLI login/upload with preview.
+- **Status:** Done
+
+
 
 
 

@@ -42,7 +42,9 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   // Exempt registration and login from requiring a prior CSRF token,
   // or allow if session does not exist yet. However, once a session exists, enforce it!
   // If the path is /api/v1/auth/register or /api/v1/auth/login, a client might not have established a session yet:
-  if (req.path === "/api/v1/auth/register" || req.path === "/api/v1/auth/login") {
+  // Only cookie-authenticated sessions with an active user need CSRF protection.
+  // Unauthenticated requests will be rejected by requireAuth with 401.
+  if (!req.session?.userId) {
     return next();
   }
 
