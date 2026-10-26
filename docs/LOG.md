@@ -247,5 +247,45 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 2, Run 2D: Python and Django checks.
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 2, Run 2D: Python and Django checks
+- **Prompt used:** PHASE2.md > Run 2D: Python and Django checks
+- **What was done:** Implemented Python dependency inspection, Django environment analysis, and 4 new diagnostic rules:
+  1. Built Python dependency analyzer `packages/adapters/src/python-deps.ts`:
+     - PEP 503 package name canonicalization (`normalizePythonPackageName`).
+     - Safe parsing of `requirements.txt` and `pyproject.toml` dependency declarations without code execution.
+     - Installed package enumeration via `python -m pip list --format=json` through the safe runner.
+     - PEP 440 compatible version satisfaction checking (`checkPythonVersionSatisfies`).
+  2. Built Django diagnostics adapter `packages/adapters/src/django.ts`:
+     - `isDjangoProject` strictly requiring positive detection of `django` dependency or `manage.py` (generic `requirements.txt` alone does NOT trigger Django).
+     - Static settings module discovery (`discoverDjangoSettings`) from `manage.py` without executing project code.
+     - Migration inspection (`checkDjangoMigrations`) strictly gated behind `--allow-project-code` flag using read-only `showmigrations --plan`. When flag is absent, check is reported as "skipped: requires running project code; use --allow-project-code".
+     - Banned keyword enforcement: `migrate` appears nowhere in code, findings, or recommendations.
+  3. Implemented 4 diagnostic rules and registered them in the default registry (bringing total rules to 20):
+     - `PYTHON_PACKAGES_MISSING`: Identifies declared Python packages not installed in the environment.
+     - `PYTHON_PACKAGE_VERSION_MISMATCH`: Identifies installed packages that fail declared version specifiers.
+     - `DJANGO_SETTINGS_NOT_FOUND`: Identifies missing Django settings files referenced by `DJANGO_SETTINGS_MODULE`.
+     - `DJANGO_MIGRATIONS_PENDING`: Identifies unapplied database schema changes without ever running or mentioning `migrate`.
+  4. Added `stackdoctor rules` CLI command in `apps/cli/src/index.ts` supporting both human-readable terminal output and machine-readable `--json` output, as well as the `--allow-project-code` flag.
+  5. Documented rules 17 through 20 in `docs/diagnostics.md`.
+  6. Added comprehensive unit tests in `packages/adapters/test/python-deps.test.ts`, `packages/adapters/test/django.test.ts`, `packages/rules/test/python-django-rules.test.ts`, and `apps/cli/test/cli.test.ts`.
+- **Files created/changed:** `packages/adapters/src/python-deps.ts`, `packages/adapters/src/django.ts`, `packages/adapters/src/index.ts`, `packages/adapters/test/python-deps.test.ts`, `packages/adapters/test/django.test.ts`, `packages/rules/src/rules/python-packages-missing.ts`, `packages/rules/src/rules/python-package-version-mismatch.ts`, `packages/rules/src/rules/django-settings-not-found.ts`, `packages/rules/src/rules/django-migrations-pending.ts`, `packages/rules/src/types.ts`, `packages/rules/src/index.ts`, `packages/rules/test/python-django-rules.test.ts`, `packages/rules/test/registry.test.ts`, `packages/rules/test/phase2-rules.test.ts`, `packages/rules/test/port-rules.test.ts`, `packages/rules/test/database-rules.test.ts`, `apps/cli/src/index.ts`, `apps/cli/test/cli.test.ts`, `docs/diagnostics.md`, `docs/PHASE2.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (155/155 tests across 26 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `shell: true` search: 0 occurrences found
+  - `migrate` search: 0 occurrences in source/findings/recommendations (only in test assertions verifying absence)
+  - Without `--allow-project-code`, no project code is executed: Verified
+  - `requirements.txt` alone does not mean Django: Verified
+  - `stackdoctor rules` lists every rule: Verified (all 20 rules listed in terminal table and JSON)
+- **Problems / errors:** Unused `let` fixed with `const`; missing `source` field added to rule context types.
+- **Decisions made:** Migration check strictly read-only (`showmigrations --plan`) and gated behind `--allow-project-code`.
+- **Next step:** Phase 2, Run 2E: Fixtures, integration + security tests, docs, final verification.
+- **Status:** Done
+
+
 
 

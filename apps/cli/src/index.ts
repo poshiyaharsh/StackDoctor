@@ -17,7 +17,7 @@ import { validateReport, type Report, CURRENT_TOOL_VERSION } from "@stackdoctor/
 import { formatTerminalReport } from "./format.js";
 
 export interface CliOptions {
-  command: "scan" | "help" | "version";
+  command: "scan" | "rules" | "help" | "version";
   targetPath: string;
   json: boolean;
   outFile?: string;
@@ -25,10 +25,11 @@ export interface CliOptions {
   help: boolean;
   version: boolean;
   dbUrlEnv?: string;
+  allowProjectCode: boolean;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
-  let command: "scan" | "help" | "version" = "scan";
+  let command: "scan" | "rules" | "help" | "version" = "scan";
   let targetPath = ".";
   let json = false;
   let outFile: string | undefined;
@@ -36,6 +37,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
   let help = false;
   let version = false;
   let dbUrlEnv: string | undefined;
+  let allowProjectCode = false;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -50,6 +52,8 @@ export function parseCliArgs(argv: string[]): CliOptions {
       json = true;
     } else if (arg === "--no-color") {
       noColor = true;
+    } else if (arg === "--allow-project-code") {
+      allowProjectCode = true;
     } else if (arg === "--out") {
       if (i + 1 < argv.length) {
         outFile = argv[++i];
@@ -66,6 +70,8 @@ export function parseCliArgs(argv: string[]): CliOptions {
       }
     } else if (arg?.startsWith("--db-url-env=")) {
       dbUrlEnv = arg.slice(13);
+    } else if (arg === "rules") {
+      command = "rules";
     } else if (arg === "scan") {
       command = "scan";
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
@@ -84,7 +90,8 @@ export function parseCliArgs(argv: string[]): CliOptions {
     noColor,
     help,
     version,
-    dbUrlEnv
+    dbUrlEnv,
+    allowProjectCode
   };
 }
 
@@ -95,15 +102,18 @@ Tagline: "Find the cause. Fix the environment. Ship the code."
 
 USAGE:
   stackdoctor scan [path] [flags]
+  stackdoctor rules [flags]
   stackdoctor [path] [flags]
 
 COMMANDS:
   scan [path]        Scan and diagnose a project directory (default: current directory)
+  rules              List all diagnostic rules supported by StackDoctor
 
 FLAGS:
   --json             Print valid JSON report to stdout
   --out <file>       Write valid JSON report to a file
   --db-url-env <VAR> Opt-in to authenticated database checks using the named environment variable
+  --allow-project-code Allow running safe, read-only project inspection commands
   --no-color         Disable ANSI terminal colors
   --version, -v      Print StackDoctor version
   --help, -h         Display this help message
@@ -134,6 +144,35 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
 
   if (opts.help) {
     printHelp();
+    return 0;
+  }
+
+  if (opts.command === "rules") {
+    const registry = createDefaultRuleRegistry();
+    const rules = registry.list();
+    if (opts.json) {
+      console.log(
+        JSON.stringify(
+          rules.map((r) => ({
+            id: r.id,
+            title: r.title,
+            severity: r.severity,
+            technologies: r.technologies
+          })),
+          null,
+          2
+        )
+      );
+      return 0;
+    }
+
+    console.log(`\nStackDoctor Diagnostic Rules (${rules.length} total):\n`);
+    for (const r of rules) {
+      console.log(`• [${r.id}] (${r.severity.toUpperCase()})`);
+      console.log(`  Title       : ${r.title}`);
+      console.log(`  Technologies: ${r.technologies.join(", ")}`);
+      console.log("");
+    }
     return 0;
   }
 

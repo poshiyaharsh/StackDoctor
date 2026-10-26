@@ -241,11 +241,11 @@ describe("Phase 2 Run 2C Database Rules", () => {
     });
   });
 
-  describe("Default Rule Registry has 16 rules", () => {
-    it("registers all 16 rules", () => {
+  describe("Default Rule Registry has 20 rules", () => {
+    it("registers all 20 rules", () => {
       const registry = createDefaultRuleRegistry();
       const rules = registry.list();
-      expect(rules.length).toBe(16);
+      expect(rules.length).toBe(20);
 
       const ids = rules.map((r) => r.id);
       expect(ids).toContain("MONGO_CONNECTION_REFUSED");

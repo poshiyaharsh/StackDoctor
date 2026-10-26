@@ -388,4 +388,100 @@ This document catalog describes each diagnostic rule implemented in StackDoctor,
 - **Verification**: Verify that connection establishes before timeout expires.
 - **References**: [Connection Timeout](https://en.wikipedia.org/wiki/Connection_timeout)
 
+---
+
+### 17. `PYTHON_PACKAGES_MISSING`
+
+- **Title**: Declared Python dependencies are not installed
+- **Category**: `dependencies`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `Python`, `Django`
+- **Description**: Triggered when one or more packages declared in `requirements.txt` or `pyproject.toml` are not installed in the active Python environment.
+- **Preconditions**: Package declared in dependency file is absent from `python -m pip list`.
+- **Observed Evidence (Facts)**:
+  - Missing packages: List of declared packages absent from installed environment.
+- **Possible Causes (Hypotheses)**:
+  - Dependencies have not yet been installed in the active virtual environment.
+  - A different virtual environment or Python interpreter is currently active in the shell.
+  - Packages were recently added to requirements without running installation.
+- **Remediation**:
+  - Command: `pip install -r requirements.txt`
+  - Risks: Downloads packages into active virtual environment.
+  - Undo: `pip uninstall <package>`
+- **Verification**: Re-run scan to confirm all declared packages are present.
+- **References**: [pip install documentation](https://pip.pypa.io/en/stable/cli/pip_install/)
+
+---
+
+### 18. `PYTHON_PACKAGE_VERSION_MISMATCH`
+
+- **Title**: Installed Python package version does not satisfy requirement
+- **Category**: `dependencies`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `Python`, `Django`
+- **Description**: Triggered when an installed Python package version fails to satisfy a parseable version constraint declared in `requirements.txt` or `pyproject.toml`.
+- **Preconditions**: Installed package version does not satisfy declared specifier.
+- **Observed Evidence (Facts)**:
+  - Version comparison: Installed package version vs required specifier.
+- **Possible Causes (Hypotheses)**:
+  - Package was installed with an older or newer version than required.
+  - Requirements file was updated after packages were installed.
+- **Remediation**:
+  - Command: `pip install --upgrade -r requirements.txt`
+  - Risks: Upgrades or downgrades packages in active virtual environment.
+  - Undo: Reinstall previous version via pip.
+- **Verification**: Re-run scan to verify installed package satisfies requirements.
+- **References**: [PEP 440 Version Identification](https://peps.python.org/pep-0440/)
+
+---
+
+### 19. `DJANGO_SETTINGS_NOT_FOUND`
+
+- **Title**: Django settings module file not found
+- **Category**: `configuration`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `Django`
+- **Description**: Triggered when `DJANGO_SETTINGS_MODULE` configured in `manage.py` points to a file path that does not exist on disk.
+- **Preconditions**: `manage.py` exists and specifies a settings module that cannot be located.
+- **Observed Evidence (Facts)**:
+  - Configuration setting: `DJANGO_SETTINGS_MODULE` string in `manage.py`.
+  - Expected file path: Expected file path where the module was looked up.
+- **Possible Causes (Hypotheses)**:
+  - The settings file was moved or renamed without updating `manage.py`.
+  - The project directory layout differs from standard Django layout.
+  - A typo in `DJANGO_SETTINGS_MODULE`.
+- **Remediation**:
+  - Command: Create the missing settings file or correct the `DJANGO_SETTINGS_MODULE` path in `manage.py`.
+  - Risks: Configuration change.
+  - Undo: Revert `manage.py`.
+- **Verification**: Confirm settings file exists on disk.
+- **References**: [Django Settings Documentation](https://docs.djangoproject.com/en/stable/topics/settings/)
+
+---
+
+### 20. `DJANGO_MIGRATIONS_PENDING`
+
+- **Title**: Unapplied database schema changes detected
+- **Category**: `database`
+- **Severity**: `medium`
+- **Confidence**: `confirmed`
+- **Technologies**: `Django`
+- **Description**: Triggered when unapplied schema changes exist for the Django application (inspected safely via read-only `showmigrations --plan`, requires explicit `--allow-project-code` flag).
+- **Preconditions**: `showmigrations --plan` reports unapplied changes (detected only with `--allow-project-code`).
+- **Observed Evidence (Facts)**:
+  - Plan output: List of unapplied schema operations reported by `showmigrations`.
+- **Possible Causes (Hypotheses)**:
+  - New schema definitions were created or pulled from version control without updating the local database.
+  - A fresh database was initialized but pending schema operations were not applied.
+- **Remediation**:
+  - Command: Apply pending schema operations using Django management tooling.
+  - Risks: Alters database schema.
+  - Undo: Revert schema changes.
+- **Verification**: Re-run scan with `--allow-project-code` to confirm no unapplied changes remain.
+- **References**: [Django Migrations Documentation](https://docs.djangoproject.com/en/stable/topics/migrations/)
+
+
 

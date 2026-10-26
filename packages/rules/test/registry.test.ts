@@ -52,8 +52,8 @@ describe("RuleRegistry (registry.ts)", () => {
 
   it("filters rules by technology with wildcard support", () => {
     const registry = createDefaultRuleRegistry();
-    // Default registry contains 16 rules
-    expect(registry.list().length).toBe(16);
+    // Default registry contains 20 rules
+    expect(registry.list().length).toBe(20);
 
     const nodeRules = registry.forTechnologies(["Node.js"]);
     expect(nodeRules.some((r) => r.id === "NODE_DEPS_NOT_INSTALLED")).toBe(true);

@@ -118,4 +118,35 @@ describe("StackDoctor CLI (apps/cli)", () => {
     // NODE_DEPS_NOT_INSTALLED, ENV_EXAMPLE_PRESENT_NO_ENV, LOCKFILE_MISSING
     expect(parsed.summary.totalFindings).toBe(3);
   });
+
+  it("handles 'rules' command and prints all 20 rules in formatted output", async () => {
+    let stdoutData = "";
+    vi.spyOn(console, "log").mockImplementation((msg?: unknown) => {
+      stdoutData += (msg ?? "") + "\n";
+    });
+
+    const exitCode = await runCli(["rules", "--no-color"]);
+    expect(exitCode).toBe(0);
+    expect(stdoutData).toContain("StackDoctor Diagnostic Rules (20 total)");
+    expect(stdoutData).toContain("NODE_DEPS_NOT_INSTALLED");
+    expect(stdoutData).toContain("PYTHON_PACKAGES_MISSING");
+    expect(stdoutData).toContain("DJANGO_SETTINGS_NOT_FOUND");
+    expect(stdoutData).toContain("DJANGO_MIGRATIONS_PENDING");
+  });
+
+  it("handles 'rules --json' and outputs array of 20 rules", async () => {
+    let jsonOutput = "";
+    vi.spyOn(console, "log").mockImplementation((msg?: unknown) => {
+      jsonOutput += (msg ?? "") + "\n";
+    });
+
+    const exitCode = await runCli(["rules", "--json"]);
+    expect(exitCode).toBe(0);
+
+    const parsed = JSON.parse(jsonOutput.trim()) as Array<{ id: string; title: string }>;
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed.length).toBe(20);
+    expect(parsed.some((r) => r.id === "DJANGO_SETTINGS_NOT_FOUND")).toBe(true);
+    expect(parsed.some((r) => r.id === "PYTHON_PACKAGE_VERSION_MISMATCH")).toBe(true);
+  });
 });

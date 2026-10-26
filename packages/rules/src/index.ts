@@ -15,6 +15,10 @@ import { mysqlConnectionRefusedRule } from "./rules/mysql-connection-refused.js"
 import { mysqlAuthFailedRule } from "./rules/mysql-auth-failed.js";
 import { dbHostNotResolvedRule } from "./rules/db-host-not-resolved.js";
 import { dbConnectionTimeoutRule } from "./rules/db-connection-timeout.js";
+import { pythonPackagesMissingRule } from "./rules/python-packages-missing.js";
+import { pythonPackageVersionMismatchRule } from "./rules/python-package-version-mismatch.js";
+import { djangoSettingsNotFoundRule } from "./rules/django-settings-not-found.js";
+import { djangoMigrationsPendingRule } from "./rules/django-migrations-pending.js";
 
 export * from "./types.js";
 export * from "./registry.js";
@@ -34,6 +38,10 @@ export * from "./rules/mysql-connection-refused.js";
 export * from "./rules/mysql-auth-failed.js";
 export * from "./rules/db-host-not-resolved.js";
 export * from "./rules/db-connection-timeout.js";
+export * from "./rules/python-packages-missing.js";
+export * from "./rules/python-package-version-mismatch.js";
+export * from "./rules/django-settings-not-found.js";
+export * from "./rules/django-migrations-pending.js";
 
 export const RULES_PACKAGE = "@stackdoctor/rules";
 export const RULES_DEPENDENCY = "@stackdoctor/schemas";
@@ -59,5 +67,9 @@ export function createDefaultRuleRegistry(): RuleRegistry {
   registry.register(mysqlAuthFailedRule);
   registry.register(dbHostNotResolvedRule);
   registry.register(dbConnectionTimeoutRule);
+  registry.register(pythonPackagesMissingRule);
+  registry.register(pythonPackageVersionMismatchRule);
+  registry.register(djangoSettingsNotFoundRule);
+  registry.register(djangoMigrationsPendingRule);
   return registry;
 }

@@ -88,6 +88,35 @@ export interface RuleEvaluationContext {
       error?: string;
     }>;
   };
+  python?: {
+    hasDeclaredDeps?: boolean;
+    missingPackages?: Array<{
+      name: string;
+      specifier?: string;
+      source: string;
+    }>;
+    mismatchedPackages?: Array<{
+      name: string;
+      installedVersion: string;
+      expectedSpecifier: string;
+      source?: string;
+    }>;
+  };
+  django?: {
+    isDjangoProject?: boolean;
+    settings?: {
+      discovered: boolean;
+      moduleName?: string;
+      expectedFilePath?: string;
+      fileExists: boolean;
+    };
+    migrations?: {
+      status: "passed" | "pending" | "skipped" | "error";
+      reason?: string;
+      pendingCount?: number;
+      unappliedList?: string[];
+    };
+  };
 }
 
 export interface Rule {

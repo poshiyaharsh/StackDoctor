@@ -19,7 +19,7 @@ Keep it in the repo root with `PHASES.md`, `PHASE1.md`, `LOG.md`, `INDEX.md`.
 | 2A | Safe exec + runtime checks + requirement detection | Done | 9646c32 | 2026-10-26 |
 | 2B | Port + configuration checks | Done | 753b953 | 2026-10-26 |
 | 2C | Database checks (MongoDB, MySQL) | Done | 3bca9f4 | 2026-10-26 |
-| 2D | Python and Django checks | Not started | - | - |
+| 2D | Python and Django checks | Done | pending | 2026-10-26 |
 | 2E | Fixtures, integration + security tests, docs, final verification | Not started | - | - |
 
 Status values: Not started, In progress, Needs fixes, Done.
@@ -297,16 +297,39 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Without `--allow-project-code`, no project code is executed (test proves it)
-- [ ] `migrate` appears nowhere in the codebase
-- [ ] `requirements.txt` alone still does not mean Django
-- [ ] `stackdoctor rules` lists every rule
+- [x] Without `--allow-project-code`, no project code is executed (test proves it)
+- [x] `migrate` appears nowhere in the codebase
+- [x] `requirements.txt` alone still does not mean Django
+- [x] `stackdoctor rules` lists every rule
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/adapters/src/python-deps.ts`: PEP 503 package normalization, `parseRequirementsTxt`, `parsePyprojectDependencies`, `getInstalledPythonPackages`, `checkPythonVersionSatisfies`.
+  - `packages/adapters/src/django.ts`: `isDjangoProject` (safe dependency inspection), `discoverDjangoSettings` (static manage.py parser), `checkDjangoMigrations` (gated behind `--allow-project-code` using read-only `showmigrations --plan`).
+  - `packages/adapters/src/index.ts`: Exported python-deps and django functions.
+  - `packages/rules/src/rules/python-packages-missing.ts`: `PYTHON_PACKAGES_MISSING` rule.
+  - `packages/rules/src/rules/python-package-version-mismatch.ts`: `PYTHON_PACKAGE_VERSION_MISMATCH` rule.
+  - `packages/rules/src/rules/django-settings-not-found.ts`: `DJANGO_SETTINGS_NOT_FOUND` rule.
+  - `packages/rules/src/rules/django-migrations-pending.ts`: `DJANGO_MIGRATIONS_PENDING` rule (verifies banned word `migrate` never appears).
+  - `packages/rules/src/types.ts`: Extended `RuleEvaluationContext` with `python` and `django` contexts.
+  - `packages/rules/src/index.ts`: Registered all 20 rules in `createDefaultRuleRegistry`.
+  - `apps/cli/src/index.ts`: Added `stackdoctor rules` command (with formatted output and `--json` support) and `--allow-project-code` flag.
+  - `docs/diagnostics.md`: Documented rules 17 through 20.
+  - Test files: `packages/adapters/test/python-deps.test.ts`, `packages/adapters/test/django.test.ts`, `packages/rules/test/python-django-rules.test.ts`, `apps/cli/test/cli.test.ts`.
 - Command results:
+  - `npm run build`: Passed (code 0)
+  - `npm test`: Passed (155/155 tests passed across 26 test suites)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (code 0)
+  - `shell: true` search: 0 occurrences
+  - `migrate` keyword search: 0 occurrences in source/findings/recommendations (only in test assertions checking absence)
 - Problems:
+  - Unused let declaration `pythonExe` caught by ESLint; changed to `const`.
+  - TypeScript property access on `mismatches` item required adding optional `source?: string` to `RuleEvaluationContext`.
 - Decisions:
+  - Project code execution strictly blocked unless `--allow-project-code` is provided.
+  - `isDjangoProject` strictly checks for `django` dependency or `manage.py`, preventing false positives on generic `requirements.txt`.
+  - Output for `stackdoctor rules` formats rules in clean terminal view or standard JSON with `--json`.
 
 ---
 
