@@ -21,7 +21,7 @@ Never skip a run or change the order.
 |---|---|---|---|---|
 | 0 | Git + GitHub setup | Done | 563a08d | 2026-10-26 |
 | 1A | Scaffold | Done | d4eae7b | 2026-10-26 |
-| 1B | Schemas | Not started | - | - |
+| 1B | Schemas | Done | pending | 2026-10-26 |
 | 1C | Core (redaction, scanner, lifecycle) | Not started | - | - |
 | 1D | Rules registry | Not started | - | - |
 | 1E | CLI + final verification | Not started | - | - |
@@ -193,16 +193,16 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Tests for valid and invalid reports pass
-- [ ] `docs/report.schema.json` is generated
-- [ ] Evidence and possibleCauses are separate fields
-- [ ] Other packages can import types from `@stackdoctor/schemas`
+- [x] Tests for valid and invalid reports pass
+- [x] `docs/report.schema.json` is generated
+- [x] Evidence and possibleCauses are separate fields
+- [x] Other packages can import types from `@stackdoctor/schemas`
 
 **Run log (Antigravity fills):**
-- Files:
-- Command results:
-- Problems:
-- Decisions:
+- Files: `packages/schemas/package.json`, `packages/schemas/src/enums.ts`, `packages/schemas/src/evidence.ts`, `packages/schemas/src/checks.ts`, `packages/schemas/src/findings.ts`, `packages/schemas/src/rules.ts`, `packages/schemas/src/report.ts`, `packages/schemas/src/json-schema.ts`, `packages/schemas/src/index.ts`, `packages/schemas/test/report.test.ts`, `packages/rules/test/index.test.ts`, `scripts/generate-schema.mjs`, `docs/report.schema.json`
+- Command results: npm run build (0), node ./scripts/generate-schema.mjs (0), npm test (12/12 passed across 7 test suites), npm run lint (0), npm run typecheck (0)
+- Problems: Missing `CONFIG_SOURCE` re-export fixed in schemas `index.ts`. Explicit typing used in tests to avoid `@typescript-eslint/no-explicit-any` warnings.
+- Decisions: Configured string length limits on Evidence (`MAX_EVIDENCE_OBSERVED_LENGTH = 10_000`) and max finding items on Report (`MAX_REPORT_FINDINGS = 1_000`). Used `zod-to-json-schema` to export `docs/report.schema.json`.
 
 ---
 

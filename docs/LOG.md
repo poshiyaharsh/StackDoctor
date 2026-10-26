@@ -46,3 +46,23 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Decisions made:** TypeScript project references (`tsc -b`) chosen for fast, dependency-ordered builds and cross-workspace typechecking.
 - **Next step:** Phase 1, Run 1B: Shared Schemas (packages/schemas only).
 - **Status:** Done
+
+---
+
+### [2026-10-26] Phase 1, Run 1B: Shared Schemas
+- **Prompt used:** PHASE1.md > Run 1B: Shared Schemas (packages/schemas only)
+- **What was done:** Created comprehensive Zod schemas and inferred TypeScript types in `@stackdoctor/schemas`: Severity, Confidence, CheckStatus, ReportStatus, VerificationStatus, Evidence, TechnologyDetection, CheckResult, Recommendation, Finding, Report, and RuleMetadata. Implemented helper `validateReport(unknown)` and JSON schema exporter `getReportJsonSchema()`. Generated `docs/report.schema.json`. Added unit tests verifying valid reports, missing fields rejection, oversized evidence rejection, unknown severity rejection, and strict separation between evidence facts and possible causes hypotheses. Verified cross-package schema import in `@stackdoctor/rules`.
+- **Files created/changed:** `packages/schemas/package.json`, `packages/schemas/src/enums.ts`, `packages/schemas/src/evidence.ts`, `packages/schemas/src/checks.ts`, `packages/schemas/src/findings.ts`, `packages/schemas/src/rules.ts`, `packages/schemas/src/report.ts`, `packages/schemas/src/json-schema.ts`, `packages/schemas/src/index.ts`, `packages/schemas/test/report.test.ts`, `packages/rules/test/index.test.ts`, `scripts/generate-schema.mjs`, `docs/report.schema.json`, `docs/PHASE1.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `node ./scripts/generate-schema.mjs`: Passed (generated `docs/report.schema.json`)
+  - `npm test`: Passed (12/12 tests across 7 suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `docs/report.schema.json` is generated: Verified
+  - Evidence and possibleCauses are separate fields: Verified
+  - Other packages import types from `@stackdoctor/schemas`: Verified
+- **Problems / errors:** Missing `CONFIG_SOURCE` re-export fixed in schemas `index.ts`. Replaced `any` assertions with `unknown` casting in tests to ensure clean linting.
+- **Decisions made:** Applied 10,000 character maximum limit for evidence `observed` string; 1,000 items maximum limit for report `findings`.
+- **Next step:** Phase 1, Run 1C: Core Engine (redaction, scanner, lifecycle).
+- **Status:** Done
