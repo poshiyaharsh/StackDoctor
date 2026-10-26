@@ -23,7 +23,7 @@ Never skip a run or change the order.
 | 1A | Scaffold | Done | d4eae7b | 2026-10-26 |
 | 1B | Schemas | Done | be4a071 | 2026-10-26 |
 | 1C | Core (redaction, scanner, lifecycle) | Done | 9a878c1 | 2026-10-26 |
-| 1D | Rules registry | Done | pending | 2026-10-26 |
+| 1D | Rules registry | Done | e421fec | 2026-10-26 |
 | 1E | CLI + final verification | Not started | - | - |
 
 Status values: Not started, In progress, Needs fixes, Done.
