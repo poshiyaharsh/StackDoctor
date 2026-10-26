@@ -24,7 +24,7 @@ Never skip a run or change the order.
 | 1B | Schemas | Done | be4a071 | 2026-10-26 |
 | 1C | Core (redaction, scanner, lifecycle) | Done | 9a878c1 | 2026-10-26 |
 | 1D | Rules registry | Done | e421fec | 2026-10-26 |
-| 1E | CLI + final verification | Not started | - | - |
+| 1E | CLI + final verification | Done | pending | 2026-10-26 |
 
 Status values: Not started, In progress, Needs fixes, Done.
 
@@ -327,21 +327,21 @@ only if every item in the Final Phase 1 checklist below truly passed.
 ```
 
 **Final Phase 1 checklist**
-- [ ] `npm install` and `npm run build` succeed from the repo root
-- [ ] `stackdoctor scan examples/broken-node-project` prints a readable report with both sample findings
-- [ ] `--json` output validates against the schema
-- [ ] A deliberately failing check does not crash the run
-- [ ] Redaction tests pass
-- [ ] Scanner ignores node_modules/.git and does not follow outside symlinks
-- [ ] All tests pass
-- [ ] README matches what actually exists
-- [ ] Everything committed and pushed
+- [x] `npm install` and `npm run build` succeed from the repo root
+- [x] `stackdoctor scan examples/broken-node-project` prints a readable report with both sample findings
+- [x] `--json` output validates against the schema
+- [x] A deliberately failing check does not crash the run
+- [x] Redaction tests pass
+- [x] Scanner ignores node_modules/.git and does not follow outside symlinks
+- [x] All tests pass
+- [x] README matches what actually exists
+- [x] Everything committed and pushed
 
 **Run log (Antigravity fills):**
-- Files:
-- Command results:
-- Problems:
-- Decisions:
+- Files: `apps/cli/package.json`, `apps/cli/src/bin.ts`, `apps/cli/src/format.ts`, `apps/cli/src/index.ts`, `apps/cli/test/cli.test.ts`, `examples/broken-node-project/package.json`, `examples/broken-node-project/.env.example`, `docs/installation.md`, `README.md`, `docs/INDEX.md`, `docs/PHASE1.md`, `docs/LOG.md`
+- Command results: npm run build (0), npm test (55/55 passed across 14 test suites), npm run lint (0), npm run typecheck (0), `stackdoctor scan examples/broken-node-project` (exit code 1, 2 findings), `stackdoctor scan examples/broken-node-project --json` (exit code 1, schema-valid JSON)
+- Problems: Removed unused imports in `format.ts` to satisfy ESLint.
+- Decisions: Terminal output renders 10 structured sections in order. Exit code 1 for high/critical findings, 0 for clean/info runs, 2 for tool errors. Both sample rules trigger deterministically on `examples/broken-node-project`.
 
 ---
 

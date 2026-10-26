@@ -113,3 +113,34 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Decisions made:** Rules strictly isolate hypotheses inside `possibleCauses` and facts inside `evidence`. `extractEnvVarNames` regex ignores comment lines and isolates key identifiers before delimiters.
 - **Next step:** Phase 1, Run 1E: CLI, output, README, final verification (apps/cli).
 - **Status:** Done
+
+---
+
+### [2026-10-26] Phase 1, Run 1E: CLI, output, README, final verification (apps/cli)
+- **Prompt used:** PHASE1.md > Run 1E: CLI + OUTPUT (apps/cli)
+- **What was done:** Completed Phase 1 Foundation by building the CLI application in `apps/cli`:
+  1. Implemented executable CLI entrypoints (`src/bin.ts`, `src/index.ts`) supporting `stackdoctor scan [path]` and flags `--json`, `--out <file>`, `--no-color`, `--version`, and `--help`.
+  2. Implemented terminal output formatter (`src/format.ts`) rendering 10 distinct, structured sections in exact required order: scan summary, detected technologies, environment info, passed checks, warnings, failed checks, observed evidence (`OBSERVED`), probable causes (`POSSIBLE`), recommended next steps, and tool version.
+  3. Created fixture `examples/broken-node-project` with `package.json`, `.env.example`, no `node_modules`, and no `.env`.
+  4. Verified that running `stackdoctor scan` against `examples/broken-node-project` deterministically triggers both `NODE_DEPS_NOT_INSTALLED` and `ENV_EXAMPLE_PRESENT_NO_ENV` and returns exit code 1.
+  5. Verified `--json` outputs schema-validated JSON matching `validateReport`.
+  6. Verified `--out <file>` writes valid JSON reports to disk.
+  7. Updated `README.md` and `docs/installation.md` with complete installation, usage, and output examples.
+  8. Verified all 9 items in the Final Phase 1 checklist passed, and updated `docs/INDEX.md` marking Phase 1 as Done.
+- **Files created/changed:** `apps/cli/package.json`, `apps/cli/src/bin.ts`, `apps/cli/src/format.ts`, `apps/cli/src/index.ts`, `apps/cli/test/cli.test.ts`, `examples/broken-node-project/package.json`, `examples/broken-node-project/.env.example`, `docs/installation.md`, `README.md`, `docs/INDEX.md`, `docs/PHASE1.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm install`: Passed (exit code 0)
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (55/55 tests across 14 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `stackdoctor scan examples/broken-node-project`: Passed (exit code 1, prints formatted report with both sample findings)
+  - `stackdoctor scan examples/broken-node-project --json`: Passed (validates against schema)
+  - A deliberately failing check does not crash the run: Verified
+  - Redaction tests pass: Verified
+  - Scanner ignores node_modules/.git and does not follow outside symlinks: Verified
+  - README matches what actually exists: Verified
+- **Problems / errors:** None.
+- **Decisions made:** Strict adherence to exit code standards (0 for clean, 1 for high/critical findings, 2 for tool errors).
+- **Next step:** Phase 2: Diagnostic engine (adapters, rules, fixtures).
+- **Status:** Done

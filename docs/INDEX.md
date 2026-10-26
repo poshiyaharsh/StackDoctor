@@ -18,7 +18,7 @@
 
 | # | Phase | Deliverable | Status |
 |---|---|---|---|
-| 1 | Foundation | CLI runs locally and outputs a valid report | Not started |
+| 1 | Foundation | CLI runs locally and outputs a valid report | Done |
 | 2 | Diagnostic engine | Reliable CLI that explains common failures | Not started |
 | 3 | Web platform | Dashboard + API + optional report upload | Not started |
 | 4 | Integrations | GitHub issue drafts, CI JSON, report compare | Not started |
