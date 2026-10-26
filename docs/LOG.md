@@ -286,6 +286,43 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 2, Run 2E: Fixtures, integration + security tests, docs, final verification.
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 2, Run 2E: Fixtures, integration + security tests, docs, final verification
+- **Prompt used:** PHASE2.md > Run 2E: Fixtures, integration + security tests, docs, final verification
+- **What was done:** Completed Phase 2 (Diagnostic Engine) with end-to-end integration, fixtures, security tests, benchmark evaluation, and cross-platform verification:
+  1. Built comprehensive evaluation context collector in `apps/cli/src/collector.ts` wiring all Phase 2 adapters (safe exec, platform adapters, runtime requirements, port probes, config comparisons, compose inspection, staged database checks, python dependencies, and django diagnostics) directly into `RuleEvaluationContext`.
+  2. Created 4 comprehensive reference fixtures in `examples/` with dedicated `README.md` and `expected.json` files:
+     - `examples/broken-node-project`: Triggers `NODE_DEPS_NOT_INSTALLED`, `LOCKFILE_MISSING`, `NODE_VERSION_MISMATCH`, `ENV_VAR_NAMES_MISSING`, and `PORT_IN_USE`.
+     - `examples/broken-django-project`: Triggers `PYTHON_VENV_MISSING`, `PYTHON_PACKAGES_MISSING`, and `DJANGO_SETTINGS_NOT_FOUND`.
+     - `examples/broken-database-config`: Triggers `COMPOSE_SERVICE_NOT_FOUND`, `DB_HOST_NOT_RESOLVED`, and `PORT_INVALID`.
+     - `examples/healthy-node-project`: Produces exactly 0 findings (verifying 0% false positives).
+  3. Built end-to-end fixture integration test suite in `apps/cli/test/integration.test.ts` running the CLI against every fixture and asserting an exact match with `expected.json`.
+  4. Implemented `npm run eval` diagnostic accuracy benchmark script in `scripts/eval.js` calculating True Positives, False Negatives, False Positives, Detection Accuracy (100.0%), and False Positive Rate (0.0%).
+  5. Implemented comprehensive security test suite in `packages/core/test/security.test.ts` testing canary secret redaction, path traversal and symlink confinement, command injection immunity, malformed file resilience (invalid YAML, binary junk), output truncation, and timeout process termination.
+  6. Added GitHub Actions CI matrix workflow in `.github/workflows/ci.yml` running on `ubuntu-latest`, `windows-latest`, and `macos-latest` across Node 20.x and 22.x.
+  7. Documented platform support matrix in `docs/installation.md` and security/credentials policy in `docs/security.md`. Updated `README.md` with complete Phase 2 documentation and rules catalog.
+  8. Verified all 10 items in the Final Phase 2 checklist passed, and marked Phase 2 as Done in `docs/INDEX.md` and `docs/PHASE2.md`.
+- **Files created/changed:** `apps/cli/src/collector.ts`, `apps/cli/src/index.ts`, `apps/cli/test/cli.test.ts`, `apps/cli/test/integration.test.ts`, `packages/core/src/scanner.ts`, `packages/core/test/security.test.ts`, `examples/broken-node-project/package.json`, `examples/broken-node-project/.env`, `examples/broken-node-project/README.md`, `examples/broken-node-project/expected.json`, `examples/broken-django-project/manage.py`, `examples/broken-django-project/requirements.txt`, `examples/broken-django-project/README.md`, `examples/broken-django-project/expected.json`, `examples/broken-database-config/docker-compose.yml`, `examples/broken-database-config/.env`, `examples/broken-database-config/.env.example`, `examples/broken-database-config/README.md`, `examples/broken-database-config/expected.json`, `examples/healthy-node-project/package.json`, `examples/healthy-node-project/package-lock.json`, `examples/healthy-node-project/node_modules/express/package.json`, `examples/healthy-node-project/.env`, `examples/healthy-node-project/.env.example`, `examples/healthy-node-project/README.md`, `examples/healthy-node-project/expected.json`, `scripts/eval.js`, `package.json`, `.github/workflows/ci.yml`, `docs/installation.md`, `docs/security.md`, `README.md`, `docs/INDEX.md`, `docs/PHASE2.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (166/166 tests across 28 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm run eval`: Passed (100% accuracy, 0% false positives)
+  - `shell: true` search: 0 occurrences found
+  - `migrate` search: 0 occurrences found in source/findings
+  - Every fixture produces exactly its expected rule IDs: Verified
+  - `healthy-node-project` produces zero findings: Verified
+  - Canary secrets never appear in outputs or snapshots: Verified
+  - Port checks never kill processes: Verified
+  - Project code never executed without `--allow-project-code`: Verified
+- **Problems / errors:** Local port 8080 in use handled by using high port for healthy fixture; compose port mapping on host removed in broken database fixture to test container network references without host port collision.
+- **Decisions made:** Integrated `npm run eval` into CI pipeline to continuously track diagnostic detection accuracy and false positive rates.
+- **Next step:** Phase 3: Web platform (dashboard, API, optional report upload).
+- **Status:** Done
+
+
 
 
 

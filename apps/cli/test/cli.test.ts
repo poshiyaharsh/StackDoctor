@@ -73,11 +73,10 @@ describe("StackDoctor CLI (apps/cli)", () => {
     // Verify sections and findings in terminal output
     expect(stdoutData).toContain("=== StackDoctor Diagnostic Report ===");
     expect(stdoutData).toContain("NODE_DEPS_NOT_INSTALLED");
-    expect(stdoutData).toContain("ENV_EXAMPLE_PRESENT_NO_ENV");
+    expect(stdoutData).toContain("ENV_VAR_NAMES_MISSING");
     expect(stdoutData).toContain("OBSERVED:");
     expect(stdoutData).toContain("POSSIBLE:");
     expect(stdoutData).toContain("Action     : npm install");
-    expect(stdoutData).toContain("Action     : cp .env.example .env");
   });
 
   it("prints valid schema-compliant JSON when --json flag is passed", async () => {
@@ -97,7 +96,7 @@ describe("StackDoctor CLI (apps/cli)", () => {
     const validation = validateReport(parsed);
     expect(validation.success).toBe(true);
     expect(parsed.findings.some((f) => f.ruleId === "NODE_DEPS_NOT_INSTALLED")).toBe(true);
-    expect(parsed.findings.some((f) => f.ruleId === "ENV_EXAMPLE_PRESENT_NO_ENV")).toBe(true);
+    expect(parsed.findings.some((f) => f.ruleId === "ENV_VAR_NAMES_MISSING")).toBe(true);
   });
 
   it("writes valid schema-compliant JSON file when --out flag is passed", async () => {
@@ -115,8 +114,8 @@ describe("StackDoctor CLI (apps/cli)", () => {
 
     const validation = validateReport(parsed);
     expect(validation.success).toBe(true);
-    // NODE_DEPS_NOT_INSTALLED, ENV_EXAMPLE_PRESENT_NO_ENV, LOCKFILE_MISSING
-    expect(parsed.summary.totalFindings).toBe(3);
+    // NODE_DEPS_NOT_INSTALLED, NODE_VERSION_MISMATCH, LOCKFILE_MISSING, ENV_VAR_NAMES_MISSING
+    expect(parsed.summary.totalFindings).toBe(4);
   });
 
   it("handles 'rules' command and prints all 20 rules in formatted output", async () => {

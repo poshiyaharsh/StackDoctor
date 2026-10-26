@@ -13,6 +13,12 @@ coverage/
 .env
 .env.*
 !.env.example
+!examples/**/.env
+!examples/**/.env.*
+
+# Allow fixture dummy node_modules
+!examples/healthy-node-project/node_modules/
+!examples/healthy-node-project/node_modules/**
 
 # Logs
 *.log

@@ -12,7 +12,8 @@
     "clean": "tsc -b --clean",
     "typecheck": "tsc -b",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval": "node scripts/eval.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",

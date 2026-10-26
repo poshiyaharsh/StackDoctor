@@ -4,17 +4,16 @@ import process from "node:process";
 import {
   runDiagnostics,
   validateDirectory,
+  scanProject,
   type DiagnosticRule,
-  type DiagnosticCheck,
-  type DiagnosticContext
+  type DiagnosticCheck
 } from "@stackdoctor/core";
 import {
-  createDefaultRuleRegistry,
-  extractEnvVarNames,
-  type RuleEvaluationContext
+  createDefaultRuleRegistry
 } from "@stackdoctor/rules";
 import { validateReport, type Report, CURRENT_TOOL_VERSION } from "@stackdoctor/schemas";
 import { formatTerminalReport } from "./format.js";
+import { collectEvaluationContext } from "./collector.js";
 
 export interface CliOptions {
   command: "scan" | "rules" | "help" | "version";
@@ -189,17 +188,28 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
   const registry = createDefaultRuleRegistry();
   const rules = registry.list();
 
-  // 3. Create diagnostic checks and rule bridge
+  // 3. Collect comprehensive evidence and build evaluation context
+  let initialScan;
+  try {
+    initialScan = await scanProject(realDir);
+  } catch (err) {
+    console.error(`Project scan failed: ${err instanceof Error ? err.message : String(err)}`);
+    return 2;
+  }
+
+  const evaluationContext = await collectEvaluationContext(realDir, opts, initialScan);
+
+  // 4. Create diagnostic checks and rule bridge
   const diagnosticChecks: DiagnosticCheck[] = [
     {
       id: "check_node_modules",
       title: "Check Node.js dependencies installed",
       category: "dependencies",
-      execute: async (ctx: DiagnosticContext) => {
-        if (!ctx.scanResult.detectedFiles.hasPackageJson) {
+      execute: async () => {
+        if (!evaluationContext.files.hasPackageJson) {
           return { status: "skipped", evidence: [] };
         }
-        if (ctx.scanResult.detectedFiles.hasNodeModules) {
+        if (evaluationContext.files.hasNodeModules) {
           return {
             status: "passed",
             evidence: [
@@ -233,11 +243,11 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
       id: "check_env_file",
       title: "Check .env configuration presence",
       category: "configuration",
-      execute: async (ctx: DiagnosticContext) => {
-        if (!ctx.scanResult.detectedFiles.hasEnvExample) {
+      execute: async () => {
+        if (!evaluationContext.files.hasEnvExample) {
           return { status: "skipped", evidence: [] };
         }
-        if (ctx.scanResult.detectedFiles.hasEnv) {
+        if (evaluationContext.files.hasEnv) {
           return {
             status: "passed",
             evidence: [
@@ -279,33 +289,11 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
     severity: r.severity,
     confidence: r.confidence,
     docs: r.docs,
-    evaluate: (ctx: DiagnosticContext) => {
-      // Safely extract variable names from .env.example without reading any secrets
-      let envExampleVarNames: string[] = [];
-      const envExamplePath = path.join(ctx.dir, ".env.example");
-      if (fs.existsSync(envExamplePath)) {
-        try {
-          const content = fs.readFileSync(envExamplePath, "utf-8");
-          envExampleVarNames = extractEnvVarNames(content);
-        } catch {
-          // Ignore read error
-        }
-      }
-
-      const evalCtx: RuleEvaluationContext = {
-        dir: ctx.dir,
-        files: {
-          ...ctx.scanResult.detectedFiles,
-          envExampleVarNames
-        },
-        technologies: ctx.technologies,
-        evidence: ctx.scanResult.technologies.flatMap((t) => t.evidence)
-      };
-
-      if (!r.preconditions(evalCtx)) {
+    evaluate: () => {
+      if (!r.preconditions(evaluationContext)) {
         return null;
       }
-      return r.evaluate(evalCtx);
+      return r.evaluate(evaluationContext);
     }
   }));
 

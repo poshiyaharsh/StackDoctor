@@ -386,6 +386,54 @@ export async function scanProject(targetDir: string, options: ScanOptions = {}):
     });
   }
 
+  // 9. MongoDB detection
+  for (const f of files) {
+    if (
+      ["docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml", ".env", ".env.example", "package.json", "requirements.txt"].includes(f.name)
+    ) {
+      try {
+        const content = fs.readFileSync(f.absolutePath, "utf-8");
+        if (/\b(?:mongo|mongodb|mongoose)\b/i.test(content)) {
+          addTech("MongoDB", "likely", {
+            id: "ev-tech-mongodb",
+            kind: "file_content",
+            description: `Detected MongoDB reference in ${f.relativePath}`,
+            observed: `Found MongoDB keywords in ${f.relativePath}`,
+            source: f.relativePath,
+            collectedAt: now
+          });
+          break;
+        }
+      } catch {
+        // Continue safely
+      }
+    }
+  }
+
+  // 10. MySQL detection
+  for (const f of files) {
+    if (
+      ["docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml", ".env", ".env.example", "package.json", "requirements.txt"].includes(f.name)
+    ) {
+      try {
+        const content = fs.readFileSync(f.absolutePath, "utf-8");
+        if (/\b(?:mysql|mysql2|mysqld)\b/i.test(content)) {
+          addTech("MySQL", "likely", {
+            id: "ev-tech-mysql",
+            kind: "file_content",
+            description: `Detected MySQL reference in ${f.relativePath}`,
+            observed: `Found MySQL keywords in ${f.relativePath}`,
+            source: f.relativePath,
+            collectedAt: now
+          });
+          break;
+        }
+      } catch {
+        // Continue safely
+      }
+    }
+  }
+
   // Convert technology map to array
   const technologies: TechnologyDetection[] = Array.from(techMap.entries()).map(([name, val]) => ({
     name,
