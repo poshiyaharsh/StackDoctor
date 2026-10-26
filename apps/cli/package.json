@@ -1,0 +1,27 @@
+{
+  "name": "stackdoctor",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "stackdoctor": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@stackdoctor/adapters": "*",
+    "@stackdoctor/config": "*",
+    "@stackdoctor/core": "*",
+    "@stackdoctor/rules": "*",
+    "@stackdoctor/schemas": "*"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  }
+}

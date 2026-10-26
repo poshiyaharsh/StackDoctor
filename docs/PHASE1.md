@@ -19,8 +19,8 @@ Never skip a run or change the order.
 
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
-| 0 | Git + GitHub setup | Not started | - | - |
-| 1A | Scaffold | Not started | - | - |
+| 0 | Git + GitHub setup | Done | 563a08d | 2026-10-26 |
+| 1A | Scaffold | Done | pending | 2026-10-26 |
 | 1B | Schemas | Not started | - | - |
 | 1C | Core (redaction, scanner, lifecycle) | Not started | - | - |
 | 1D | Rules registry | Not started | - | - |
@@ -144,16 +144,16 @@ Then follow the POST-RUN PROTOCOL in PHASE1.md.
 ```
 
 **Checklist**
-- [ ] `npm install` succeeds with no errors
-- [ ] `npm run build`, `test`, `lint`, `typecheck` all pass
-- [ ] Packages import each other via `@stackdoctor/...` names (not relative paths)
-- [ ] No diagnostic logic exists yet
+- [x] `npm install` succeeds with no errors
+- [x] `npm run build`, `test`, `lint`, `typecheck` all pass
+- [x] Packages import each other via `@stackdoctor/...` names (not relative paths)
+- [x] No diagnostic logic exists yet
 
 **Run log (Antigravity fills):**
-- Files:
-- Command results:
-- Problems:
-- Decisions:
+- Files: `package.json`, `package-lock.json`, `tsconfig.base.json`, `tsconfig.json`, `eslint.config.mjs`, `vitest.config.ts`, `apps/cli/*`, `packages/config/*`, `packages/schemas/*`, `packages/rules/*`, `packages/adapters/*`, `packages/core/*`, `docs/architecture.md`, `docs/diagnostics.md`, `docs/security.md`, `docs/installation.md`, `docs/contributing.md`, `examples/.gitkeep`, `scripts/.gitkeep`
+- Command results: npm install (0), npm run build (0), npm test (6/6 passed), npm run lint (0), npm run typecheck (0)
+- Problems: TS6059 rootDir path resolution in composite projects resolved with explicit rootDir/outDir in package tsconfigs. ESLint no-undef on globals resolved by adding Node + ES2021 globals to eslint configurations.
+- Decisions: Monorepo uses npm workspaces and TypeScript project references (composite/references) for deterministic compilation and cross-workspace package resolution.
 
 ---
 
