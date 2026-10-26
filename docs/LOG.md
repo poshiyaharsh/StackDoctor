@@ -66,3 +66,27 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Decisions made:** Applied 10,000 character maximum limit for evidence `observed` string; 1,000 items maximum limit for report `findings`.
 - **Next step:** Phase 1, Run 1C: Core Engine (redaction, scanner, lifecycle).
 - **Status:** Done
+
+---
+
+### [2026-10-26] Phase 1, Run 1C: Core Engine (redaction, scanner, lifecycle)
+- **Prompt used:** PHASE1.md > Run 1C: Core Engine (packages/core)
+- **What was done:** Built the three core modules in `@stackdoctor/core`:
+  1. `src/redact.ts`: Redaction utility masking passwords, tokens, API keys, Authorization headers, AWS keys, JWT tokens, private key blocks, and URL credentials while preserving normal non-secret text. Implemented `redactEnv` to mask values while keeping variable names.
+  2. `src/scanner.ts`: Safe project scanner with directory validation, traversal checks, symlink escape protection, ignoring node_modules/.git/dist/etc. Accurately detects Node.js, Vite, Next.js, Django (`manage.py` and/or django in manifest; requirements.txt alone never flags Django), Python, lockfiles (npm/pnpm/yarn/bun), Docker, Docker Compose, and `.env.example` existence without ever reading `.env`. Identifies monorepo subprojects.
+  3. `src/logger.ts` & `src/runner.ts`: Resilient diagnostic lifecycle runner that validates directories, runs project scanner, selects applicable rules, executes checks with per-check timeouts, records errors without crashing the run, supports cancellation via AbortSignal, and builds schema-validated Reports.
+- **Files created/changed:** `packages/core/src/redact.ts`, `packages/core/src/scanner.ts`, `packages/core/src/logger.ts`, `packages/core/src/runner.ts`, `packages/core/src/index.ts`, `packages/core/test/redact.test.ts`, `packages/core/test/scanner.test.ts`, `packages/core/test/runner.test.ts`, `docs/PHASE1.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (34/34 tests across 10 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - Redaction masks all sample secrets and leaves normal text alone: Verified
+  - requirements.txt alone does not produce "Django": Verified
+  - Symlink-escape and path-traversal tests pass: Verified
+  - A throwing check and a timing-out check both leave the run completed: Verified
+  - Output report passes validateReport: Verified
+- **Problems / errors:** Fixed `CORE_DEPENDENCIES` export in `packages/core/src/index.ts` to ensure compatibility with package assertion tests.
+- **Decisions made:** Scanner checks `fs.realpath` against project directory to reject symlinks escaping project bounds. Runner protects checks with `Promise.race` timeouts and redacts error messages.
+- **Next step:** Phase 1, Run 1D: Rule Registry (packages/rules).
+- **Status:** Done

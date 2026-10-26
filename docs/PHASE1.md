@@ -22,7 +22,7 @@ Never skip a run or change the order.
 | 0 | Git + GitHub setup | Done | 563a08d | 2026-10-26 |
 | 1A | Scaffold | Done | d4eae7b | 2026-10-26 |
 | 1B | Schemas | Done | be4a071 | 2026-10-26 |
-| 1C | Core (redaction, scanner, lifecycle) | Not started | - | - |
+| 1C | Core (redaction, scanner, lifecycle) | Done | pending | 2026-10-26 |
 | 1D | Rules registry | Not started | - | - |
 | 1E | CLI + final verification | Not started | - | - |
 
@@ -246,17 +246,17 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Redaction masks all sample secrets and leaves normal text alone
-- [ ] `requirements.txt` alone does not produce "Django"
-- [ ] Symlink-escape and path-traversal tests pass
-- [ ] A throwing check and a timing-out check both leave the run completed
-- [ ] Output report passes `validateReport`
+- [x] Redaction masks all sample secrets and leaves normal text alone
+- [x] `requirements.txt` alone does not produce "Django"
+- [x] Symlink-escape and path-traversal tests pass
+- [x] A throwing check and a timing-out check both leave the run completed
+- [x] Output report passes `validateReport`
 
 **Run log (Antigravity fills):**
-- Files:
-- Command results:
-- Problems:
-- Decisions:
+- Files: `packages/core/src/redact.ts`, `packages/core/src/scanner.ts`, `packages/core/src/logger.ts`, `packages/core/src/runner.ts`, `packages/core/src/index.ts`, `packages/core/test/redact.test.ts`, `packages/core/test/scanner.test.ts`, `packages/core/test/runner.test.ts`
+- Command results: npm run build (0), npm test (34/34 passed across 10 test suites), npm run lint (0), npm run typecheck (0)
+- Problems: Re-exported `CORE_DEPENDENCIES` in `packages/core/src/index.ts` to maintain consistency with package tests.
+- Decisions: Symlink escape protection checks `path.relative` against project realpath; timeout wrapped with `Promise.race`; cancellation supported via `AbortSignal`; error and timing out checks converted to `status: "error"` CheckResults.
 
 ---
 

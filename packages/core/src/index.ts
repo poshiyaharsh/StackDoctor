@@ -1,6 +1,12 @@
-import { SCHEMAS_PACKAGE } from "@stackdoctor/schemas";
-import { RULES_PACKAGE } from "@stackdoctor/rules";
-import { ADAPTERS_PACKAGE } from "@stackdoctor/adapters";
+export * from "./redact.js";
+export * from "./scanner.js";
+export * from "./logger.js";
+export * from "./runner.js";
 
 export const CORE_PACKAGE = "@stackdoctor/core";
-export const CORE_DEPENDENCIES = [SCHEMAS_PACKAGE, RULES_PACKAGE, ADAPTERS_PACKAGE] as const;
+export const CORE_DEPENDENCIES = [
+  "@stackdoctor/schemas",
+  "@stackdoctor/rules",
+  "@stackdoctor/adapters"
+] as const;
+
