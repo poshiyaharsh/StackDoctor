@@ -22,6 +22,17 @@ export interface RuleEvaluationContext {
   };
   technologies: TechnologyDetection[];
   evidence: Evidence[];
+  runtime?: {
+    nodeVersion?: string;
+    nodeRequirement?: {
+      declared: boolean;
+      rawRange?: string;
+      sourceFile?: string;
+    };
+    hasActivePythonVenv?: boolean;
+    hasLocalPythonVenv?: boolean;
+    installedPythonVersion?: string;
+  };
 }
 
 export interface Rule {

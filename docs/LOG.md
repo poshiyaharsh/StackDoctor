@@ -144,3 +144,31 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Decisions made:** Strict adherence to exit code standards (0 for clean, 1 for high/critical findings, 2 for tool errors).
 - **Next step:** Phase 2: Diagnostic engine (adapters, rules, fixtures).
 - **Status:** Done
+
+---
+
+### [2026-10-26] Phase 2, Run 2A: Safe exec, runtime checks, requirement detection
+- **Prompt used:** PHASE2.md > Run 2A: Safe exec, runtime checks, requirement detection
+- **What was done:** Built the adapters foundation and expanded rules:
+  1. Implemented safe command runner `runCommand` in `packages/adapters/src/exec.ts` using `child_process.execFile` with `shell: false`, strict allowlist of executables (`node`, `npm`, `pnpm`, `yarn`, `python`, `python3`, `py`, `git`, `docker`, `docker-compose`), timeouts, output byte limits, output secret redaction, and safe missing binary handling.
+  2. Implemented platform abstraction interface `PlatformAdapter` with implementations for `win32`, `linux`, and `darwin`, providing platform-specific executable detection and commands.
+  3. Implemented safe runtime check adapters (`checkNodeRuntime`, `checkPackageManagerRuntime`, `checkPythonRuntime`, `checkPythonVenvStatus`, `checkGitRuntime`, `checkDockerRuntime`) that never throw and return valid evidence-backed `CheckResult` objects.
+  4. Implemented explicit requirement detection (`detectNodeRequirement`, `evaluateNodeVersion`, `detectPythonRequirement`) reading `engines.node`, `.nvmrc`, `.node-version`, `pyproject.toml`, `.python-version`, and `runtime.txt`. Unparseable semver ranges issue warnings and do not fail the check.
+  5. Implemented 3 new rules with full documentation in `docs/diagnostics.md` and registered in default registry: `NODE_VERSION_MISMATCH`, `LOCKFILE_MISSING`, and `PYTHON_VENV_MISSING`.
+  6. Added comprehensive test suites across `packages/adapters` and `packages/rules` covering injection prevention, timeouts, buffers, allowlists, requirement evaluation, and rule preconditions/evaluation.
+- **Files created/changed:** `packages/adapters/package.json`, `packages/adapters/tsconfig.json`, `packages/adapters/src/exec.ts`, `packages/adapters/src/platform/types.ts`, `packages/adapters/src/platform/win32.ts`, `packages/adapters/src/platform/linux.ts`, `packages/adapters/src/platform/darwin.ts`, `packages/adapters/src/platform/index.ts`, `packages/adapters/src/runtimes.ts`, `packages/adapters/src/requirements.ts`, `packages/adapters/src/index.ts`, `packages/adapters/test/exec.test.ts`, `packages/adapters/test/runtimes.test.ts`, `packages/adapters/test/requirements.test.ts`, `packages/rules/package.json`, `packages/rules/src/rules/node-version-mismatch.ts`, `packages/rules/src/rules/lockfile-missing.ts`, `packages/rules/src/rules/python-venv-missing.ts`, `packages/rules/src/index.ts`, `packages/rules/src/types.ts`, `packages/rules/test/phase2-rules.test.ts`, `packages/rules/test/registry.test.ts`, `apps/cli/test/cli.test.ts`, `docs/diagnostics.md`, `docs/INDEX.md`, `docs/PHASE2.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (97/97 tests across 18 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `shell: true` search: 0 occurrences found
+  - Command injection resistance verified with malicious arguments: Passed
+  - Process timeout terminates and marks timedOut: true: Passed
+  - Output truncation caps at maxOutputBytes: Passed
+  - Non-allowlisted binaries rejected: Passed
+- **Problems / errors:** Node 20+ Windows `.cmd` execution restriction (`EINVAL` on shell: false) handled cleanly by resolving `npm`, `pnpm`, and `yarn` to Node entrypoints.
+- **Decisions made:** Strict linear dependency model `config` -> `schemas` -> `core` -> `adapters` -> `rules` -> `apps/cli` maintained.
+- **Next step:** Phase 2, Run 2B: Port and configuration checks.
+- **Status:** Done
+

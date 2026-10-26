@@ -12,7 +12,11 @@
   },
   "dependencies": {
     "@stackdoctor/config": "*",
-    "@stackdoctor/schemas": "*"
+    "@stackdoctor/schemas": "*",
+    "semver": "^7.6.3"
+  },
+  "devDependencies": {
+    "@types/semver": "^7.5.8"
   },
   "scripts": {
     "build": "tsc -b",

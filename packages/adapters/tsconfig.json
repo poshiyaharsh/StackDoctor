@@ -8,6 +8,7 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../config" },
-    { "path": "../schemas" }
+    { "path": "../schemas" },
+    { "path": "../core" }
   ]
 }

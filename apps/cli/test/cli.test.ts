@@ -115,6 +115,7 @@ describe("StackDoctor CLI (apps/cli)", () => {
 
     const validation = validateReport(parsed);
     expect(validation.success).toBe(true);
-    expect(parsed.summary.totalFindings).toBe(2);
+    // NODE_DEPS_NOT_INSTALLED, ENV_EXAMPLE_PRESENT_NO_ENV, LOCKFILE_MISSING
+    expect(parsed.summary.totalFindings).toBe(3);
   });
 });

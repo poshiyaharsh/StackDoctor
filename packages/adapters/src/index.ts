@@ -1,4 +1,7 @@
-import { SCHEMAS_PACKAGE } from "@stackdoctor/schemas";
+export * from "./exec.js";
+export * from "./platform/index.js";
+export * from "./runtimes.js";
+export * from "./requirements.js";
 
 export const ADAPTERS_PACKAGE = "@stackdoctor/adapters";
-export const ADAPTERS_DEPENDENCY = SCHEMAS_PACKAGE;
+export const ADAPTERS_DEPENDENCY = "@stackdoctor/schemas";
