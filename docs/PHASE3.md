@@ -16,7 +16,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
 | 3A | API scaffold, MongoDB, authentication | Done | a12454c | 2026-10-26 |
-| 3B | Projects, diagnostic runs, rules endpoints, authorization | Done | pending | 2026-10-26 |
+| 3B | Projects, diagnostic runs, rules endpoints, authorization | Done | a1d57c2 | 2026-10-26 |
 | 3C | API tokens + CLI login/upload with preview | Not started | - | - |
 | 3D | Web scaffold, landing page, auth pages | Not started | - | - |
 | 3E | Dashboard, projects, report and finding pages, settings | Not started | - | - |
