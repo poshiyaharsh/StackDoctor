@@ -1,8 +1,14 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
+import mongoose from "mongoose";
 import { User, hashPassword } from "../models/user.js";
+import { Project } from "../models/project.js";
+import { DiagnosticRun } from "../models/diagnostic-run.js";
+import { ApiToken } from "../models/api-token.js";
 import { getOrCreateCsrfToken } from "../middleware/csrf.js";
+import { requireAuth } from "../middleware/auth.js";
 import { createRateLimiter } from "../middleware/rate-limiter.js";
+import { cleanupExpiredRuns } from "../services/retention.js";
 
 export const authRouter = Router();
 
@@ -18,6 +24,22 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email("Invalid email address").toLowerCase().trim(),
   password: z.string().min(1, "Password is required").max(128)
+});
+
+const preferencesSchema = z.object({
+  retentionDays: z.number().int().min(0).max(365)
+});
+
+const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z
+    .string()
+    .min(12, "New password must be at least 12 characters long")
+    .max(128, "New password cannot exceed 128 characters")
+});
+
+const accountDeleteSchema = z.object({
+  password: z.string().min(1, "Password is required to confirm account deletion")
 });
 
 // Rate limiters for auth endpoints
@@ -227,3 +249,191 @@ authRouter.get("/csrf", (req: Request, res: Response): void => {
   const csrfToken = getOrCreateCsrfToken(req);
   res.status(200).json({ csrfToken });
 });
+
+/**
+ * PATCH /api/v1/auth/preferences
+ * Updates user preferences including report retention period.
+ */
+authRouter.patch(
+  "/preferences",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const parsed = preferencesSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: "ValidationError",
+            message: "Invalid preferences data",
+            details: parsed.error.issues
+          }
+        });
+        return;
+      }
+
+      const user = await User.findById(req.session.userId);
+      if (!user) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "User not found"
+          }
+        });
+        return;
+      }
+
+      user.retentionDays = parsed.data.retentionDays;
+      await user.save();
+
+      res.status(200).json({
+        user: user.toSafeObject()
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * PATCH /api/v1/auth/password
+ * Changes the user password with current password verification.
+ */
+authRouter.patch(
+  "/password",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const parsed = passwordChangeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: "ValidationError",
+            message: "Invalid password change data",
+            details: parsed.error.issues
+          }
+        });
+        return;
+      }
+
+      const user = await User.findById(req.session.userId);
+      if (!user) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "User not found"
+          }
+        });
+        return;
+      }
+
+      const isMatch = await user.comparePassword(parsed.data.currentPassword);
+      if (!isMatch) {
+        res.status(401).json({
+          error: {
+            code: "InvalidCredentials",
+            message: "Current password does not match"
+          }
+        });
+        return;
+      }
+
+      user.passwordHash = await hashPassword(parsed.data.newPassword);
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: "Password updated successfully"
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * POST /api/v1/auth/retention-cleanup
+ * Executes cleanup of diagnostic runs older than the configured retention days for this user.
+ */
+authRouter.post(
+  "/retention-cleanup",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await cleanupExpiredRuns(req.session.userId);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * DELETE /api/v1/auth/account
+ * Completely deletes the user account and cascades deletion to all projects, runs, tokens, and sessions.
+ * Requires current password verification for safety.
+ */
+authRouter.delete(
+  "/account",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const parsed = accountDeleteSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: "ValidationError",
+            message: "Password required to confirm account deletion",
+            details: parsed.error.issues
+          }
+        });
+        return;
+      }
+
+      const userId = req.session.userId;
+      const user = await User.findById(userId);
+      if (!user) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "User not found"
+          }
+        });
+        return;
+      }
+
+      const isMatch = await user.comparePassword(parsed.data.password);
+      if (!isMatch) {
+        res.status(401).json({
+          error: {
+            code: "InvalidCredentials",
+            message: "Incorrect password. Account was not deleted."
+          }
+        });
+        return;
+      }
+
+      const userObjectId = new mongoose.Types.ObjectId(userId);
+
+      // Cascade delete all owner resources
+      await Promise.all([
+        DiagnosticRun.deleteMany({ ownerId: userObjectId }),
+        Project.deleteMany({ ownerId: userObjectId }),
+        ApiToken.deleteMany({ ownerId: userObjectId }),
+        User.deleteOne({ _id: userObjectId })
+      ]);
+
+      // Destroy session
+      await new Promise<void>((resolve) => {
+        req.session.destroy(() => resolve());
+      });
+
+      res.clearCookie("sid");
+      res.status(200).json({
+        success: true,
+        message: "Account and all associated diagnostic data have been permanently deleted."
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);

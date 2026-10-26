@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (credentials: { email: string; password: string }) => Promise<void>;
   register: (data: { email: string; password: string; displayName: string }) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   theme: "dark" | "light";
   toggleTheme: () => void;
 }
@@ -67,6 +68,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const data = await api.auth.getMe();
+      setUser(data.user);
+    } catch {
+      // User might be unauthenticated
+    }
+  };
+
   const value = useMemo(
     () => ({
       user,
@@ -75,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       logout,
+      refreshUser,
       theme,
       toggleTheme
     }),

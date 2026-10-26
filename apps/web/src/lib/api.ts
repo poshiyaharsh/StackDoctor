@@ -100,8 +100,105 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
+  retentionDays?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProjectItem {
+  id: string;
+  ownerId: string;
+  name: string;
+  repositoryUrl?: string;
+  detectedTechnologies: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FindingItem {
+  id?: string;
+  ruleId: string;
+  title: string;
+  category: string;
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  confidence: "confirmed" | "likely" | "possible" | "tentative";
+  status: "failed" | "passed" | "warning";
+  evidence: Array<{
+    id: string;
+    kind: string;
+    description: string;
+    observed: string;
+    source?: string;
+    collectedAt?: string;
+  }>;
+  possibleCauses?: Array<{
+    id: string;
+    description: string;
+    likelihood: "very_high" | "high" | "medium" | "low";
+  }>;
+  recommendedChecks?: string[];
+  remediation?: Array<{
+    problem?: string;
+    relevance?: string;
+    commandOrAction: string;
+    expectedResult?: string;
+    risks?: string;
+    verification?: string;
+  }>;
+  verification?: string;
+  docs?: string[];
+}
+
+export interface DiagnosticRunItem {
+  id: string;
+  projectId: string;
+  ownerId: string;
+  toolVersion: string;
+  operatingSystem: string;
+  startedAt: string;
+  completedAt: string;
+  status: "completed" | "completed_with_warnings" | "failed" | "cancelled" | "passed" | "warning";
+  summary: {
+    totalChecks?: number;
+    passedChecks?: number;
+    failedChecks?: number;
+    warningChecks?: number;
+    totalFindings?: number;
+    executionDurationMs?: number;
+  };
+  findings: FindingItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StatsResponse {
+  totalRuns: number;
+  projectsScanned: number;
+  failedChecks: number;
+  commonCategories: Array<{ category: string; count: number }>;
+  recentReports: Array<{
+    id: string;
+    projectId: string;
+    projectName: string;
+    status: string;
+    findingsCount: number;
+    createdAt: string;
+  }>;
+  statusBreakdown: {
+    passed: number;
+    warning: number;
+    failed: number;
+    cancelled?: number;
+  };
+}
+
+export interface ApiTokenItem {
+  id: string;
+  name: string;
+  prefix: string;
+  createdAt: string;
+  lastUsedAt?: string | null;
+  expiresAt?: string | null;
 }
 
 export const api = {
@@ -133,11 +230,90 @@ export const api = {
       });
       setCsrfToken(null);
       return res;
+    },
+    async updatePreferences(retentionDays: number): Promise<{ user: User }> {
+      return apiFetch<{ user: User }>("/api/v1/auth/preferences", {
+        method: "PATCH",
+        body: JSON.stringify({ retentionDays })
+      });
+    },
+    async changePassword(passwords: { currentPassword: string; newPassword: string }): Promise<{ success: boolean; message: string }> {
+      return apiFetch<{ success: boolean; message: string }>("/api/v1/auth/password", {
+        method: "PATCH",
+        body: JSON.stringify(passwords)
+      });
+    },
+    async triggerRetentionCleanup(): Promise<{ deletedRuns: number }> {
+      return apiFetch<{ deletedRuns: number }>("/api/v1/auth/retention-cleanup", {
+        method: "POST"
+      });
+    },
+    async deleteAccount(password: string): Promise<{ success: boolean; message: string }> {
+      return apiFetch<{ success: boolean; message: string }>("/api/v1/auth/account", {
+        method: "DELETE",
+        body: JSON.stringify({ password })
+      });
     }
   },
+
+  stats: {
+    async get(): Promise<StatsResponse> {
+      return apiFetch<StatsResponse>("/api/v1/stats");
+    }
+  },
+
+  projects: {
+    async list(): Promise<{ total: number; projects: ProjectItem[] }> {
+      return apiFetch<{ total: number; projects: ProjectItem[] }>("/api/v1/projects");
+    },
+    async get(id: string): Promise<{ project: ProjectItem; recentRuns: DiagnosticRunItem[] }> {
+      return apiFetch<{ project: ProjectItem; recentRuns: DiagnosticRunItem[] }>(`/api/v1/projects/${id}`);
+    },
+    async delete(id: string): Promise<{ success: boolean }> {
+      return apiFetch<{ success: boolean }>(`/api/v1/projects/${id}`, {
+        method: "DELETE"
+      });
+    }
+  },
+
+  runs: {
+    async list(projectId?: string): Promise<{ total: number; runs: DiagnosticRunItem[] }> {
+      const query = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+      return apiFetch<{ total: number; runs: DiagnosticRunItem[] }>(`/api/v1/diagnostic-runs${query}`);
+    },
+    async get(id: string): Promise<{ run: DiagnosticRunItem }> {
+      return apiFetch<{ run: DiagnosticRunItem }>(`/api/v1/diagnostic-runs/${id}`);
+    },
+    async delete(id: string): Promise<{ success: boolean }> {
+      return apiFetch<{ success: boolean }>(`/api/v1/diagnostic-runs/${id}`, {
+        method: "DELETE"
+      });
+    }
+  },
+
+  tokens: {
+    async list(): Promise<{ tokens: ApiTokenItem[] }> {
+      return apiFetch<{ tokens: ApiTokenItem[] }>("/api/v1/tokens");
+    },
+    async create(name: string, expiresAt?: string): Promise<{ token: string; apiToken: ApiTokenItem }> {
+      return apiFetch<{ token: string; apiToken: ApiTokenItem }>("/api/v1/tokens", {
+        method: "POST",
+        body: JSON.stringify({ name, expiresAt })
+      });
+    },
+    async revoke(id: string): Promise<{ success: boolean }> {
+      return apiFetch<{ success: boolean }>(`/api/v1/tokens/${id}`, {
+        method: "DELETE"
+      });
+    }
+  },
+
   rules: {
     async list(): Promise<{ total: number; rules: Array<{ id: string; title: string; severity: string; description: string }> }> {
       return apiFetch("/api/v1/rules");
+    },
+    async get(id: string): Promise<{ rule: Record<string, unknown> }> {
+      return apiFetch(`/api/v1/rules/${id}`);
     }
   }
 };

@@ -41,10 +41,16 @@ export function Navbar() {
 
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="btn btn-secondary btn-sm">
+              <Link to="/dashboard" className="btn btn-ghost btn-sm">
                 Dashboard
               </Link>
-              <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+              <Link to="/projects" className="btn btn-ghost btn-sm">
+                Projects
+              </Link>
+              <Link to="/settings" className="btn btn-ghost btn-sm">
+                Settings
+              </Link>
+              <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginLeft: "0.5rem" }}>
                 {user?.displayName}
               </span>
               <Button variant="ghost" size="sm" onClick={handleLogout}>

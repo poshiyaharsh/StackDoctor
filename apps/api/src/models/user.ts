@@ -5,6 +5,7 @@ export interface IUser {
   email: string;
   passwordHash: string;
   displayName: string;
+  retentionDays?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +16,7 @@ export interface IUserMethods {
     id: string;
     email: string;
     displayName: string;
+    retentionDays: number;
     createdAt: string;
     updatedAt: string;
   };
@@ -41,6 +43,12 @@ const userSchema = new Schema<UserDocument>(
       required: true,
       trim: true,
       maxlength: 64
+    },
+    retentionDays: {
+      type: Number,
+      default: 90,
+      min: 0,
+      max: 365
     }
   },
   {
@@ -63,6 +71,7 @@ userSchema.methods.toSafeObject = function () {
     id: this._id.toString(),
     email: this.email,
     displayName: this.displayName,
+    retentionDays: this.retentionDays ?? 90,
     createdAt: this.createdAt.toISOString(),
     updatedAt: this.updatedAt.toISOString()
   };

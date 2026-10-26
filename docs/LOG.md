@@ -449,6 +449,43 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 3, Run 3E: Application pages (Dashboard, projects, report and finding pages, settings).
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 3, Run 3E: Application Pages & Owner-Scoped Operations (apps/web & apps/api)
+- **Prompt used:** PHASE3.md > Run 3E: Dashboard, projects, report, finding, settings
+- **What was done:** Implemented owner-scoped API operations in `apps/api` and application pages in `apps/web`:
+  1. Built `GET /api/v1/stats` in `apps/api/src/routes/stats.ts` providing owner-isolated metric aggregations: total runs, projects scanned, failed checks, common issue categories, latest scan status breakdown, and recent reports with project names.
+  2. Implemented data retention policy in `User` model (`retentionDays`), user preferences endpoint `PATCH /api/v1/auth/preferences`, and retention cleanup service (`cleanupExpiredRuns` in `apps/api/src/services/retention.ts` and `POST /api/v1/auth/retention-cleanup`).
+  3. Implemented secure account management in `apps/api/src/routes/auth.ts`: `PATCH /api/v1/auth/password` (requires and validates current password) and `DELETE /api/v1/auth/account` (re-authenticates with current password and cascades deletion to all user projects, diagnostic runs, API tokens, user document, and destroys session).
+  4. Added accessible UI components: `Tabs` (`apps/web/src/components/ui/Tabs.tsx`) and `ToastProvider` / `useToast` (`apps/web/src/components/ui/Toast.tsx`).
+  5. Built full web application pages in `apps/web`:
+     - `DashboardPage`: Key metric cards, issue category breakdown, recent reports table, and copyable CLI onboarding steps when no reports exist.
+     - `ProjectsPage`: Grid of registered projects with detected technology badges and link to details.
+     - `ProjectDetailPage`: Project header, scan history table, and delete project flow with modal confirmation.
+     - `ReportDetailPage`: Report overview, severity filtering tabs (Critical, High, Medium, Low), distinct visual separation between **`OBSERVED EVIDENCE`** (facts) and **`POSSIBLE CAUSES`** (hypotheses), copy buttons for safe remediation commands and sanitized report JSON, and delete report modal.
+     - `FindingDetailPage`: Rule deep dive with description, recommended probes, suggested fixes, verification instructions, and documentation links with `rel="noopener noreferrer"`.
+     - `SettingsPage`: Profile & password change tab, retention settings with manual cleanup trigger, API tokens manager (generating cryptographically random token displayed **exactly once** in modal with copy button and warning), disabled AI explanations section explaining strict offline privacy guarantees, and danger zone account deletion modal with password re-entry.
+  6. Added comprehensive unit and integration test suites:
+     - `apps/api/test/stats-and-account.test.ts`: Scoped stats aggregation, tenant isolation, retention cleanup without touching other users' runs, password change verification, and cascaded account deletion.
+     - `apps/web/test/app-pages.test.tsx`: Loading/empty/error states across pages, single-time token display, severity filtering, observed evidence vs possible causes differentiation, and secure external link attributes.
+- **Files created/changed:** `apps/api/src/routes/stats.ts`, `apps/api/src/services/retention.ts`, `apps/api/src/routes/auth.ts`, `apps/api/src/models/user.ts`, `apps/api/src/app.ts`, `apps/api/test/stats-and-account.test.ts`, `apps/web/src/components/ui/Tabs.tsx`, `apps/web/src/components/ui/Toast.tsx`, `apps/web/src/components/layout/Navbar.tsx`, `apps/web/src/context/AuthContext.tsx`, `apps/web/src/lib/api.ts`, `apps/web/src/App.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/ProjectsPage.tsx`, `apps/web/src/pages/ProjectDetailPage.tsx`, `apps/web/src/pages/ReportDetailPage.tsx`, `apps/web/src/pages/FindingDetailPage.tsx`, `apps/web/src/pages/SettingsPage.tsx`, `apps/web/test/app-pages.test.tsx`, `docs/PHASE3.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npx vite build apps/web`: Passed (production bundle built in 1.25s)
+  - `npm test`: Passed (224/224 tests across 36 suites passed)
+  - `npm run eval`: Passed (100% detection, 0% false positives)
+  - Every page has loading, empty, and error states: Verified
+  - Evidence and possible causes are visibly labeled as different things: Verified
+  - Token never shown again after creation: Verified
+  - Account deletion removes all user data: Verified
+  - No diagnostic logic duplicated in the frontend: Verified
+- **Problems / errors:** Handled query helper resolution in testing multiple occurrences of numeric metric values; ensured test isolation for retention cleanup and cascaded deletion.
+- **Decisions made:** Kept frontend strictly a pure renderer of shared report schema without any local diagnostic rules or duplicated evaluation logic; prominent visual separation between deterministic observed evidence (`OBSERVED EVIDENCE`) and hypotheses (`POSSIBLE CAUSES`); token shown exactly once at creation with copy button; cascaded deletion on project and account removal.
+- **Next step:** Phase 3, Run 3F: Security tests, docs, docker-compose, final verification.
+- **Status:** Done
+
 
 
 

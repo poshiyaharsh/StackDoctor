@@ -19,7 +19,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | 3B | Projects, diagnostic runs, rules endpoints, authorization | Done | a1d57c2 | 2026-10-26 |
 | 3C | API tokens + CLI login/upload with preview | Done | 9ebc357 | 2026-10-26 |
 | 3D | Web scaffold, landing page, auth pages | Done | 7e6b648 | 2026-10-26 |
-| 3E | Dashboard, projects, report and finding pages, settings | Not started | - | - |
+| 3E | Dashboard, projects, report and finding pages, settings | Done | [will fill] | 2026-10-26 |
 | 3F | Security tests, docs, docker-compose, final verification | Not started | - | - |
 
 Status values: Not started, In progress, Needs fixes, Done.
@@ -245,17 +245,17 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Every page has loading, empty, and error states
-- [ ] Evidence and possible causes are visibly labeled as different things
-- [ ] Token never shown again after creation
-- [ ] Account deletion removes all user data (test proves it)
-- [ ] No diagnostic logic duplicated in the frontend
+- [x] Every page has loading, empty, and error states
+- [x] Evidence and possible causes are visibly labeled as different things
+- [x] Token never shown again after creation
+- [x] Account deletion removes all user data (test proves it)
+- [x] No diagnostic logic duplicated in the frontend
 
 **Run log (Antigravity fills):**
-- Files:
-- Command results:
-- Problems:
-- Decisions:
+- Files: `apps/api/src/routes/stats.ts`, `apps/api/src/services/retention.ts`, `apps/api/src/routes/auth.ts`, `apps/api/src/models/user.ts`, `apps/api/src/app.ts`, `apps/api/test/stats-and-account.test.ts`, `apps/web/src/components/ui/Tabs.tsx`, `apps/web/src/components/ui/Toast.tsx`, `apps/web/src/components/layout/Navbar.tsx`, `apps/web/src/context/AuthContext.tsx`, `apps/web/src/lib/api.ts`, `apps/web/src/App.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/ProjectsPage.tsx`, `apps/web/src/pages/ProjectDetailPage.tsx`, `apps/web/src/pages/ReportDetailPage.tsx`, `apps/web/src/pages/FindingDetailPage.tsx`, `apps/web/src/pages/SettingsPage.tsx`, `apps/web/test/app-pages.test.tsx`
+- Command results: `npm run build` passed (exit code 0); `npm run lint` passed (exit code 0); `npm run typecheck` passed (exit code 0); `npx vite build apps/web` passed (exit code 0); `npm test` passed (224/224 tests across 36 suites); `npm run eval` passed (100% detection, 0% false positives).
+- Problems: Handled query helper resolution in testing multiple occurrences of numeric metric values; ensured test isolation for retention cleanup and cascaded deletion.
+- Decisions: Kept frontend strictly a pure renderer of shared report schema without any local diagnostic rules or duplicated evaluation logic; prominent visual separation between deterministic observed evidence (`OBSERVED EVIDENCE`) and hypotheses (`POSSIBLE CAUSES`); token shown exactly once at creation with copy button; cascaded deletion on project and account removal.
 
 ---
 
