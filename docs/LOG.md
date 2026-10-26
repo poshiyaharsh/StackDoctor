@@ -322,6 +322,35 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 3: Web platform (dashboard, API, optional report upload).
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 3, Run 3A: API Foundation (apps/api)
+- **Prompt used:** PHASE3.md > Run 3A: API scaffold, MongoDB, authentication
+- **What was done:** Scaffolded `apps/api` Express + TypeScript application with MongoDB via Mongoose, strict security middleware, session management, CSRF defense, and authentication endpoints:
+  1. Configured `@stackdoctor/api` package with TypeScript project references, Zod-based fail-fast configuration parsing (`NODE_ENV`, `PORT`, `MONGODB_URI`, `SESSION_SECRET`, `CORS_ORIGIN`, `COOKIE_SECURE`), and `apps/api/.env.example`.
+  2. Implemented Mongoose database connection lifecycle in `apps/api/src/lib/db.ts` with connection pooling, timeouts, and graceful shutdown handling.
+  3. Implemented full security middleware suite: Helmet headers, strict CORS origin matching, 1MB JSON body size limit, `x-request-id` tracing, structured JSON logging with text redaction (never logging request bodies, cookies, or secrets), sliding-window rate limiting on auth endpoints with generic enumeration protection, timing-safe CSRF validation on state-changing cookie requests, and centralized error handling suppressing stack traces in production.
+  4. Implemented User model in `apps/api/src/models/user.ts` with normalized unique lowercase email, bcrypt (cost 12) password hashing, and safe object serialization suppressing `passwordHash`.
+  5. Implemented versioned `/api/v1/auth` endpoints (`/register`, `/login`, `/logout`, `/me`, `/csrf`) and `/api/v1/health` DB status check. Sessions regenerate on login to eliminate session fixation.
+  6. Added comprehensive unit and integration tests in `apps/api/test/config.test.ts` (3 tests) and `apps/api/test/auth.test.ts` (12 tests using `mongodb-memory-server` and `supertest`) covering registration, login, logout, authentication state, duplicate email rejection, generic 401 on bad password and missing email (no enumeration), CSRF enforcement, and 404 routing.
+- **Files created/changed:** `apps/api/package.json`, `apps/api/tsconfig.json`, `apps/api/.env.example`, `apps/api/src/config.ts`, `apps/api/src/lib/db.ts`, `apps/api/src/middleware/request-id.ts`, `apps/api/src/middleware/logger.ts`, `apps/api/src/middleware/error-handler.ts`, `apps/api/src/middleware/rate-limiter.ts`, `apps/api/src/middleware/csrf.ts`, `apps/api/src/models/user.ts`, `apps/api/src/routes/auth.ts`, `apps/api/src/routes/health.ts`, `apps/api/src/app.ts`, `apps/api/src/server.ts`, `apps/api/test/config.test.ts`, `apps/api/test/auth.test.ts`, `package.json`, `package-lock.json`, `tsconfig.json`, `docs/PHASE3.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (181/181 tests across 30 suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm run eval`: Passed (100% detection, 0% false positives)
+  - API starts only with valid config; fails fast otherwise: Verified
+  - Passwords hashed (bcrypt cost 12), never logged: Verified
+  - Login/register rate limited with generic errors (no user enumeration): Verified
+  - State-changing cookie requests require CSRF protection: Verified
+  - No stack traces leaked in production mode: Verified
+- **Problems / errors:** ESLint namespace lint rule on Express.Request augmentation resolved with scoped eslint-disable comment. Mongoose Document generic methods typing resolved cleanly with interface extensions.
+- **Decisions made:** Selected `bcryptjs` with cost factor 12 for portable, cross-platform password hashing. Session regeneration on login prevents session fixation. CSRF token validated with timing-safe comparison on state-changing cookie requests while allowing Bearer tokens. Centralized error handling suppresses error stacks in non-development environments.
+- **Next step:** Phase 3, Run 3B: Projects, diagnostic runs, rules endpoints, authorization.
+- **Status:** Done
+
+
 
 
 
