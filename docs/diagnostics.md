@@ -242,3 +242,150 @@ This document catalog describes each diagnostic rule implemented in StackDoctor,
 - **Verification**: Confirm that all referenced hostnames match defined compose services.
 - **References**: [Compose File Specification](https://docs.docker.com/compose/compose-file/)
 
+---
+
+### 11. `MONGO_CONNECTION_REFUSED`
+
+- **Title**: MongoDB connection refused on target endpoint
+- **Category**: `database`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `MongoDB`
+- **Description**: Triggered when a TCP connection to the configured MongoDB host and port is actively refused (ECONNREFUSED).
+- **Preconditions**: Staged diagnostic confirms TCP connection to MongoDB endpoint was refused.
+- **Observed Evidence (Facts)**:
+  - Network probe: Connection refused (ECONNREFUSED) on `host:port`.
+- **Possible Causes (Hypotheses)**:
+  - MongoDB service or daemon (`mongod`) is not currently running.
+  - The configured host or port is incorrect.
+  - MongoDB is running inside a Docker container that is stopped or has not forwarded the port.
+  - Local firewall or network configuration is blocking connection.
+- **Remediation**:
+  - Command: Start MongoDB locally (`mongod`), or run `docker compose up -d` if using containers.
+  - Risks: Starts database service.
+  - Undo: Stop started database service.
+- **Verification**: Re-run scan to confirm TCP connection succeeds.
+- **References**: [MongoDB Connection Troubleshooting](https://www.mongodb.com/docs/manual/administration/monitoring/)
+
+---
+
+### 12. `MONGO_AUTH_FAILED`
+
+- **Title**: MongoDB authentication failed
+- **Category**: `database`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `MongoDB`
+- **Description**: Triggered when a network connection to MongoDB succeeds, but authentication is rejected by the database.
+- **Preconditions**: Opt-in authenticated check fails with an authentication error.
+- **Observed Evidence (Facts)**:
+  - Authentication check: Authentication was rejected by MongoDB on `host:port`. (Secret values were not stored or logged).
+- **Possible Causes (Hypotheses)**:
+  - Username or password specified in connection URL is incorrect.
+  - The user was created on a different authentication database (`authSource`).
+  - The user lacks permissions or roles for the requested database.
+- **Remediation**:
+  - Command: Update database credentials in your environment variable to match an authorized MongoDB user.
+  - Risks: Credential update in local environment only.
+  - Undo: Revert environment variable.
+- **Verification**: Re-run scan with `--db-url-env`.
+- **References**: [MongoDB User Security](https://www.mongodb.com/docs/manual/core/security-users/)
+
+---
+
+### 13. `MYSQL_CONNECTION_REFUSED`
+
+- **Title**: MySQL connection refused on target endpoint
+- **Category**: `database`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `MySQL`
+- **Description**: Triggered when a TCP connection to the configured MySQL host and port is actively refused (ECONNREFUSED).
+- **Preconditions**: Staged diagnostic confirms TCP connection to MySQL endpoint was refused.
+- **Observed Evidence (Facts)**:
+  - Network probe: Connection refused (ECONNREFUSED) on `host:port`.
+- **Possible Causes (Hypotheses)**:
+  - MySQL service (`mysqld`) is not currently running.
+  - The configured host or port is incorrect.
+  - MySQL is running inside a Docker container that is stopped or has not mapped the port.
+  - Local firewall or network configuration is blocking connection.
+- **Remediation**:
+  - Command: Start MySQL service locally, or run `docker compose up -d` if using containers.
+  - Risks: Starts database service.
+  - Undo: Stop started database service.
+- **Verification**: Re-run scan to confirm TCP connection succeeds.
+- **References**: [MySQL Cannot Connect Documentation](https://dev.mysql.com/doc/refman/8.0/en/can-not-connect-to-server.html)
+
+---
+
+### 14. `MYSQL_AUTH_FAILED`
+
+- **Title**: MySQL authentication failed
+- **Category**: `database`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `MySQL`
+- **Description**: Triggered when a network connection to MySQL succeeds, but user authentication is rejected (Access denied).
+- **Preconditions**: Opt-in authenticated check fails with access denied error.
+- **Observed Evidence (Facts)**:
+  - Authentication check: Access denied by MySQL on `host:port`. (Secret values were not stored or logged).
+- **Possible Causes (Hypotheses)**:
+  - Username or password specified in connection URL is incorrect.
+  - The user account is restricted to a different client host.
+  - The user account does not have GRANT privileges on the requested database.
+- **Remediation**:
+  - Command: Update database credentials in your environment variable to match an authorized MySQL user.
+  - Risks: Credential update in local environment only.
+  - Undo: Revert environment variable.
+- **Verification**: Re-run scan with `--db-url-env`.
+- **References**: [MySQL Access Denied Troubleshooting](https://dev.mysql.com/doc/refman/8.0/en/access-denied.html)
+
+---
+
+### 15. `DB_HOST_NOT_RESOLVED`
+
+- **Title**: Database hostname failed DNS resolution
+- **Category**: `database`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `MongoDB`, `MySQL`
+- **Description**: Triggered when the database hostname configured in project settings cannot be resolved via DNS lookup.
+- **Preconditions**: Stage 1 DNS resolution returns `ENOTFOUND` or other lookup failure.
+- **Observed Evidence (Facts)**:
+  - DNS lookup: Hostname could not be resolved to an IP address.
+- **Possible Causes (Hypotheses)**:
+  - The hostname has a typo in project configuration or environment variables.
+  - The hostname is a container service name but command was run from host outside container network.
+  - Local DNS server or network connectivity is down.
+- **Remediation**:
+  - Command: Update configuration to specify a valid, resolvable hostname or IP address.
+  - Risks: Configuration update.
+  - Undo: Revert configuration change.
+- **Verification**: Confirm hostname resolves via DNS lookup.
+- **References**: [Domain Name System](https://en.wikipedia.org/wiki/Domain_Name_System)
+
+---
+
+### 16. `DB_CONNECTION_TIMEOUT`
+
+- **Title**: Database connection timed out
+- **Category**: `database`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `MongoDB`, `MySQL`
+- **Description**: Triggered when a TCP connection to the database endpoint times out before establishing a connection.
+- **Preconditions**: Stage 2 TCP socket probe times out.
+- **Observed Evidence (Facts)**:
+  - Network probe: Connection attempt timed out without receiving a TCP response.
+- **Possible Causes (Hypotheses)**:
+  - A cloud database firewall or IP whitelist (e.g. MongoDB Atlas Network Access) is blocking client IP.
+  - A local or corporate firewall is dropping outbound packets to target port.
+  - The database server is offline or experiencing network disruption.
+- **Remediation**:
+  - Command: Whitelist client IP in database cloud management console or inspect network routing.
+  - Risks: Security group rules update.
+  - Undo: Revert security group rules.
+- **Verification**: Verify that connection establishes before timeout expires.
+- **References**: [Connection Timeout](https://en.wikipedia.org/wiki/Connection_timeout)
+
+

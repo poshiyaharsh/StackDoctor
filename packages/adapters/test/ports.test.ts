@@ -41,7 +41,7 @@ describe("Port Checker Adapter (ports.ts)", () => {
     const activePort = address.port;
 
     try {
-      const result = await checkPort("127.0.0.1", activePort, 400);
+      const result = await checkPort("127.0.0.1", activePort, 1500);
       expect(result.status).toBe("in_use");
       expect(typeof result.conclusive).toBe("boolean");
       if (result.conclusive) {

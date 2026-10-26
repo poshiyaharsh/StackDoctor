@@ -24,6 +24,7 @@ export interface CliOptions {
   noColor: boolean;
   help: boolean;
   version: boolean;
+  dbUrlEnv?: string;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
@@ -34,6 +35,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
   let noColor = false;
   let help = false;
   let version = false;
+  let dbUrlEnv: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -56,6 +58,14 @@ export function parseCliArgs(argv: string[]): CliOptions {
       }
     } else if (arg?.startsWith("--out=")) {
       outFile = arg.slice(6);
+    } else if (arg === "--db-url-env") {
+      if (i + 1 < argv.length) {
+        dbUrlEnv = argv[++i];
+      } else {
+        throw new Error("Missing environment variable name for --db-url-env flag");
+      }
+    } else if (arg?.startsWith("--db-url-env=")) {
+      dbUrlEnv = arg.slice(13);
     } else if (arg === "scan") {
       command = "scan";
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
@@ -73,7 +83,8 @@ export function parseCliArgs(argv: string[]): CliOptions {
     outFile,
     noColor,
     help,
-    version
+    version,
+    dbUrlEnv
   };
 }
 
@@ -92,6 +103,7 @@ COMMANDS:
 FLAGS:
   --json             Print valid JSON report to stdout
   --out <file>       Write valid JSON report to a file
+  --db-url-env <VAR> Opt-in to authenticated database checks using the named environment variable
   --no-color         Disable ANSI terminal colors
   --version, -v      Print StackDoctor version
   --help, -h         Display this help message

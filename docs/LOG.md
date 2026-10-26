@@ -210,4 +210,42 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 2, Run 2C: Database checks (MongoDB, MySQL).
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 2, Run 2C: Database checks (MongoDB and MySQL)
+- **Prompt used:** PHASE2.md > Run 2C: Database checks (MongoDB and MySQL)
+- **What was done:** Implemented staged database connectivity diagnostics and 6 database diagnostic rules:
+  1. Built staged connectivity adapter `runStagedDatabaseCheck` in `packages/adapters/src/database.ts`:
+     - Stage 1: DNS resolution via `dns.promises.lookup(host)`. Fails with `dns_failure`. Later stages skipped.
+     - Stage 2: TCP reachability probe via `net.Socket`. Fails with `connection_refused`, `timeout`, or `unreachable_network`. Later stages skipped.
+     - Stage 3: Authenticated connection check (opt-in only via `--db-url-env <VAR>`). Never reads `.env` for credentials. Read-only ping operations (`admin.ping` for MongoDB, `SELECT 1` for MySQL). Zero writes. Classifies `auth_failed`.
+  2. Implemented strict secret protection: canary secret testing verified passwords and tokens never appear in any evidence, JSON, or logs.
+  3. Added `--db-url-env <ENV_VAR_NAME>` flag to CLI argument parser.
+  4. Implemented 6 database diagnostic rules and documented them in `docs/diagnostics.md`:
+     - `MONGO_CONNECTION_REFUSED`: Identifies connection refused on MongoDB endpoint; strictly avoids claiming uninstalled.
+     - `MONGO_AUTH_FAILED`: Identifies authentication rejection; strictly isolates credential issues from network configuration.
+     - `MYSQL_CONNECTION_REFUSED`: Identifies connection refused on MySQL endpoint; avoids claiming uninstalled.
+     - `MYSQL_AUTH_FAILED`: Identifies authentication rejection on MySQL.
+     - `DB_HOST_NOT_RESOLVED`: Identifies unresolvable database hostnames.
+     - `DB_CONNECTION_TIMEOUT`: Identifies TCP socket connection timeouts.
+  5. Updated default rule registry to contain all 16 diagnostic rules.
+  6. Added comprehensive unit tests in `packages/adapters/test/database.test.ts` and `packages/rules/test/database-rules.test.ts`.
+- **Files created/changed:** `packages/adapters/package.json`, `packages/adapters/src/database.ts`, `packages/adapters/src/index.ts`, `packages/adapters/test/database.test.ts`, `packages/adapters/test/ports.test.ts`, `packages/rules/src/rules/mongo-connection-refused.ts`, `packages/rules/src/rules/mongo-auth-failed.ts`, `packages/rules/src/rules/mysql-connection-refused.ts`, `packages/rules/src/rules/mysql-auth-failed.ts`, `packages/rules/src/rules/db-host-not-resolved.ts`, `packages/rules/src/rules/db-connection-timeout.ts`, `packages/rules/src/types.ts`, `packages/rules/src/index.ts`, `packages/rules/test/database-rules.test.ts`, `packages/rules/test/port-rules.test.ts`, `packages/rules/test/registry.test.ts`, `packages/rules/test/phase2-rules.test.ts`, `apps/cli/src/index.ts`, `docs/diagnostics.md`, `docs/PHASE2.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (134/134 tests across 23 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `shell: true` search: 0 occurrences found
+  - Refused, DNS failure, timeout, and auth failure produce four different findings: Verified
+  - Canary password never appears in any output, JSON, log, or snapshot: Verified
+  - No `.env` file is read for credentials: Verified
+  - Stage 3 only runs with `--db-url-env`: Verified
+  - No write operation exists in database code: Verified
+- **Problems / errors:** Initial network glitch during package install resolved by retry.
+- **Decisions made:** Database checks strictly execute read-only ping checks. Secrets sanitized before entering diagnostic report structures.
+- **Next step:** Phase 2, Run 2D: Python and Django checks.
+- **Status:** Done
+
+
 

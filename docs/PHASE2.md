@@ -18,7 +18,7 @@ Keep it in the repo root with `PHASES.md`, `PHASE1.md`, `LOG.md`, `INDEX.md`.
 |---|---|---|---|---|
 | 2A | Safe exec + runtime checks + requirement detection | Done | 9646c32 | 2026-10-26 |
 | 2B | Port + configuration checks | Done | 753b953 | 2026-10-26 |
-| 2C | Database checks (MongoDB, MySQL) | Not started | - | - |
+| 2C | Database checks (MongoDB, MySQL) | Done | pending | 2026-10-26 |
 | 2D | Python and Django checks | Not started | - | - |
 | 2E | Fixtures, integration + security tests, docs, final verification | Not started | - | - |
 
@@ -229,17 +229,40 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Refused, DNS failure, timeout, and auth failure produce four different findings
-- [ ] Canary password never appears in any output, JSON, log, or snapshot
-- [ ] No `.env` file is read for credentials
-- [ ] Stage 3 only runs with `--db-url-env`
-- [ ] No write operation exists in database code
+- [x] Refused, DNS failure, timeout, and auth failure produce four different findings
+- [x] Canary password never appears in any output, JSON, log, or snapshot
+- [x] No `.env` file is read for credentials
+- [x] Stage 3 only runs with `--db-url-env`
+- [x] No write operation exists in database code
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/adapters/src/database.ts`: Staged database connectivity adapter (Stage 1 DNS -> Stage 2 TCP -> Stage 3 Authenticated ping).
+  - `packages/adapters/src/index.ts`: Exported database adapter types and functions.
+  - `packages/adapters/test/database.test.ts`: Unit tests verifying DNS resolution failures, connection refused, timeouts, opt-in authentication enforcement, and canary secret masking.
+  - `packages/rules/src/rules/mongo-connection-refused.ts`: `MONGO_CONNECTION_REFUSED` rule (never claims uninstalled).
+  - `packages/rules/src/rules/mongo-auth-failed.ts`: `MONGO_AUTH_FAILED` rule (strictly isolates credentials from network settings).
+  - `packages/rules/src/rules/mysql-connection-refused.ts`: `MYSQL_CONNECTION_REFUSED` rule (never claims uninstalled).
+  - `packages/rules/src/rules/mysql-auth-failed.ts`: `MYSQL_AUTH_FAILED` rule.
+  - `packages/rules/src/rules/db-host-not-resolved.ts`: `DB_HOST_NOT_RESOLVED` rule.
+  - `packages/rules/src/rules/db-connection-timeout.ts`: `DB_CONNECTION_TIMEOUT` rule.
+  - `packages/rules/src/types.ts`: Extended `RuleEvaluationContext` with `database.diagnostics`.
+  - `packages/rules/src/index.ts`: Registered all 16 rules in default registry.
+  - `packages/rules/test/database-rules.test.ts`: Unit tests verifying each failure category produces distinct findings without claiming tools are uninstalled.
+  - `apps/cli/src/index.ts`: Added `--db-url-env <VAR>` opt-in flag.
+  - `docs/diagnostics.md`: Documented all 6 database rules.
 - Command results:
+  - `npm run build`: Passed (code 0)
+  - `npm test`: Passed (134/134 tests across 23 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (code 0)
+  - `shell: true` search: 0 occurrences
 - Problems:
+  - Initial network timeout during `npm install mongodb mysql2` resolved by retrying.
 - Decisions:
+  - Stage 3 authentication is opt-in only via `--db-url-env <ENV_VAR_NAME>`. Never reads `.env` for secrets.
+  - Database ping operations are read-only (`admin.ping` and `SELECT 1`). Zero write operations exist in codebase.
+  - Canary secret assertion verified that passwords never leak to evidence, JSON, or logs.
 
 ---
 

@@ -9,6 +9,12 @@ import { envVarNamesMissingRule } from "./rules/env-var-names-missing.js";
 import { portInvalidRule } from "./rules/port-invalid.js";
 import { runtimeDeclarationsConflictRule } from "./rules/runtime-declarations-conflict.js";
 import { composeServiceNotFoundRule } from "./rules/compose-service-not-found.js";
+import { mongoConnectionRefusedRule } from "./rules/mongo-connection-refused.js";
+import { mongoAuthFailedRule } from "./rules/mongo-auth-failed.js";
+import { mysqlConnectionRefusedRule } from "./rules/mysql-connection-refused.js";
+import { mysqlAuthFailedRule } from "./rules/mysql-auth-failed.js";
+import { dbHostNotResolvedRule } from "./rules/db-host-not-resolved.js";
+import { dbConnectionTimeoutRule } from "./rules/db-connection-timeout.js";
 
 export * from "./types.js";
 export * from "./registry.js";
@@ -22,6 +28,12 @@ export * from "./rules/env-var-names-missing.js";
 export * from "./rules/port-invalid.js";
 export * from "./rules/runtime-declarations-conflict.js";
 export * from "./rules/compose-service-not-found.js";
+export * from "./rules/mongo-connection-refused.js";
+export * from "./rules/mongo-auth-failed.js";
+export * from "./rules/mysql-connection-refused.js";
+export * from "./rules/mysql-auth-failed.js";
+export * from "./rules/db-host-not-resolved.js";
+export * from "./rules/db-connection-timeout.js";
 
 export const RULES_PACKAGE = "@stackdoctor/rules";
 export const RULES_DEPENDENCY = "@stackdoctor/schemas";
@@ -41,5 +53,11 @@ export function createDefaultRuleRegistry(): RuleRegistry {
   registry.register(portInvalidRule);
   registry.register(runtimeDeclarationsConflictRule);
   registry.register(composeServiceNotFoundRule);
+  registry.register(mongoConnectionRefusedRule);
+  registry.register(mongoAuthFailedRule);
+  registry.register(mysqlConnectionRefusedRule);
+  registry.register(mysqlAuthFailedRule);
+  registry.register(dbHostNotResolvedRule);
+  registry.register(dbConnectionTimeoutRule);
   return registry;
 }

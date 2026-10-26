@@ -68,6 +68,26 @@ export interface RuleEvaluationContext {
       }>;
     };
   };
+  database?: {
+    diagnostics?: Array<{
+      dbType: "mongodb" | "mysql" | "unknown";
+      host: string;
+      port: number;
+      scheme?: string;
+      databaseName?: string;
+      finalCategory?:
+        | "dns_failure"
+        | "connection_refused"
+        | "timeout"
+        | "unreachable_network"
+        | "tls_error"
+        | "auth_failed"
+        | "authorization_failed"
+        | "protocol_error"
+        | "unknown";
+      error?: string;
+    }>;
+  };
 }
 
 export interface Rule {
