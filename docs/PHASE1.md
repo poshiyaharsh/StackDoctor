@@ -20,7 +20,7 @@ Never skip a run or change the order.
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
 | 0 | Git + GitHub setup | Done | 563a08d | 2026-10-26 |
-| 1A | Scaffold | Done | pending | 2026-10-26 |
+| 1A | Scaffold | Done | d4eae7b | 2026-10-26 |
 | 1B | Schemas | Not started | - | - |
 | 1C | Core (redaction, scanner, lifecycle) | Not started | - | - |
 | 1D | Rules registry | Not started | - | - |
