@@ -1,0 +1,18 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: stackdoctor-mongo
+    restart: unless-stopped
+    ports:
+      # Bound strictly to 127.0.0.1 to avoid exposing the database externally
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-stackdoctor}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-stackdoctor_local_secret_pass}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-stackdoctor_dev}
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+    name: stackdoctor_mongo_data

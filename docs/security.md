@@ -55,3 +55,62 @@ Inspecting a repository must never inadvertently trigger arbitrary or malicious 
 - **Confinement to Target Directory**: Scans are strictly confined to the validated target directory.
 - **Symlink Protection**: Directory traversal routines ignore directory junctions and symlinks pointing outside the project root to prevent symlink escape and information leakage from host file systems.
 - **Ignored Directories**: Sensitive and heavy directories (`node_modules`, `.git`, `.venv`, `dist`, `coverage`) are excluded by default from deep traversal.
+
+---
+
+## 6. Web & API Security Architecture (Phase 3)
+
+The StackDoctor API (`apps/api`) and Web Platform (`apps/web`) operate under strict defense-in-depth principles:
+
+### Content-Security-Policy (CSP) & XSS Defenses
+- Strict CSP headers applied via Helmet in the API server and declared in `index.html`.
+- Zero occurrences of `dangerouslySetInnerHTML` in the web application codebase.
+- Evidence strings, log traces, and command suggestions are rendered strictly as inert text nodes.
+- All external links open with `target="_blank"` and `rel="noopener noreferrer"`.
+
+### Request Hygiene & Injection Prevention
+- **Payload Size Cap**: Request bodies are capped at 1MB (`express.json({ limit: "1mb" })`) to prevent memory exhaustion DoS.
+- **NoSQL Injection Immunity**: Request parameters and bodies are validated against strict Zod schemas and checked with `rejectNoSqlOperators()`. Any payload containing query operators (`$ne`, `$gt`, `$where`, etc.) is immediately rejected with HTTP 400.
+- **Strict ObjectId Validation**: Hexadecimal 24-character ObjectIds are validated with regex prior to query execution. Malformed IDs return HTTP 400.
+
+### CSRF & Session Security
+- Cookie sessions are marked `httpOnly: true`, `sameSite: "lax"`, and dynamically require `secure: true` in production.
+- State-changing requests (`POST`, `PUT`, `PATCH`, `DELETE`) with cookie credentials enforce `X-CSRF-Token` header verification.
+- **Session Fixation Prevention**: Session identifiers are regenerated upon registration and successful authentication.
+- API Bearer tokens bypass CSRF checks while maintaining independent authentication and ownership verification.
+
+---
+
+## 7. Multi-Tenant Isolation & Anti-Enumeration
+
+- **Strict Owner Scoping**: Every resource (`Project`, `DiagnosticRun`, `ApiToken`) is bound to `ownerId`.
+- **404 Anti-Enumeration Policy**: When a user attempts to access or modify a resource owned by another user, the server returns **HTTP 404 Not Found** (never 403 Forbidden). This prevents malicious users from probing the existence of private projects or runs.
+- **Credential Validation Anti-Enumeration**: Authentication endpoints return identical generic error messages (`"Invalid email or password"`) for both missing email accounts and invalid passwords with equivalent timing.
+
+---
+
+## 8. API Tokens Lifecycle
+
+- **Cryptographic Generation**: CLI API tokens are generated using `crypto.randomBytes(24)` with prefix `stk_live_`.
+- **Single-Time Display**: Plaintext tokens are returned **exactly once** upon creation. They are never displayed again, logged, or returned in list queries.
+- **Hash Persistence**: Only the SHA-256 hash (`crypto.createHash("sha256")`) and a 12-character display prefix are stored in MongoDB.
+- **Revocation & Expiration**: Tokens can be revoked at any time. Revoked or expired tokens are immediately rejected with HTTP 401.
+- **Secure CLI Storage**: CLI credentials are saved with restricted filesystem permissions (`0o600` on POSIX / private directories).
+- **HTTPS Enforcement**: Insecure HTTP communication is permitted strictly for `localhost` and `127.0.0.1`. Remote servers must use HTTPS.
+
+---
+
+## 9. Data Retention & Account Deletion
+
+- **Configurable Retention**: Users can configure report retention periods (30, 60, 90, 180, 365 days, or indefinite).
+- **Scheduled & Manual Cleanup**: Runs exceeding the configured retention threshold are pruned automatically without touching other tenants' records.
+- **Complete Account Removal**: Account deletion re-authenticates with current password and cascades deletion to all user projects, diagnostic runs, API tokens, user document, and destroys active sessions.
+
+---
+
+## 10. Dependency Security Audit Notes
+
+As of Run 3F, an audit of dependencies was conducted via `npm audit`:
+- **Zod (`<3.24.2`)**: An advisory exists regarding oversized constrained array validation. In StackDoctor, this risk is mitigated at the network layer because `apps/api` enforces a strict 1MB body limit (`express.json({ limit: "1mb" })`) before data reaches Zod parsing.
+- **Vitest & Tinypool (`vitest < 3.2.0`)**: Developer-only test runner dependencies in devDependencies. They are never bundled into production releases or deployed on production servers.
+

@@ -69,31 +69,49 @@ stackdoctor scan --db-url-env MONGO_URL
 stackdoctor scan --allow-project-code
 ```
 
-#### 2. List Diagnostic Rules
+#### 3. Upload Reports & Team Collaboration (Phase 3)
 ```bash
-# List all 20 registered rules in terminal format
-stackdoctor rules
+# Log in to your StackDoctor server instance
+stackdoctor login --server http://localhost:3000
 
-# Export rules as JSON array
-stackdoctor rules --json
+# Inspect and upload your local diagnostic report (shows interactive preview)
+stackdoctor upload
+
+# Non-interactive upload for CI/CD pipelines
+stackdoctor upload --yes
+
+# Clear stored credentials
+stackdoctor logout
 ```
 
-### Command Flags
+---
 
-| Flag | Description |
-|------|-------------|
-| `--json` | Outputs schema-validated JSON report to stdout. |
-| `--out <file>` | Writes JSON report directly to specified file. |
-| `--no-color` | Disables ANSI color escapes in terminal formatting. |
-| `--db-url-env <VAR>` | Opt-in to authenticated Stage 3 database reachability testing using named env var. |
-| `--allow-project-code` | Opt-in to safe, read-only inspection commands that execute framework management code. |
-| `--version`, `-v` | Prints StackDoctor version. |
-| `--help`, `-h` | Prints help and usage instructions. |
+## Web Platform & Architecture
 
-### Exit Codes
-- `0`: Scan passed with no high or critical severity issues.
-- `1`: Scan identified environment issues at high or critical severity.
-- `2`: Tool error (invalid target directory, internal schema failure).
+StackDoctor includes an optional web platform featuring an interactive dashboard, project history, and rich diagnostic report viewers:
+
+```
++-------------------------------------------------------------------------+
+|  🩺 StackDoctor Web Platform                                            |
+|                                                                         |
+|  [Total Runs: 12]   [Projects: 3]   [Failed: 4]   [Passed: 8]          |
+|                                                                         |
+|  Recent Diagnostic Runs:                                                |
+|  - API Gateway        FAILED    2 findings   Node 20.x, Docker Compose |
+|  - Auth Service       PASSED    0 findings   Python 3.12, PostgreSQL   |
+|                                                                         |
+|  Report View:                                                           |
+|  🔍 OBSERVED EVIDENCE (Deterministic facts, probes, exact logs)         |
+|  💡 POSSIBLE CAUSES   (Hypotheses, version conflicts, missing files)   |
+|  🛠️ RECOMMENDED FIX   (Exact copyable commands, risks, verification)   |
++-------------------------------------------------------------------------+
+```
+
+### Core Architecture Principles
+1. **Local-First & Offline-by-Default**: `stackdoctor scan` makes zero network calls and never transmits source code or secrets.
+2. **Explicit User Uploads**: Reports are uploaded only when developers explicitly run `stackdoctor upload` and confirm via interactive preview.
+3. **Multi-Pass Redaction**: All credentials, tokens, environment variable assignments, and canary secrets are sanitized before leaving the machine and re-redacted on the server.
+4. **Strict Isolation**: Multi-tenant database design with owner-scoped aggregation and zero cross-tenant visibility.
 
 ---
 
@@ -127,10 +145,10 @@ stackdoctor rules --json
 ## Verification & Accuracy
 
 ```bash
-# Run test suite
+# Run complete test suite across monorepo (36 test suites, 224+ tests)
 npm test
 
-# Run diagnostic accuracy evaluation across fixtures
+# Run diagnostic accuracy evaluation across test fixtures
 npm run eval
 
 # Run linter and typecheck
@@ -142,7 +160,8 @@ npm run typecheck
 
 ## Documentation
 
-- [Diagnostic Rules Reference](docs/diagnostics.md)
-- [Installation & Platform Support Matrix](docs/installation.md)
+- [System Architecture](docs/architecture.md)
 - [Security & Credentials Policy](docs/security.md)
+- [Installation & Local Setup](docs/installation.md)
+- [Diagnostic Rules Reference](docs/diagnostics.md)
 - [Development Log](docs/LOG.md)

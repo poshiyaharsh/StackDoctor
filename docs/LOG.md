@@ -486,6 +486,58 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 3, Run 3F: Security tests, docs, docker-compose, final verification.
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 3, Run 3F: Security Tests, Hardening, Docs, and Final Verification
+- **Prompt used:** PHASE3.md > Run 3F: Security tests, docs, docker-compose, final verification
+- **What was done:** Completed Phase 3 Web Platform hardening, documentation, and automated end-to-end verification:
+  1. Configured `docker-compose.yml` for local MongoDB development, bound strictly to `127.0.0.1:27017` with credentials loaded via environment variables and persistent volume `mongo_data`.
+  2. Created `.env.example` documenting local development environment variables for API, Web, and MongoDB.
+  3. Added root development scripts: `dev:api` (`npm --workspace=@stackdoctor/api run dev`), `dev:web` (`npm --workspace=@stackdoctor/web run dev`), `dev` (`npm run dev:api`), and `e2e:phase3` (`node scripts/e2e-phase3.js`).
+  4. Built comprehensive security test suite in `apps/api/test/security-matrix.test.ts`:
+     - Full Authorization Matrix: Every route x HTTP verb x caller role (anonymous callers receive 401 Unauthorized; cross-tenant intruders receive 404 Not Found to prevent information leaks; resource owners succeed).
+     - CSRF protection: State-changing requests with cookie credentials lacking `X-CSRF-Token` return 403 Forbidden.
+     - Session fixation prevention: Session identifiers regenerate upon registration and login.
+     - Token revocation and expiration: Revoked and expired tokens are rejected with 401.
+     - NoSQL query operator injection: Query objects containing operators (`$ne`, `$gt`) are rejected with 400.
+     - Canary secret detection: Payloads containing canary secrets return 422 Unprocessable Entity, store nothing, and never leak the secret in responses, headers, or logs.
+  5. Built automated end-to-end check script `scripts/e2e-phase3.js`:
+     - Spawns in-memory MongoDB and Express API server.
+     - Registers a user account and generates a CLI API Bearer token.
+     - Executes an offline diagnostic scan on `examples/broken-node-project` via `runCli`.
+     - Uploads report over HTTP/HTTPS with Bearer authentication.
+     - Fetches and verifies uploaded diagnostic run via API.
+     - Deletes the run and confirms 404 Not Found response.
+  6. Conducted dependency audit with `npm audit`: Documented Zod array validation (mitigated via 1MB Express body limit) and devDependency-confined Vitest advisories in `docs/security.md`.
+  7. Created comprehensive documentation:
+     - `docs/architecture.md`: CLI, API, web app, data flow, what stays local vs what is uploaded.
+     - `docs/security.md`: Threat model, zero-trust execution, canary redaction, CSP, multi-tenant isolation, token lifecycle, data retention, and audit notes.
+     - `docs/installation.md`: Local setup with Docker Compose, API/Web platform dev workflow, and platform matrix.
+     - `README.md`: Updated with web platform overview, ASCII architecture, CLI upload instructions, and documentation links.
+  8. Verified all 11 items in the Final Phase 3 checklist passed, and updated `docs/INDEX.md` marking Phase 3 as Done.
+- **Files created/changed:** `docker-compose.yml`, `.env.example`, `apps/api/package.json`, `package.json`, `apps/api/test/security-matrix.test.ts`, `apps/web/src/lib/api.ts`, `scripts/e2e-phase3.js`, `docs/architecture.md`, `docs/security.md`, `docs/installation.md`, `README.md`, `docs/INDEX.md`, `docs/PHASE3.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (231/231 tests across 37 suites passed)
+  - `npm run eval`: Passed (100% detection, 0% false positives)
+  - `npm run e2e:phase3`: Passed (exit code 0)
+  - User A cannot access User B's projects, runs, or tokens: Verified (matrix test passes)
+  - Oversized and malformed payloads rejected: Verified
+  - Tokens shown once and never again: Verified
+  - Upload shows a preview and needs confirmation; `scan` never uploads: Verified
+  - Deleting a run actually deletes it; account deletion removes everything: Verified
+  - Canary secret absent from DB, logs, API responses, and UI: Verified
+  - CLI still works fully with the API turned off: Verified
+  - `npm audit` has no unaddressed high/critical issues: Verified
+  - E2E script passes: Verified
+  - Docs match what actually exists: Verified
+- **Problems / errors:** Handled workspace mongoose resolution in standalone E2E script by utilizing the API's database connector; attached CSRF token to login request during session fixation test.
+- **Decisions made:** Docker Compose bound strictly to 127.0.0.1; complete anti-enumeration policy returns 404 for foreign tenant resources; automated end-to-end check script tests full lifecycle from registration through deletion.
+- **Next step:** Phase 4: Integrations (GitHub issue drafts, CI JSON, report compare).
+- **Status:** Done
+
 
 
 

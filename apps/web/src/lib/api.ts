@@ -282,7 +282,8 @@ export const api = {
       return apiFetch<{ total: number; runs: DiagnosticRunItem[] }>(`/api/v1/diagnostic-runs${query}`);
     },
     async get(id: string): Promise<{ run: DiagnosticRunItem }> {
-      return apiFetch<{ run: DiagnosticRunItem }>(`/api/v1/diagnostic-runs/${id}`);
+      const res = await apiFetch<{ run?: DiagnosticRunItem; diagnosticRun?: DiagnosticRunItem }>(`/api/v1/diagnostic-runs/${id}`);
+      return { run: (res.run || res.diagnosticRun)! };
     },
     async delete(id: string): Promise<{ success: boolean }> {
       return apiFetch<{ success: boolean }>(`/api/v1/diagnostic-runs/${id}`, {

@@ -33,6 +33,56 @@ stackdoctor rules
 
 ---
 
+## Web Platform & API Local Development (Phase 3)
+
+StackDoctor includes an optional API server and interactive web dashboard for visualizing diagnostic histories and collaborating with teams.
+
+### 1. Launch Local MongoDB with Docker Compose
+
+A local MongoDB 7 instance can be launched via Docker Compose. The database container is bound strictly to `127.0.0.1:27017`:
+
+```bash
+# Start MongoDB in background
+docker compose up -d
+
+# Verify MongoDB is running
+docker compose ps
+```
+
+### 2. Configure Environment
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+### 3. Start Development Servers
+
+Run the API and Web platforms concurrently or independently:
+
+```bash
+# Start the API server on http://localhost:3000
+npm run dev:api
+
+# Start the Web dashboard on http://localhost:5173
+npm run dev:web
+```
+
+### 4. Authenticate the CLI with Local API
+
+```bash
+# 1. Open http://localhost:5173 and create an account
+# 2. Go to Settings > API Tokens and generate a token
+# 3. Authenticate your CLI:
+stackdoctor login --server http://localhost:3000
+
+# 4. Upload your first diagnostic run from any project folder:
+stackdoctor upload
+```
+
+---
+
 ## Platform Support Matrix
 
 StackDoctor is designed to be cross-platform, running seamlessly on Windows, Linux, and macOS without requiring elevated privileges. When platform-specific diagnostic utilities are not present or access is restricted, checks degrade gracefully to `"skipped"` or report honest uncertainty (`"not conclusive"`).
