@@ -19,7 +19,7 @@ Keep it in the repo root with `PHASES.md`, `PHASE1.md`, `LOG.md`, `INDEX.md`.
 | 2A | Safe exec + runtime checks + requirement detection | Done | 9646c32 | 2026-10-26 |
 | 2B | Port + configuration checks | Done | 753b953 | 2026-10-26 |
 | 2C | Database checks (MongoDB, MySQL) | Done | 3bca9f4 | 2026-10-26 |
-| 2D | Python and Django checks | Done | pending | 2026-10-26 |
+| 2D | Python and Django checks | Done | 2488d5d | 2026-10-26 |
 | 2E | Fixtures, integration + security tests, docs, final verification | Not started | - | - |
 
 Status values: Not started, In progress, Needs fixes, Done.
