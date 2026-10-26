@@ -19,7 +19,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | 3B | Projects, diagnostic runs, rules endpoints, authorization | Done | a1d57c2 | 2026-10-26 |
 | 3C | API tokens + CLI login/upload with preview | Done | 9ebc357 | 2026-10-26 |
 | 3D | Web scaffold, landing page, auth pages | Done | 7e6b648 | 2026-10-26 |
-| 3E | Dashboard, projects, report and finding pages, settings | Done | [will fill] | 2026-10-26 |
+| 3E | Dashboard, projects, report and finding pages, settings | Done | 1592659 | 2026-10-26 |
 | 3F | Security tests, docs, docker-compose, final verification | Not started | - | - |
 
 Status values: Not started, In progress, Needs fixes, Done.
