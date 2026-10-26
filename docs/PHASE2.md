@@ -17,7 +17,7 @@ Keep it in the repo root with `PHASES.md`, `PHASE1.md`, `LOG.md`, `INDEX.md`.
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
 | 2A | Safe exec + runtime checks + requirement detection | Done | 9646c32 | 2026-10-26 |
-| 2B | Port + configuration checks | Not started | - | - |
+| 2B | Port + configuration checks | Done | pending | 2026-10-26 |
 | 2C | Database checks (MongoDB, MySQL) | Not started | - | - |
 | 2D | Python and Django checks | Not started | - | - |
 | 2E | Fixtures, integration + security tests, docs, final verification | Not started | - | - |
@@ -148,17 +148,41 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Port test never kills or signals a process
-- [ ] Unidentified owner => finding says "not conclusive"
-- [ ] .env values never appear in output, JSON, logs, or test snapshots
-- [ ] YAML parsing is safe (no code execution)
-- [ ] Invalid ports handled without a crash
+- [x] Port test never kills or signals a process
+- [x] Unidentified owner => finding says "not conclusive"
+- [x] .env values never appear in output, JSON, logs, or test snapshots
+- [x] YAML parsing is safe (no code execution)
+- [x] Invalid ports handled without a crash
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/adapters/src/ports.ts`: Non-intrusive TCP port check adapter with process discovery and validation.
+  - `packages/adapters/src/config-scanner.ts`: Static declared port detector, environment variable name comparator, runtime conflict detector, and safe Docker Compose YAML inspector.
+  - `packages/adapters/src/platform/`: Added `getProcessOnPort` to `PlatformAdapter` interface and implemented for `win32` (`netstat`), `linux` (`ss`/`lsof`), `darwin` (`lsof`), and `unsupported`.
+  - `packages/adapters/src/exec.ts`: Added `netstat`, `ss`, and `lsof` to `ALLOWED_EXECUTABLES`.
+  - `packages/adapters/src/index.ts`: Re-exported all port and config scanner utilities.
+  - `packages/adapters/test/ports.test.ts`: Unit tests for port checks (invalid values, available ports, and in-use port detection).
+  - `packages/adapters/test/config-scanner.test.ts`: Unit tests for variable name extraction, port declarations, runtime conflict detection, and compose service inspection.
+  - `packages/rules/src/rules/port-in-use.ts`: `PORT_IN_USE` rule with conclusive/non-conclusive distinction.
+  - `packages/rules/src/rules/env-var-names-missing.ts`: `ENV_VAR_NAMES_MISSING` rule for variable names missing from `.env`.
+  - `packages/rules/src/rules/port-invalid.ts`: `PORT_INVALID` rule for invalid or out-of-range port declarations.
+  - `packages/rules/src/rules/runtime-declarations-conflict.ts`: `RUNTIME_DECLARATIONS_CONFLICT` rule.
+  - `packages/rules/src/rules/compose-service-not-found.ts`: `COMPOSE_SERVICE_NOT_FOUND` rule.
+  - `packages/rules/src/index.ts`: Registered all 10 rules in default registry.
+  - `packages/rules/test/port-rules.test.ts`: Unit tests for all 5 new rules and registry integration.
+  - `docs/diagnostics.md`: Documented all 5 new rules in catalogue.
 - Command results:
+  - `npm run build`: Passed (code 0)
+  - `npm test`: Passed (119/119 tests across 21 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (code 0)
+  - `shell: true` search: 0 occurrences
 - Problems:
+  - None.
 - Decisions:
+  - Added `netstat`, `ss`, and `lsof` to `ALLOWED_EXECUTABLES` strictly for read-only process discovery.
+  - When port is occupied but owning process cannot be determined, finding explicitly notes "not conclusive" and sets confidence to `likely`.
+  - `.env` values are immediately discarded upon key parsing to guarantee zero secret leakage.
 
 ---
 

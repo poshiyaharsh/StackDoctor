@@ -71,7 +71,10 @@ describe("Safe Command Runner (exec.ts)", () => {
       "py",
       "git",
       "docker",
-      "docker-compose"
+      "docker-compose",
+      "netstat",
+      "ss",
+      "lsof"
     ];
     for (const exe of required) {
       expect(ALLOWED_EXECUTABLES.has(exe)).toBe(true);

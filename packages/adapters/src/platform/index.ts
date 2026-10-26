@@ -19,6 +19,10 @@ class UnsupportedPlatformAdapter implements PlatformAdapter {
   isCapabilitySupported(): boolean {
     return false;
   }
+
+  async getProcessOnPort(): Promise<undefined> {
+    return undefined;
+  }
 }
 
 export function getPlatformAdapter(targetPlatform: string = process.platform): PlatformAdapter {

@@ -172,3 +172,42 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 2, Run 2B: Port and configuration checks.
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 2, Run 2B: Port and configuration checks
+- **Prompt used:** PHASE2.md > Run 2B: Port + configuration checks
+- **What was done:** Implemented port checking adapter, static configuration scanner, and 5 diagnostic rules:
+  1. Built non-intrusive TCP port check adapter `checkPort` in `packages/adapters/src/ports.ts` with range validation (1-65535) and process identification via platform adapters without side effects (never terminates or signals processes).
+  2. Implemented platform-specific listening process identification (`getProcessOnPort`) for Windows (`netstat -ano -p tcp`), Linux (`ss`/`lsof`), and macOS (`lsof`).
+  3. Added `netstat`, `ss`, and `lsof` to `ALLOWED_EXECUTABLES` in `packages/adapters/src/exec.ts`.
+  4. Implemented static configuration scanner `packages/adapters/src/config-scanner.ts`:
+     - Discovers declared ports statically from `package.json` scripts, `vite.config.*`, `.env.example`, and Compose files without executing project code.
+     - Compares `.env.example` vs `.env` for variable NAMES ONLY, immediately discarding secret values.
+     - Detects conflicting runtime version declarations between `.nvmrc` and `engines.node`.
+     - Safely parses Docker Compose YAML files (`yaml` package) and verifies that hostnames/services referenced in app configuration exist in `services:`.
+     - Checks localhost backend URL reachability via non-intrusive TCP probe.
+  5. Implemented 5 diagnostic rules and documented them in `docs/diagnostics.md`:
+     - `PORT_IN_USE`: Flags when a declared port is busy; marks confidence as `confirmed` and evidence as conclusive only if the owning process was identified; otherwise marks confidence as `likely` and notes "not conclusive".
+     - `ENV_VAR_NAMES_MISSING`: Flags missing variable names in `.env` without printing secret values.
+     - `PORT_INVALID`: Flags non-numeric or out-of-range port declarations as high-severity failures.
+     - `RUNTIME_DECLARATIONS_CONFLICT`: Flags conflicting `.nvmrc` and `engines.node` declarations.
+     - `COMPOSE_SERVICE_NOT_FOUND`: Flags application configs referencing Compose service names not defined in `docker-compose.yml`.
+  6. Added comprehensive test suites across `packages/adapters` and `packages/rules` verifying port checks, config scanning, and all 5 rules. Default rule registry now contains 10 rules.
+- **Files created/changed:** `packages/adapters/package.json`, `packages/adapters/src/ports.ts`, `packages/adapters/src/config-scanner.ts`, `packages/adapters/src/platform/types.ts`, `packages/adapters/src/platform/win32.ts`, `packages/adapters/src/platform/linux.ts`, `packages/adapters/src/platform/darwin.ts`, `packages/adapters/src/platform/index.ts`, `packages/adapters/src/exec.ts`, `packages/adapters/src/index.ts`, `packages/adapters/test/ports.test.ts`, `packages/adapters/test/config-scanner.test.ts`, `packages/adapters/test/exec.test.ts`, `packages/rules/src/rules/port-in-use.ts`, `packages/rules/src/rules/env-var-names-missing.ts`, `packages/rules/src/rules/port-invalid.ts`, `packages/rules/src/rules/runtime-declarations-conflict.ts`, `packages/rules/src/rules/compose-service-not-found.ts`, `packages/rules/src/types.ts`, `packages/rules/src/index.ts`, `packages/rules/test/port-rules.test.ts`, `packages/rules/test/registry.test.ts`, `packages/rules/test/phase2-rules.test.ts`, `docs/diagnostics.md`, `docs/PHASE2.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (119/119 tests across 21 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `shell: true` search: 0 occurrences found
+  - Port test never kills or signals a process: Verified
+  - Unidentified owner => finding states "not conclusive": Verified
+  - .env values never appear in output, JSON, logs, or test snapshots: Verified
+  - YAML parsing is safe (no code execution): Verified
+  - Invalid ports handled without a crash: Verified
+- **Problems / errors:** None.
+- **Decisions made:** Strict adherence to secret sanitization (values discarded immediately upon parsing). Added `netstat`, `ss`, and `lsof` strictly for non-intrusive diagnostic process queries.
+- **Next step:** Phase 2, Run 2C: Database checks (MongoDB, MySQL).
+- **Status:** Done
+
+

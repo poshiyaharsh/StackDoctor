@@ -14,7 +14,10 @@ export const ALLOWED_EXECUTABLES = new Set([
   "py",
   "git",
   "docker",
-  "docker-compose"
+  "docker-compose",
+  "netstat",
+  "ss",
+  "lsof"
 ]);
 
 export interface RunCommandOptions {

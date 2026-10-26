@@ -123,3 +123,122 @@ This document catalog describes each diagnostic rule implemented in StackDoctor,
   - Undo: `rm -rf .venv`
 - **Verification**: Confirm that `.venv` directory exists or `VIRTUAL_ENV` is active.
 - **References**: [Python venv documentation](https://docs.python.org/3/library/venv.html)
+
+---
+
+### 6. `PORT_IN_USE`
+
+- **Title**: Required network port is already in use
+- **Category**: `network`
+- **Severity**: `high`
+- **Confidence**: `confirmed` (when owning process is identified) / `likely` (when owning process could not be determined)
+- **Technologies**: `*` (All technologies)
+- **Description**: Triggered when a required network port declared by the project is already bound by another process or listener on this machine.
+- **Preconditions**: At least one declared port test confirms an active listener on the target port.
+- **Observed Evidence (Facts)**:
+  - Network probe: TCP connection to host:port succeeded (actively listening).
+  - Owning process: Process PID and name if identified via OS tools (`netstat`, `ss`, `lsof`). States clearly whether evidence is conclusive (process identified) or not conclusive.
+- **Possible Causes (Hypotheses)**:
+  - Another instance of the application or a different development server is already running.
+  - A background system service or Docker container is bound to the port.
+- **Remediation**:
+  - Command: Terminate the occupying process or specify an alternate `PORT` in your environment.
+  - Risks: Terminating another process may interrupt background services; StackDoctor never auto-terminates processes.
+  - Undo: Restart the terminated service or reset PORT configuration.
+- **Verification**: Verify that the port is free using TCP probe or netstat.
+- **References**: [Node.js EADDRINUSE Documentation](https://nodejs.org/api/errors.html#eaddrinuse)
+
+---
+
+### 7. `ENV_VAR_NAMES_MISSING`
+
+- **Title**: Required environment variable names missing from .env
+- **Category**: `configuration`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `*` (All technologies)
+- **Description**: Triggered when `.env` is present in the project root, but one or more variable names documented in `.env.example` are missing from `.env`.
+- **Preconditions**: Both `.env.example` and `.env` exist.
+- **Observed Evidence (Facts)**:
+  - Variable names: List of variable names missing from `.env`. (Secret values are never read, stored, or logged).
+- **Possible Causes (Hypotheses)**:
+  - New configuration keys were added to `.env.example` without updating local `.env`.
+  - `.env` was copied from a template before recent features were added.
+- **Remediation**:
+  - Command: Add missing keys to `.env` with appropriate local values.
+  - Risks: Adding keys to `.env` modifies local configuration; never commit `.env` to source control.
+  - Undo: Remove added keys from `.env`.
+- **Verification**: Re-run scan to confirm all declared keys are present.
+- **References**: [The Twelve-Factor App: Config](https://12factor.net/config)
+
+---
+
+### 8. `PORT_INVALID`
+
+- **Title**: Declared network port is invalid or out of range
+- **Category**: `configuration`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `*` (All technologies)
+- **Description**: Triggered when a network port specified in project configuration or scripts is not a valid TCP port number (must be an integer between 1 and 65535).
+- **Preconditions**: At least one statically declared port fails numeric range validation.
+- **Observed Evidence (Facts)**:
+  - Configuration source: The file and script or setting where the invalid value was detected.
+  - Raw value: The invalid string or out-of-range number detected.
+- **Possible Causes (Hypotheses)**:
+  - A typo or non-numeric placeholder was entered in configuration.
+  - An environment variable was assigned an out-of-range port number (e.g. greater than 65535 or negative).
+- **Remediation**:
+  - Command: Update configuration to specify a valid TCP port number between 1 and 65535.
+  - Risks: Modifies configuration; ensure selected port does not conflict with existing services.
+  - Undo: Revert configuration change.
+- **Verification**: Verify that all declared port numbers are integers in 1-65535.
+- **References**: [Port Numbers](https://en.wikipedia.org/wiki/Port_(computer_networking))
+
+---
+
+### 9. `RUNTIME_DECLARATIONS_CONFLICT`
+
+- **Title**: Conflicting runtime version declarations between project files
+- **Category**: `configuration`
+- **Severity**: `medium`
+- **Confidence**: `confirmed`
+- **Technologies**: `Node.js`
+- **Description**: Triggered when the project contains mutually conflicting runtime version specifications across configuration files (e.g. `.nvmrc` conflicts with `package.json` `engines.node`).
+- **Preconditions**: Both `.nvmrc` and `engines.node` are declared and their version ranges do not intersect.
+- **Observed Evidence (Facts)**:
+  - Version strings: Version declared in `.nvmrc` and semver range declared in `engines.node`.
+- **Possible Causes (Hypotheses)**:
+  - `.nvmrc` was updated without updating `engines.node` in `package.json` (or vice versa).
+  - A version bump was partially completed across repository files.
+- **Remediation**:
+  - Command: Align `.nvmrc` and `package.json` `engines.node` to target the same compatible Node.js version range.
+  - Risks: Modifies version declaration files; harmless to source code.
+  - Undo: Revert configuration files.
+- **Verification**: Verify that `.nvmrc` satisfies the range specified in `package.json` `engines.node`.
+- **References**: [npm package.json engines](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#engines)
+
+---
+
+### 10. `COMPOSE_SERVICE_NOT_FOUND`
+
+- **Title**: Application references Docker Compose service not defined in compose file
+- **Category**: `configuration`
+- **Severity**: `high`
+- **Confidence**: `confirmed`
+- **Technologies**: `Docker`, `Docker Compose`
+- **Description**: Triggered when an application configuration or environment URL references a service name that does not exist in the project's `docker-compose.yml` services.
+- **Preconditions**: Compose file exists and at least one referenced service name is missing from `services:`.
+- **Observed Evidence (Facts)**:
+  - Referenced service: Name and source of the referenced service.
+  - Defined services: List of all valid service names declared under `services:` in compose file.
+- **Possible Causes (Hypotheses)**:
+  - The service was renamed or removed from `docker-compose.yml`.
+  - The application configuration has a typo in the service hostname.
+- **Remediation**:
+  - Command: Add the service definition to `docker-compose.yml` or update application configuration to reference an existing service.
+  - Risks: Modifies compose file or configuration.
+  - Undo: Revert compose file or configuration changes.
+- **Verification**: Confirm that all referenced hostnames match defined compose services.
+- **References**: [Compose File Specification](https://docs.docker.com/compose/compose-file/)
+
