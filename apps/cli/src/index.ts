@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import readline from "node:readline";
 import {
   runDiagnostics,
   validateDirectory,
@@ -8,15 +9,20 @@ import {
   type DiagnosticRule,
   type DiagnosticCheck
 } from "@stackdoctor/core";
-import {
-  createDefaultRuleRegistry
-} from "@stackdoctor/rules";
+import { createDefaultRuleRegistry } from "@stackdoctor/rules";
 import { validateReport, type Report, CURRENT_TOOL_VERSION } from "@stackdoctor/schemas";
 import { formatTerminalReport } from "./format.js";
 import { collectEvaluationContext } from "./collector.js";
+import {
+  saveConfig,
+  clearConfig,
+  loadConfig,
+  validateServerUrl
+} from "./config-store.js";
+import { formatReportPreview, uploadReport } from "./uploader.js";
 
 export interface CliOptions {
-  command: "scan" | "rules" | "help" | "version";
+  command: "scan" | "rules" | "login" | "logout" | "upload" | "help" | "version";
   targetPath: string;
   json: boolean;
   outFile?: string;
@@ -25,10 +31,14 @@ export interface CliOptions {
   version: boolean;
   dbUrlEnv?: string;
   allowProjectCode: boolean;
+  serverUrl?: string;
+  token?: string;
+  yes?: boolean;
+  projectName?: string;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
-  let command: "scan" | "rules" | "help" | "version" = "scan";
+  let command: "scan" | "rules" | "login" | "logout" | "upload" | "help" | "version" = "scan";
   let targetPath = ".";
   let json = false;
   let outFile: string | undefined;
@@ -37,6 +47,10 @@ export function parseCliArgs(argv: string[]): CliOptions {
   let version = false;
   let dbUrlEnv: string | undefined;
   let allowProjectCode = false;
+  let serverUrl: string | undefined;
+  let token: string | undefined;
+  let yes = false;
+  let projectName: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -53,6 +67,32 @@ export function parseCliArgs(argv: string[]): CliOptions {
       noColor = true;
     } else if (arg === "--allow-project-code") {
       allowProjectCode = true;
+    } else if (arg === "--yes" || arg === "-y") {
+      yes = true;
+    } else if (arg === "--server") {
+      if (i + 1 < argv.length) {
+        serverUrl = argv[++i];
+      } else {
+        throw new Error("Missing URL for --server flag");
+      }
+    } else if (arg?.startsWith("--server=")) {
+      serverUrl = arg.slice(9);
+    } else if (arg === "--token") {
+      if (i + 1 < argv.length) {
+        token = argv[++i];
+      } else {
+        throw new Error("Missing token string for --token flag");
+      }
+    } else if (arg?.startsWith("--token=")) {
+      token = arg.slice(8);
+    } else if (arg === "--project") {
+      if (i + 1 < argv.length) {
+        projectName = argv[++i];
+      } else {
+        throw new Error("Missing project name for --project flag");
+      }
+    } else if (arg?.startsWith("--project=")) {
+      projectName = arg.slice(10);
     } else if (arg === "--out") {
       if (i + 1 < argv.length) {
         outFile = argv[++i];
@@ -71,6 +111,15 @@ export function parseCliArgs(argv: string[]): CliOptions {
       dbUrlEnv = arg.slice(13);
     } else if (arg === "rules") {
       command = "rules";
+    } else if (arg === "login") {
+      command = "login";
+    } else if (arg === "logout") {
+      command = "logout";
+    } else if (arg === "upload") {
+      command = "upload";
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        targetPath = argv[++i] as string;
+      }
     } else if (arg === "scan") {
       command = "scan";
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
@@ -90,7 +139,11 @@ export function parseCliArgs(argv: string[]): CliOptions {
     help,
     version,
     dbUrlEnv,
-    allowProjectCode
+    allowProjectCode,
+    serverUrl,
+    token,
+    yes,
+    projectName
   };
 }
 
@@ -102,13 +155,22 @@ Tagline: "Find the cause. Fix the environment. Ship the code."
 USAGE:
   stackdoctor scan [path] [flags]
   stackdoctor rules [flags]
-  stackdoctor [path] [flags]
+  stackdoctor login --server <url> [flags]
+  stackdoctor logout
+  stackdoctor upload [reportFile | path] [flags]
 
 COMMANDS:
-  scan [path]        Scan and diagnose a project directory (default: current directory)
+  scan [path]        Scan and diagnose a project directory (default: current directory, 100% offline)
   rules              List all diagnostic rules supported by StackDoctor
+  login              Authenticate with a StackDoctor server and securely store API token
+  logout             Remove stored server credentials
+  upload [target]    Upload a diagnostic report with interactive preview and confirmation
 
 FLAGS:
+  --server <url>     StackDoctor server URL (HTTPS required for remote servers; HTTP only for localhost)
+  --token <token>    API token for authentication (or use STACKDOCTOR_TOKEN env var)
+  --yes, -y          Skip interactive confirmation prompt on report upload
+  --project <name>   Target project name for upload
   --json             Print valid JSON report to stdout
   --out <file>       Write valid JSON report to a file
   --db-url-env <VAR> Opt-in to authenticated database checks using the named environment variable
@@ -118,10 +180,107 @@ FLAGS:
   --help, -h         Display this help message
 
 EXIT CODES:
-  0                  Diagnostics passed with no critical or high severity findings
-  1                  Diagnostics found environment issues (high or critical severity)
-  2                  Tool error (invalid directory path, schema validation failure)
+  0                  Success (no critical/high findings or successful command)
+  1                  Diagnostics found environment issues (high or critical severity) or auth failure
+  2                  Tool error (invalid directory path, schema validation failure, missing argument)
 `);
+}
+
+async function promptInput(question: string): Promise<string> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
+/**
+ * Builds diagnostic checks and runs rules on a project directory.
+ */
+async function generateDirectoryReport(
+  realDir: string,
+  opts: CliOptions
+): Promise<Report> {
+  const registry = createDefaultRuleRegistry();
+  const rules = registry.list();
+  const initialScan = await scanProject(realDir);
+  const evaluationContext = await collectEvaluationContext(realDir, opts, initialScan);
+
+  const diagnosticChecks: DiagnosticCheck[] = [
+    {
+      id: "check_node_modules",
+      title: "Check Node.js dependencies installed",
+      category: "dependencies",
+      execute: async () => {
+        if (!evaluationContext.files.hasPackageJson) {
+          return { status: "skipped", evidence: [] };
+        }
+        if (evaluationContext.files.hasNodeModules) {
+          return {
+            status: "passed",
+            evidence: [
+              {
+                id: "ev-node-modules-found",
+                kind: "file_presence",
+                description: "node_modules directory found",
+                observed: "node_modules exists",
+                source: "fs.existsSync",
+                collectedAt: new Date().toISOString()
+              }
+            ]
+          };
+        }
+        return {
+          status: "failed",
+          evidence: [
+            {
+              id: "ev-node-modules-missing",
+              kind: "file_presence",
+              description: "node_modules directory missing",
+              observed: "node_modules does not exist",
+              source: "fs.existsSync",
+              collectedAt: new Date().toISOString()
+            }
+          ]
+        };
+      }
+    }
+  ];
+
+  const bridgedRules: DiagnosticRule[] = rules.map((r) => ({
+    id: r.id,
+    title: r.title,
+    category: r.category ?? "environment",
+    description: r.description,
+    technologies: r.technologies,
+    severity: r.severity,
+    confidence: r.confidence,
+    docs: r.docs,
+    evaluate: () => {
+      if (!r.preconditions(evaluationContext)) {
+        return null;
+      }
+      return r.evaluate(evaluationContext);
+    }
+  }));
+
+  const report = await runDiagnostics({
+    dir: realDir,
+    rules: bridgedRules,
+    checks: diagnosticChecks
+  });
+
+  const validation = validateReport(report);
+  if (!validation.success) {
+    throw new Error(`Report failed validation: ${validation.errors.join("; ")}`);
+  }
+
+  return report;
 }
 
 /**
@@ -146,6 +305,7 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
     return 0;
   }
 
+  // --- COMMAND: rules ---
   if (opts.command === "rules") {
     const registry = createDefaultRuleRegistry();
     const rules = registry.list();
@@ -175,7 +335,147 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
     return 0;
   }
 
-  // 1. Validate target directory
+  // --- COMMAND: login ---
+  if (opts.command === "login") {
+    const serverUrl = opts.serverUrl || process.env.STACKDOCTOR_SERVER || "http://localhost:3000";
+
+    try {
+      validateServerUrl(serverUrl);
+    } catch (err) {
+      console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      return 2;
+    }
+
+    let token = opts.token || process.env.STACKDOCTOR_TOKEN;
+    if (!token) {
+      token = await promptInput("Enter StackDoctor API token: ");
+    }
+
+    if (!token) {
+      console.error("Error: API token is required to log in.");
+      return 2;
+    }
+
+    // Verify token with server
+    try {
+      const parsedUrl = new URL(serverUrl);
+      const verifyRes = await fetch(`${parsedUrl.origin}/api/v1/rules`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!verifyRes.ok) {
+        console.error("Error: Authentication failed. Invalid or revoked API token.");
+        return 1;
+      }
+    } catch (err) {
+      console.error(
+        `Error connecting to server at ${serverUrl}: ${err instanceof Error ? err.message : String(err)}`
+      );
+      return 1;
+    }
+
+    saveConfig({ serverUrl, token });
+    console.log(`Successfully logged in to ${serverUrl}. Credentials stored securely.`);
+    return 0;
+  }
+
+  // --- COMMAND: logout ---
+  if (opts.command === "logout") {
+    clearConfig();
+    console.log("Logged out successfully. Removed stored credentials.");
+    return 0;
+  }
+
+  // --- COMMAND: upload ---
+  if (opts.command === "upload") {
+    const stored = loadConfig();
+    const token = opts.token || process.env.STACKDOCTOR_TOKEN || stored?.token;
+    const serverUrl = opts.serverUrl || process.env.STACKDOCTOR_SERVER || stored?.serverUrl;
+
+    if (!token) {
+      console.error(
+        "Error: Not authenticated. Please run 'stackdoctor login' or set the STACKDOCTOR_TOKEN environment variable."
+      );
+      return 1;
+    }
+
+    if (!serverUrl) {
+      console.error(
+        "Error: Server URL not configured. Please run 'stackdoctor login --server <url>' or pass --server."
+      );
+      return 2;
+    }
+
+    let report: Report;
+    const resolvedTarget = path.resolve(opts.targetPath);
+
+    // If target is an existing json report file
+    if (fs.existsSync(resolvedTarget) && fs.statSync(resolvedTarget).isFile()) {
+      try {
+        const fileContent = fs.readFileSync(resolvedTarget, "utf-8");
+        const parsedJson = JSON.parse(fileContent);
+        const validated = validateReport(parsedJson);
+        if (!validated.success) {
+          console.error(`Error: File "${opts.targetPath}" is not a valid StackDoctor report:`);
+          for (const err of validated.errors) {
+            console.error(`  - ${err}`);
+          }
+          return 2;
+        }
+        report = validated.data;
+      } catch (err) {
+        console.error(`Error reading report file: ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+    } else {
+      // Target is a directory: generate report
+      let realDir: string;
+      try {
+        realDir = validateDirectory(opts.targetPath);
+      } catch (err) {
+        console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+
+      try {
+        report = await generateDirectoryReport(realDir, opts);
+      } catch (err) {
+        console.error(`Diagnostic execution failed: ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+    }
+
+    if (opts.projectName) {
+      report.projectName = opts.projectName;
+    }
+
+    // 1. Show preview
+    console.log(formatReportPreview(report));
+
+    // 2. Explicit confirmation unless --yes is specified
+    if (!opts.yes) {
+      const confirm = await promptInput(`\nUpload this report to ${serverUrl}? (y/N): `);
+      if (confirm.toLowerCase() !== "y" && confirm.toLowerCase() !== "yes") {
+        console.log("Upload cancelled by user.");
+        return 0;
+      }
+    }
+
+    // 3. Upload report
+    console.log(`Uploading report to ${serverUrl}...`);
+    try {
+      const result = await uploadReport(report, { serverUrl, token });
+      console.log(`Report uploaded successfully! Run ID: ${result.runId}`);
+      return 0;
+    } catch (err) {
+      console.error(`Upload error: ${err instanceof Error ? err.message : String(err)}`);
+      return 1;
+    }
+  }
+
+  // --- COMMAND: scan (purely local, 100% offline) ---
   let realDir: string;
   try {
     realDir = validateDirectory(opts.targetPath);
@@ -184,150 +484,23 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
     return 2;
   }
 
-  // 2. Load registry rules
-  const registry = createDefaultRuleRegistry();
-  const rules = registry.list();
-
-  // 3. Collect comprehensive evidence and build evaluation context
-  let initialScan;
-  try {
-    initialScan = await scanProject(realDir);
-  } catch (err) {
-    console.error(`Project scan failed: ${err instanceof Error ? err.message : String(err)}`);
-    return 2;
-  }
-
-  const evaluationContext = await collectEvaluationContext(realDir, opts, initialScan);
-
-  // 4. Create diagnostic checks and rule bridge
-  const diagnosticChecks: DiagnosticCheck[] = [
-    {
-      id: "check_node_modules",
-      title: "Check Node.js dependencies installed",
-      category: "dependencies",
-      execute: async () => {
-        if (!evaluationContext.files.hasPackageJson) {
-          return { status: "skipped", evidence: [] };
-        }
-        if (evaluationContext.files.hasNodeModules) {
-          return {
-            status: "passed",
-            evidence: [
-              {
-                id: "ev-node-modules-found",
-                kind: "file_presence",
-                description: "node_modules directory found",
-                observed: "node_modules exists",
-                source: "filesystem",
-                collectedAt: new Date().toISOString()
-              }
-            ]
-          };
-        }
-        return {
-          status: "failed",
-          evidence: [
-            {
-              id: "ev-node-modules-missing",
-              kind: "file_presence",
-              description: "node_modules directory is absent",
-              observed: "package.json exists in the project root, but node_modules does not exist.",
-              source: "filesystem",
-              collectedAt: new Date().toISOString()
-            }
-          ]
-        };
-      }
-    },
-    {
-      id: "check_env_file",
-      title: "Check .env configuration presence",
-      category: "configuration",
-      execute: async () => {
-        if (!evaluationContext.files.hasEnvExample) {
-          return { status: "skipped", evidence: [] };
-        }
-        if (evaluationContext.files.hasEnv) {
-          return {
-            status: "passed",
-            evidence: [
-              {
-                id: "ev-env-found",
-                kind: "file_presence",
-                description: ".env file exists",
-                observed: ".env file is present",
-                source: "filesystem",
-                collectedAt: new Date().toISOString()
-              }
-            ]
-          };
-        }
-        return {
-          status: "warning",
-          evidence: [
-            {
-              id: "ev-env-missing",
-              kind: "file_presence",
-              description: ".env file is absent while .env.example exists",
-              observed: ".env.example exists, but .env is absent.",
-              source: "filesystem",
-              collectedAt: new Date().toISOString()
-            }
-          ]
-        };
-      }
-    }
-  ];
-
-  // Convert rules to runner diagnostic rules
-  const bridgedRules: DiagnosticRule[] = rules.map((r) => ({
-    id: r.id,
-    title: r.title,
-    category: r.category,
-    description: r.description,
-    technologies: r.technologies,
-    severity: r.severity,
-    confidence: r.confidence,
-    docs: r.docs,
-    evaluate: () => {
-      if (!r.preconditions(evaluationContext)) {
-        return null;
-      }
-      return r.evaluate(evaluationContext);
-    }
-  }));
-
-  // 4. Run diagnostics lifecycle
   let report: Report;
   try {
-    report = await runDiagnostics({
-      dir: realDir,
-      rules: bridgedRules,
-      checks: diagnosticChecks
-    });
+    report = await generateDirectoryReport(realDir, opts);
   } catch (err) {
     console.error(`Diagnostic execution failed: ${err instanceof Error ? err.message : String(err)}`);
     return 2;
   }
 
-  // 5. Validate Report against schema
-  const validation = validateReport(report);
-  if (!validation.success) {
-    console.error(`Internal validation error: report failed schema validation:`);
-    for (const msg of validation.errors) {
-      console.error(`  - ${msg}`);
-    }
-    return 2;
-  }
-
-  // 6. Output handling
   const jsonOutput = JSON.stringify(report, null, 2);
 
   if (opts.outFile) {
     try {
       fs.writeFileSync(path.resolve(opts.outFile), jsonOutput + "\n", "utf-8");
     } catch (err) {
-      console.error(`Failed to write output to file "${opts.outFile}": ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `Failed to write output to file "${opts.outFile}": ${err instanceof Error ? err.message : String(err)}`
+      );
       return 2;
     }
   }
@@ -339,9 +512,6 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
     console.log(formatted);
   }
 
-  // 7. Exit code calculation:
-  // 0: no failures (no high/critical findings)
-  // 1: high or critical findings present
   const hasHighOrCritical = report.findings.some(
     (f) => f.severity === "high" || f.severity === "critical"
   );
@@ -351,4 +521,3 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
 
 export const CLI_NAME = "stackdoctor";
 export const CLI_CORE = "@stackdoctor/core";
-

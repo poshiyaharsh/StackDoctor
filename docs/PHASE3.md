@@ -17,7 +17,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 |---|---|---|---|---|
 | 3A | API scaffold, MongoDB, authentication | Done | a12454c | 2026-10-26 |
 | 3B | Projects, diagnostic runs, rules endpoints, authorization | Done | a1d57c2 | 2026-10-26 |
-| 3C | API tokens + CLI login/upload with preview | Not started | - | - |
+| 3C | API tokens + CLI login/upload with preview | Done | pending | 2026-10-26 |
 | 3D | Web scaffold, landing page, auth pages | Not started | - | - |
 | 3E | Dashboard, projects, report and finding pages, settings | Not started | - | - |
 | 3F | Security tests, docs, docker-compose, final verification | Not started | - | - |
@@ -159,17 +159,17 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Plain token returned exactly once; only a hash in the DB
-- [ ] CLI upload shows a preview and needs confirmation
-- [ ] `scan` makes no network calls
-- [ ] Token never appears in any log, output, or error
-- [ ] Revoked/expired tokens are rejected
+- [x] Plain token returned exactly once; only a hash in the DB
+- [x] CLI upload shows a preview and needs confirmation
+- [x] `scan` makes no network calls
+- [x] Token never appears in any log, output, or error
+- [x] Revoked/expired tokens are rejected
 
 **Run log (Antigravity fills):**
-- Files:
-- Command results:
-- Problems:
-- Decisions:
+- Files: `apps/api/src/models/api-token.ts`, `apps/api/src/routes/tokens.ts`, `apps/api/src/middleware/auth.ts`, `apps/api/src/app.ts`, `apps/api/src/index.ts`, `apps/cli/src/config-store.ts`, `apps/cli/src/uploader.ts`, `apps/cli/src/index.ts`, `apps/api/test/tokens.test.ts`, `apps/cli/test/upload.test.ts`
+- Command results: `npm run build` passed (exit code 0); `npm run lint` passed (exit code 0); `npm run typecheck` passed (exit code 0); `npm test` passed (203/203 tests across 33 suites); `npm run eval` passed (100% detection, 0% false positives).
+- Problems: DiagnosticRule synchronous evaluation signature in CLI report generation handled properly; restricted config directory file permissions (`0o600`) applied safely across platforms.
+- Decisions: Plaintext token is generated cryptographically (`stk_live_...`) and returned once upon creation; only SHA-256 hash is persisted. Bearer tokens authenticate CLI requests and bypass CSRF checks while updating `lastUsedAt`. CLI enforces HTTPS for all remote servers, allowing HTTP strictly for localhost/127.0.0.1. CLI `scan` is guaranteed to make zero network calls.
 
 ---
 

@@ -14,6 +14,7 @@ import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
 import { diagnosticRunsRouter } from "./routes/diagnostic-runs.js";
 import { rulesRouter } from "./routes/rules.js";
+import { tokensRouter } from "./routes/tokens.js";
 
 export function buildApp(config: ApiConfig): Express {
   const app = express();
@@ -96,6 +97,7 @@ export function buildApp(config: ApiConfig): Express {
   app.use("/api/v1/projects", projectsRouter);
   app.use("/api/v1/diagnostic-runs", diagnosticRunsRouter);
   app.use("/api/v1/rules", rulesRouter);
+  app.use("/api/v1/tokens", tokensRouter);
 
   // 8. 404 Handler
   app.use((req: Request, res: Response) => {

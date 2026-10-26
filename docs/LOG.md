@@ -379,6 +379,42 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 3, Run 3C: API tokens + CLI login/upload with preview.
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 3, Run 3C: API Tokens & CLI Upload with Preview
+- **Prompt used:** PHASE3.md > Run 3C: API tokens and CLI upload
+- **What was done:** Implemented API tokens in `apps/api` with SHA-256 hash persistence, Bearer token authentication, and CLI commands `login`, `logout`, and `upload` with interactive terminal preview and confirmation:
+  1. Built `ApiToken` model in `apps/api/src/models/api-token.ts` generating cryptographically random tokens (`stk_live_...`), storing only SHA-256 hashes and 12-char display prefixes, and returning plain tokens exactly once at creation.
+  2. Implemented `apps/api/src/routes/tokens.ts` for issuing, listing, and revoking API tokens. Plaintext tokens and hashes are never exposed in listing or queries.
+  3. Upgraded `requireAuth` in `apps/api/src/middleware/auth.ts` to accept `Authorization: Bearer <token>`, validating the token hash against active, non-revoked, and non-expired records in MongoDB, automatically establishing identity and updating `lastUsedAt`.
+  4. Built CLI configuration store in `apps/cli/src/config-store.ts` storing server URL and token with restricted file permissions (`0o600`), and enforcing that insecure HTTP connections are strictly permitted only for `localhost`/`127.0.0.1` (all remote servers must use HTTPS).
+  5. Built CLI uploader in `apps/cli/src/uploader.ts` formatting a terminal preview of the report (project name, OS, tool version, status, counts, finding titles), redacting all text locally before network transmission, and uploading over HTTPS.
+  6. Added CLI commands to `apps/cli/src/index.ts`:
+     - `stackdoctor login --server <url>` (verifies token, saves credentials).
+     - `stackdoctor logout` (clears stored credentials).
+     - `stackdoctor upload [target]` (shows preview, prompts for confirmation `y/N`, supports `--yes` for CI/non-interactive, provides clean 401/422/network error reporting without leaking tokens).
+     - Guaranteed `stackdoctor scan` makes zero network calls and remains 100% offline.
+  7. Added comprehensive test suites:
+     - `apps/api/test/tokens.test.ts`: Token issuance, plaintext token shown once, SHA-256 hash storage, Bearer authentication on protected endpoints, revocation, and expiration handling.
+     - `apps/cli/test/upload.test.ts`: Server URL localhost-only HTTP enforcement, file permissions, preview formatting, upload with pre-redaction, 401/422 handling without token leaks, non-interactive `--yes` uploads, login/logout, and verification that `scan` makes 0 network calls (tested with mocked fetch).
+- **Files created/changed:** `apps/api/src/models/api-token.ts`, `apps/api/src/routes/tokens.ts`, `apps/api/src/middleware/auth.ts`, `apps/api/src/app.ts`, `apps/api/src/index.ts`, `apps/cli/src/config-store.ts`, `apps/cli/src/uploader.ts`, `apps/cli/src/index.ts`, `apps/api/test/tokens.test.ts`, `apps/cli/test/upload.test.ts`, `docs/PHASE3.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (203/203 tests across 33 suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm run eval`: Passed (100% detection, 0% false positives)
+  - Plain token returned exactly once; only a hash in the DB: Verified
+  - CLI upload shows a preview and needs confirmation: Verified
+  - `scan` makes no network calls: Verified
+  - Token never appears in any log, output, or error: Verified
+  - Revoked/expired tokens are rejected: Verified
+- **Problems / errors:** Handled DiagnosticRule synchronous evaluation signature in CLI report generation; ensured restricted config directory file permissions (`0o600`) applied safely across platforms.
+- **Decisions made:** Plaintext token is generated cryptographically (`stk_live_...`) and returned once upon creation; only SHA-256 hash is persisted. Bearer tokens authenticate CLI requests and bypass CSRF checks while updating `lastUsedAt`. CLI enforces HTTPS for all remote servers, allowing HTTP strictly for localhost/127.0.0.1. CLI `scan` is guaranteed to make zero network calls.
+- **Next step:** Phase 3, Run 3D: Web scaffold, landing page, auth pages (`apps/web`).
+- **Status:** Done
+
+
 
 
 
