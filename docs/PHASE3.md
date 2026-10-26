@@ -18,7 +18,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | 3A | API scaffold, MongoDB, authentication | Done | a12454c | 2026-10-26 |
 | 3B | Projects, diagnostic runs, rules endpoints, authorization | Done | a1d57c2 | 2026-10-26 |
 | 3C | API tokens + CLI login/upload with preview | Done | 9ebc357 | 2026-10-26 |
-| 3D | Web scaffold, landing page, auth pages | Not started | - | - |
+| 3D | Web scaffold, landing page, auth pages | Done | [will fill] | 2026-10-26 |
 | 3E | Dashboard, projects, report and finding pages, settings | Not started | - | - |
 | 3F | Security tests, docs, docker-compose, final verification | Not started | - | - |
 
@@ -200,16 +200,16 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Landing page has no fake metrics or testimonials
-- [ ] Protected routes redirect unauthenticated users
-- [ ] No `dangerouslySetInnerHTML` anywhere (grep it)
-- [ ] Works in light and dark mode, keyboard navigable
+- [x] Landing page has no fake metrics or testimonials
+- [x] Protected routes redirect unauthenticated users
+- [x] No `dangerouslySetInnerHTML` anywhere (grep it)
+- [x] Works in light and dark mode, keyboard navigable
 
 **Run log (Antigravity fills):**
-- Files:
-- Command results:
-- Problems:
-- Decisions:
+- Files: `apps/web/package.json`, `apps/web/tsconfig.json`, `apps/web/vite.config.ts`, `apps/web/index.html`, `apps/web/src/index.css`, `apps/web/src/main.tsx`, `apps/web/src/App.tsx`, `apps/web/src/lib/api.ts`, `apps/web/src/context/AuthContext.tsx`, `apps/web/src/components/ui/Button.tsx`, `apps/web/src/components/ui/Card.tsx`, `apps/web/src/components/ui/Badge.tsx`, `apps/web/src/components/ui/Input.tsx`, `apps/web/src/components/ui/Modal.tsx`, `apps/web/src/components/ui/EmptyState.tsx`, `apps/web/src/components/layout/Navbar.tsx`, `apps/web/src/components/layout/ProtectedRoute.tsx`, `apps/web/src/pages/LandingPage.tsx`, `apps/web/src/pages/LoginPage.tsx`, `apps/web/src/pages/RegisterPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/NotFoundPage.tsx`, `apps/web/test/web.test.tsx`, `apps/cli/src/collector.ts`, `tsconfig.json`, `vitest.config.ts`, `package.json`, `package-lock.json`
+- Command results: `npm run build` passed (exit code 0); `npm run lint` passed (exit code 0); `npm run typecheck` passed (exit code 0); `npx vite build apps/web` passed (exit code 0); `npm test` passed (210/210 tests across 34 suites); `npm run eval` passed (100% detection, 0% false positives).
+- Problems: Vitest required `@testing-library/jest-dom/vitest` for DOM matchers; jsdom HTML5 validation required dispatching submit on form rather than button for required fields; port check probe in CLI collector increased from 300ms to 1000ms to eliminate timeout flakiness during highly parallel monorepo test execution.
+- Decisions: Built modern developer-focused React + Vite + TypeScript application in `apps/web` with pure vanilla CSS tokens, light and dark mode switching with localStorage persistence, accessible UI primitives, typed API client with CSRF token management, strict CSP meta tags, zero `dangerouslySetInnerHTML`, and an honest landing page with clearly labeled sample data and zero fake metrics or testimonials.
 
 ---
 

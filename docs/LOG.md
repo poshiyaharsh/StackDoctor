@@ -414,6 +414,41 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 3, Run 3D: Web scaffold, landing page, auth pages (`apps/web`).
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 3, Run 3D: Web scaffold, landing page, auth pages (apps/web)
+- **Prompt used:** PHASE3.md > Run 3D: Web scaffold, landing page, auth pages
+- **What was done:** Scaffolded and built the React + Vite + TypeScript web application in `apps/web`:
+  1. Configured `@stackdoctor/web` with React 19, React Router v7, `@tanstack/react-query`, Vite 6 with proxy `/api` -> `http://localhost:3000`, `@stackdoctor/schemas` path alias, and strict Content-Security-Policy meta tags in `index.html`.
+  2. Built a pure vanilla CSS design system in `apps/web/src/index.css` with CSS custom variables for light and dark themes, consistent typography (Inter, JetBrains Mono), responsive card surfaces, badge variants, and interactive buttons.
+  3. Built accessible, keyboard-navigable UI components: `Button`, `Card`, `Badge`, `Input`, `Modal`, `EmptyState`.
+  4. Built typed API client in `apps/web/src/lib/api.ts` with automatic CSRF token fetching (`/api/v1/auth/csrf-token`) and state-changing request header attachment (`X-CSRF-Token`), using `credentials: "include"`.
+  5. Built `AuthProvider` and `useAuth` hook in `apps/web/src/context/AuthContext.tsx` providing user state loaded from `/api/v1/auth/me`, login, register, logout, and dark/light theme switching persisted in `localStorage`.
+  6. Implemented layout and routing:
+     - `Navbar` with theme toggle, auth-sensitive navigation links, and logout trigger.
+     - `ProtectedRoute` wrapper guarding internal routes and redirecting unauthenticated users to `/login`.
+     - `LandingPage` with hero ("Find the cause. Fix the environment. Ship the code."), problem statement, 3-step workflow, supported technologies, a clearly labeled sample/example report (with disclaimer that it is illustrative mock data), privacy and security principles, CLI installation guide, zero fake metrics, and zero fake testimonials.
+     - `LoginPage` and `RegisterPage` with comprehensive client validation and error states.
+     - `DashboardPage` placeholder and `NotFoundPage` (404).
+  7. Conducted security audit: Verified zero occurrences of `dangerouslySetInnerHTML` in `apps/web/src` and verified all external links use `rel="noopener noreferrer"`.
+  8. Created comprehensive test suite in `apps/web/test/web.test.tsx` verifying landing page integrity, auth form validation, protected route enforcement, API client CSRF injection, and source code security.
+- **Files created/changed:** `apps/web/package.json`, `apps/web/tsconfig.json`, `apps/web/vite.config.ts`, `apps/web/index.html`, `apps/web/src/index.css`, `apps/web/src/main.tsx`, `apps/web/src/App.tsx`, `apps/web/src/lib/api.ts`, `apps/web/src/context/AuthContext.tsx`, `apps/web/src/components/ui/Button.tsx`, `apps/web/src/components/ui/Card.tsx`, `apps/web/src/components/ui/Badge.tsx`, `apps/web/src/components/ui/Input.tsx`, `apps/web/src/components/ui/Modal.tsx`, `apps/web/src/components/ui/EmptyState.tsx`, `apps/web/src/components/layout/Navbar.tsx`, `apps/web/src/components/layout/ProtectedRoute.tsx`, `apps/web/src/pages/LandingPage.tsx`, `apps/web/src/pages/LoginPage.tsx`, `apps/web/src/pages/RegisterPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/NotFoundPage.tsx`, `apps/web/test/web.test.tsx`, `apps/cli/src/collector.ts`, `tsconfig.json`, `vitest.config.ts`, `package.json`, `package-lock.json`, `docs/PHASE3.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npx vite build apps/web`: Passed (production bundle built in 1.17s)
+  - `npm test`: Passed (210/210 tests across 34 suites passed)
+  - `npm run eval`: Passed (100% detection, 0% false positives)
+  - Landing page has no fake metrics or testimonials: Verified
+  - Protected routes redirect unauthenticated users: Verified
+  - No `dangerouslySetInnerHTML` anywhere: Verified (0 occurrences)
+  - Works in light and dark mode, keyboard navigable: Verified
+- **Problems / errors:** Test DOM matchers required `@testing-library/jest-dom/vitest`; jsdom HTML5 validation required dispatching submit on form rather than button for required fields; port check probe in CLI collector increased from 300ms to 1000ms to eliminate timeout flakiness during highly parallel monorepo test execution.
+- **Decisions made:** Built modern developer-focused React + Vite + TypeScript application in `apps/web` with pure vanilla CSS tokens, light and dark mode switching with localStorage persistence, accessible UI primitives, typed API client with CSRF token management, strict CSP meta tags, zero `dangerouslySetInnerHTML`, and an honest landing page with clearly labeled sample data and zero fake metrics or testimonials.
+- **Next step:** Phase 3, Run 3E: Application pages (Dashboard, projects, report and finding pages, settings).
+- **Status:** Done
+
 
 
 

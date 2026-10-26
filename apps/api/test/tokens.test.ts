@@ -161,7 +161,7 @@ describe("StackDoctor API Tokens (Run 3C)", () => {
       expect(revokedRes.status).toBe(401);
 
       // 3. Expired token
-      const expiredTokenDoc = await ApiToken.create({
+      await ApiToken.create({
         ownerId: new mongoose.Types.ObjectId(),
         name: "Expired Token",
         prefix: "stk_live_expi",

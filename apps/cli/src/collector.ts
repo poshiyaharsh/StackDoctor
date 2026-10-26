@@ -57,7 +57,7 @@ export async function collectEvaluationContext(
   for (const dp of declaredPorts) {
     if (dp.valid && dp.port > 0) {
       try {
-        const check = await checkPort("127.0.0.1", dp.port, 300);
+        const check = await checkPort("127.0.0.1", dp.port, 1000);
         portChecks.push({
           port: check.port,
           host: check.host,

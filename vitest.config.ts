@@ -10,7 +10,8 @@ export default defineConfig({
     environment: "node",
     include: [
       "packages/*/test/**/*.test.ts",
-      "apps/*/test/**/*.test.ts"
+      "apps/*/test/**/*.test.ts",
+      "apps/*/test/**/*.test.tsx"
     ]
   },
   resolve: {
