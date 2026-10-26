@@ -1,0 +1,48 @@
+name: "StackDoctor Diagnostics"
+description: "Scan and diagnose developer environments offline with deterministic exit codes and step summaries"
+author: "StackDoctor Team"
+
+inputs:
+  path:
+    description: "Target directory to scan"
+    required: false
+    default: "."
+  fail-on:
+    description: "Finding severity threshold to trigger job failure (info|low|medium|high|critical)"
+    required: false
+    default: "high"
+  upload-artifact:
+    description: "Whether to upload the generated JSON diagnostic report as a workflow artifact"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    # actions/setup-node@v4.1.0
+    - name: Ensure Node.js is setup
+      uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af
+      with:
+        node-version: 20
+
+    - name: Run StackDoctor Scan
+      shell: bash
+      env:
+        TARGET_PATH: ${{ inputs.path }}
+        FAIL_ON_SEV: ${{ inputs.fail-on }}
+      run: |
+        # Safely pass variables via environment to prevent script injection
+        npx --yes stackdoctor@latest scan "$TARGET_PATH" \
+          --ci \
+          --fail-on "$FAIL_ON_SEV" \
+          --format markdown \
+          --out stackdoctor-report.json >> "$GITHUB_STEP_SUMMARY"
+
+    # actions/upload-artifact@v4.6.0
+    - name: Upload Diagnostic Report
+      if: ${{ inputs.upload-artifact == 'true' || inputs.upload-artifact == true }}
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+      with:
+        name: stackdoctor-report
+        path: stackdoctor-report.json
+        retention-days: 14

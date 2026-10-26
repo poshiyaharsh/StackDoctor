@@ -1,0 +1,104 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`JSON Report Stability and Schema Invariance (Run 4B) > matches structural JSON snapshot preventing unintentional breaking schema mutations 1`] = `
+{
+  "checks": [
+    {
+      "category": "runtime",
+      "durationMs": 15,
+      "evidence": [
+        {
+          "collectedAt": "2026-10-26T12:00:02.000Z",
+          "description": "node_modules inspection",
+          "id": "ev_check_node_deps",
+          "kind": "filesystem",
+          "observed": "Directory not found",
+          "source": "fs.existsSync",
+        },
+      ],
+      "id": "check_node_deps",
+      "status": "failed",
+      "title": "Check Node Dependencies",
+    },
+  ],
+  "completedAt": "2026-10-26T12:00:05.000Z",
+  "findings": [
+    {
+      "category": "dependency",
+      "confidence": "confirmed",
+      "docs": [
+        "https://docs.npmjs.com/cli/install",
+      ],
+      "evidence": [
+        {
+          "collectedAt": "2026-10-26T12:00:03.000Z",
+          "description": "node_modules is missing",
+          "id": "ev_finding_1",
+          "kind": "filesystem",
+          "observed": "Directory node_modules was not found in project root",
+          "source": "fs.existsSync",
+        },
+      ],
+      "possibleCauses": [
+        "Fresh git clone before running package manager install",
+      ],
+      "recommendations": [
+        {
+          "commandOrAction": "npm install",
+          "expectedResult": "node_modules created",
+          "problem": "Cannot run or test without installed dependencies",
+          "relevance": "Required to execute application code",
+          "risks": "None",
+          "undo": "rm -rf node_modules",
+          "verification": "test -d node_modules",
+        },
+      ],
+      "ruleId": "NODE_DEPS_NOT_INSTALLED",
+      "severity": "high",
+      "status": "failed",
+      "title": "Dependencies not installed in node_modules",
+      "verificationStatus": "unverified",
+    },
+  ],
+  "operatingSystem": "linux",
+  "projectName": "canonical-service",
+  "schemaVersion": "1.0.0",
+  "startedAt": "2026-10-26T12:00:00.000Z",
+  "status": "completed_with_warnings",
+  "summary": {
+    "bySeverity": {
+      "critical": 0,
+      "high": 1,
+      "info": 0,
+      "low": 0,
+      "medium": 0,
+    },
+    "byStatus": {
+      "error": 0,
+      "failed": 1,
+      "passed": 0,
+      "skipped": 0,
+      "warning": 0,
+    },
+    "totalChecks": 1,
+    "totalFindings": 1,
+  },
+  "technologies": [
+    {
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "collectedAt": "2026-10-26T12:00:01.000Z",
+          "description": "package.json detected",
+          "id": "ev_tech_node",
+          "kind": "file",
+          "observed": "Found package.json with engine definitions",
+          "source": "package.json",
+        },
+      ],
+      "name": "Node.js",
+    },
+  ],
+  "toolVersion": "0.1.0",
+}
+`;

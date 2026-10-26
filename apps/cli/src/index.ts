@@ -13,7 +13,7 @@ import {
 } from "@stackdoctor/core";
 import { createDefaultRuleRegistry } from "@stackdoctor/rules";
 import { validateReport, type Report, type Severity, CURRENT_TOOL_VERSION } from "@stackdoctor/schemas";
-import { formatTerminalReport } from "./format.js";
+import { formatTerminalReport, formatMarkdownReport } from "./format.js";
 import { collectEvaluationContext } from "./collector.js";
 import {
   saveConfig,
@@ -23,6 +23,13 @@ import {
 } from "./config-store.js";
 import { formatReportPreview, uploadReport } from "./uploader.js";
 import { copyToClipboard } from "./clipboard.js";
+
+export class InvalidUsageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidUsageError";
+  }
+}
 
 export interface CliOptions {
   command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "help" | "version";
@@ -41,6 +48,10 @@ export interface CliOptions {
   minSeverity?: Severity;
   copy?: boolean;
   noEvidence?: boolean;
+  ci: boolean;
+  failOn: Severity;
+  quiet: boolean;
+  format: "text" | "json" | "markdown";
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
@@ -60,6 +71,13 @@ export function parseCliArgs(argv: string[]): CliOptions {
   let minSeverity: Severity | undefined;
   let copy = false;
   let noEvidence = false;
+  let ci = false;
+  let failOn: Severity = "high";
+  let quiet = false;
+  let format: "text" | "json" | "markdown" = "text";
+
+  const VALID_SEVERITIES = new Set(["info", "low", "medium", "high", "critical"]);
+  const VALID_FORMATS = new Set(["text", "json", "markdown"]);
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -70,8 +88,14 @@ export function parseCliArgs(argv: string[]): CliOptions {
     } else if (arg === "--version" || arg === "-v") {
       version = true;
       command = "version";
+    } else if (arg === "--ci") {
+      ci = true;
+      noColor = true;
+    } else if (arg === "--quiet" || arg === "-q") {
+      quiet = true;
     } else if (arg === "--json") {
       json = true;
+      format = "json";
     } else if (arg === "--no-color") {
       noColor = true;
     } else if (arg === "--allow-project-code") {
@@ -82,51 +106,93 @@ export function parseCliArgs(argv: string[]): CliOptions {
       copy = true;
     } else if (arg === "--no-evidence") {
       noEvidence = true;
-    } else if (arg === "--min-severity") {
-      if (i + 1 < argv.length) {
-        minSeverity = argv[++i] as Severity;
+    } else if (arg === "--format") {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        const val = argv[++i] as "text" | "json" | "markdown";
+        if (!VALID_FORMATS.has(val)) {
+          throw new InvalidUsageError(`Invalid value "${val}" for --format flag. Must be text|json|markdown`);
+        }
+        format = val;
+        if (format === "json") json = true;
       } else {
-        throw new Error("Missing value for --min-severity flag");
+        throw new InvalidUsageError("Missing format string for --format flag. Must be text|json|markdown");
+      }
+    } else if (arg?.startsWith("--format=")) {
+      const val = arg.slice(9) as "text" | "json" | "markdown";
+      if (!VALID_FORMATS.has(val)) {
+        throw new InvalidUsageError(`Invalid value "${val}" for --format flag. Must be text|json|markdown`);
+      }
+      format = val;
+      if (format === "json") json = true;
+    } else if (arg === "--fail-on") {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        const val = argv[++i] as Severity;
+        if (!VALID_SEVERITIES.has(val)) {
+          throw new InvalidUsageError(`Invalid severity "${val}" for --fail-on flag. Must be info|low|medium|high|critical`);
+        }
+        failOn = val;
+      } else {
+        throw new InvalidUsageError("Missing severity value for --fail-on flag. Must be info|low|medium|high|critical");
+      }
+    } else if (arg?.startsWith("--fail-on=")) {
+      const val = arg.slice(10) as Severity;
+      if (!VALID_SEVERITIES.has(val)) {
+        throw new InvalidUsageError(`Invalid severity "${val}" for --fail-on flag. Must be info|low|medium|high|critical`);
+      }
+      failOn = val;
+    } else if (arg === "--min-severity") {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        const val = argv[++i] as Severity;
+        if (!VALID_SEVERITIES.has(val)) {
+          throw new InvalidUsageError(`Invalid severity "${val}" for --min-severity flag. Must be info|low|medium|high|critical`);
+        }
+        minSeverity = val;
+      } else {
+        throw new InvalidUsageError("Missing value for --min-severity flag. Must be info|low|medium|high|critical");
       }
     } else if (arg?.startsWith("--min-severity=")) {
-      minSeverity = arg.slice(15) as Severity;
+      const val = arg.slice(15) as Severity;
+      if (!VALID_SEVERITIES.has(val)) {
+        throw new InvalidUsageError(`Invalid severity "${val}" for --min-severity flag. Must be info|low|medium|high|critical`);
+      }
+      minSeverity = val;
     } else if (arg === "--server") {
-      if (i + 1 < argv.length) {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         serverUrl = argv[++i];
       } else {
-        throw new Error("Missing URL for --server flag");
+        throw new InvalidUsageError("Missing URL for --server flag");
       }
     } else if (arg?.startsWith("--server=")) {
       serverUrl = arg.slice(9);
     } else if (arg === "--token") {
-      if (i + 1 < argv.length) {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         token = argv[++i];
       } else {
-        throw new Error("Missing token string for --token flag");
+        throw new InvalidUsageError("Missing token string for --token flag");
       }
     } else if (arg?.startsWith("--token=")) {
       token = arg.slice(8);
     } else if (arg === "--project") {
-      if (i + 1 < argv.length) {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         projectName = argv[++i];
       } else {
-        throw new Error("Missing project name for --project flag");
+        throw new InvalidUsageError("Missing project name for --project flag");
       }
     } else if (arg?.startsWith("--project=")) {
       projectName = arg.slice(10);
     } else if (arg === "--out") {
-      if (i + 1 < argv.length) {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         outFile = argv[++i];
       } else {
-        throw new Error("Missing file path for --out flag");
+        throw new InvalidUsageError("Missing file path for --out flag");
       }
     } else if (arg?.startsWith("--out=")) {
       outFile = arg.slice(6);
     } else if (arg === "--db-url-env") {
-      if (i + 1 < argv.length) {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         dbUrlEnv = argv[++i];
       } else {
-        throw new Error("Missing environment variable name for --db-url-env flag");
+        throw new InvalidUsageError("Missing environment variable name for --db-url-env flag");
       }
     } else if (arg?.startsWith("--db-url-env=")) {
       dbUrlEnv = arg.slice(13);
@@ -151,7 +217,9 @@ export function parseCliArgs(argv: string[]): CliOptions {
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         targetPath = argv[++i] as string;
       }
-    } else if (!arg?.startsWith("-")) {
+    } else if (arg.startsWith("-")) {
+      throw new InvalidUsageError(`Unknown flag "${arg}"`);
+    } else {
       targetPath = arg as string;
     }
   }
@@ -172,7 +240,11 @@ export function parseCliArgs(argv: string[]): CliOptions {
     projectName,
     minSeverity,
     copy,
-    noEvidence
+    noEvidence,
+    ci,
+    failOn,
+    quiet,
+    format
   };
 }
 
@@ -198,15 +270,19 @@ COMMANDS:
   issue [target]     Generate sanitized GitHub issue draft (100% offline, never sends data)
 
 FLAGS:
+  --ci               Run in CI mode (non-interactive, deterministic ordering, no ANSI colors)
+  --fail-on <s>      Fail with exit code 1 if findings meet or exceed severity (info|low|medium|high|critical, default: high)
+  --format <fmt>     Output format (text|json|markdown, default: text)
+  --quiet, -q        Suppress non-essential console output
+  --json             Print valid JSON report to stdout (shorthand for --format json)
+  --out <file>       Write report or issue draft to a file
+  --min-severity <s> Filter issue draft findings by minimum severity (info|low|medium|high|critical)
+  --copy             Copy generated issue draft to clipboard
+  --no-evidence      Omit observed evidence section from issue draft
   --server <url>     StackDoctor server URL (HTTPS required for remote servers; HTTP only for localhost)
   --token <token>    API token for authentication (or use STACKDOCTOR_TOKEN env var)
   --yes, -y          Skip interactive confirmation prompt on report upload
   --project <name>   Target project name for upload
-  --min-severity <s> Filter issue draft findings by minimum severity (info|low|medium|high|critical)
-  --copy             Copy generated issue draft to clipboard
-  --no-evidence      Omit observed evidence section from issue draft
-  --json             Print valid JSON report to stdout
-  --out <file>       Write report or issue draft to a file
   --db-url-env <VAR> Opt-in to authenticated database checks using the named environment variable
   --allow-project-code Allow running safe, read-only project inspection commands
   --no-color         Disable ANSI terminal colors
@@ -214,9 +290,10 @@ FLAGS:
   --help, -h         Display this help message
 
 EXIT CODES:
-  0                  Success (no critical/high findings or successful command)
-  1                  Diagnostics found environment issues (high or critical severity) or auth failure
-  2                  Tool error (invalid directory path, schema validation failure, missing argument)
+  0                  Success (no findings at or above --fail-on threshold)
+  1                  Findings detected at or above --fail-on threshold (or auth failure)
+  2                  Tool error (invalid directory path, schema validation failure, file I/O error)
+  3                  Invalid usage (unknown flag, missing flag argument, invalid flag value)
 `);
 }
 
@@ -325,6 +402,10 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
   try {
     opts = parseCliArgs(argv);
   } catch (err) {
+    if (err instanceof InvalidUsageError) {
+      console.error(`Usage error: ${err.message}`);
+      return 3;
+    }
     console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     return 2;
   }
@@ -625,9 +706,21 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
 
   const jsonOutput = JSON.stringify(report, null, 2);
 
+  let formattedOutput: string;
+  if (opts.format === "json") {
+    formattedOutput = jsonOutput;
+  } else if (opts.format === "markdown") {
+    formattedOutput = formatMarkdownReport(report, {
+      projectPath: path.resolve(opts.targetPath)
+    });
+  } else {
+    formattedOutput = formatTerminalReport(report, { noColor: opts.noColor });
+  }
+
   if (opts.outFile) {
     try {
-      fs.writeFileSync(path.resolve(opts.outFile), jsonOutput + "\n", "utf-8");
+      const outputToWrite = opts.format === "markdown" ? formattedOutput : jsonOutput;
+      fs.writeFileSync(path.resolve(opts.outFile), outputToWrite + "\n", "utf-8");
     } catch (err) {
       console.error(
         `Failed to write output to file "${opts.outFile}": ${err instanceof Error ? err.message : String(err)}`
@@ -636,18 +729,24 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
     }
   }
 
-  if (opts.json) {
-    console.log(jsonOutput);
-  } else {
-    const formatted = formatTerminalReport(report, { noColor: opts.noColor });
-    console.log(formatted);
+  if (!opts.quiet || opts.format === "json" || opts.format === "markdown") {
+    console.log(formattedOutput);
   }
 
-  const hasHighOrCritical = report.findings.some(
-    (f) => f.severity === "high" || f.severity === "critical"
+  const SEVERITY_LEVELS: Record<Severity, number> = {
+    info: 0,
+    low: 1,
+    medium: 2,
+    high: 3,
+    critical: 4
+  };
+
+  const thresholdLevel = SEVERITY_LEVELS[opts.failOn || "high"] ?? 3;
+  const hasFailingFindings = report.findings.some(
+    (f) => (SEVERITY_LEVELS[f.severity] ?? 0) >= thresholdLevel
   );
 
-  return hasHighOrCritical ? 1 : 0;
+  return hasFailingFindings ? 1 : 0;
 }
 
 export const CLI_NAME = "stackdoctor";

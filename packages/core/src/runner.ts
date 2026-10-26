@@ -284,6 +284,9 @@ export async function runDiagnostics(options: RunnerOptions): Promise<Report> {
     }
   }
 
+  // Deterministic ordering: severity (critical to info), then ruleId alphabetically
+  const sortedFindings = sortFindingsDeterministically(findings);
+
   // 6. Build final report
   const completedAt = new Date().toISOString();
   let reportStatus: ReportStatus = "completed";
@@ -291,7 +294,7 @@ export async function runDiagnostics(options: RunnerOptions): Promise<Report> {
     reportStatus = "cancelled";
   } else if (
     checkResults.some((c) => c.status === "failed" || c.status === "error") ||
-    findings.some((f) => f.severity === "high" || f.severity === "critical")
+    sortedFindings.some((f) => f.severity === "high" || f.severity === "critical")
   ) {
     reportStatus = "completed_with_warnings";
   }
@@ -304,7 +307,7 @@ export async function runDiagnostics(options: RunnerOptions): Promise<Report> {
     completedAt,
     technologies: scanResult.technologies,
     checks: checkResults,
-    findings
+    findings: sortedFindings
   });
 
   // Verify against schema
@@ -314,6 +317,25 @@ export async function runDiagnostics(options: RunnerOptions): Promise<Report> {
   }
 
   return validation.data;
+}
+
+const SEVERITY_ORDER: Record<Severity, number> = {
+  critical: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+  info: 0
+};
+
+/**
+ * Deterministically sorts findings by severity (critical to info) and then ruleId ascending.
+ */
+export function sortFindingsDeterministically(findings: Finding[]): Finding[] {
+  return [...findings].sort((a, b) => {
+    const sevDiff = (SEVERITY_ORDER[b.severity] ?? 0) - (SEVERITY_ORDER[a.severity] ?? 0);
+    if (sevDiff !== 0) return sevDiff;
+    return a.ruleId.localeCompare(b.ruleId);
+  });
 }
 
 /**

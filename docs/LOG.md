@@ -577,6 +577,50 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 4, Run 4B: CI mode, stable output, GitHub Actions integration.
 - **Status:** Done
 
+---
+
+### [2026-10-26] Phase 4, Run 4B: CI Mode, Stable Output & GitHub Actions Integration
+- **Prompt used:** PHASE4.md > Run 4B: CI integration
+- **What was done:**
+  1. Implemented deterministic finding ordering in `packages/core/src/runner.ts`:
+     - Findings are sorted by severity descending (`critical`, `high`, `medium`, `low`, `info`), and then by `ruleId` ascending.
+  2. Implemented Markdown step summary formatter `formatMarkdownReport` in `apps/cli/src/format.ts`:
+     - Renders project status, summary bar, severity count table, detected issues table, and collapsible details tag (`<details><summary>...</summary>...</details>`).
+     - Normalizes project paths project-relatively and runs core secret redaction `redactText`.
+  3. Extended CLI `scan` command in `apps/cli/src/index.ts`:
+     - Added `--ci`: sets `noColor = true`, non-interactive, and deterministic ordering.
+     - Added `--fail-on <info|low|medium|high|critical>`: returns exit code 1 if findings meet or exceed threshold (defaults to `high`).
+     - Added `--quiet`, `-q`: suppresses non-essential terminal output.
+     - Added `--format <text|json|markdown>`: renders output according to requested format.
+     - Implemented stable exit code contract: `0` = OK, `1` = findings at/above `--fail-on`, `2` = tool error, `3` = invalid usage (`InvalidUsageError` for unknown flags, missing flag arguments, or invalid parameter values).
+  4. Authored comprehensive specification documentation:
+     - `docs/report-format.md`: Details every top-level and nested field of the JSON report format, value spaces, enums, schema stability policy, and CHANGELOG.
+     - `docs/ci.md`: Comprehensive CI guide featuring a copy-paste GitHub Actions workflow, SHA-pinned dependencies, minimal read-only permissions (`contents: read`), and GitLab CI example.
+  5. Built reusable composite action `action.yml`:
+     - Wraps StackDoctor scan with inputs `path`, `fail-on`, and `upload-artifact`.
+     - Passes inputs via environment variables to prevent script injection.
+     - Third-party actions pinned to full commit SHAs (`actions/setup-node@39370e39...`, `actions/upload-artifact@65c4c4a1...`).
+  6. Added automated regression and stability tests:
+     - `packages/schemas/test/report-stability.test.ts`: Snapshot test verifying Report schema invariance.
+     - `apps/cli/test/ci.test.ts`: 14 tests verifying exit code matrix for all thresholds, absence of ANSI escape sequences in `--ci`, deterministic findings order across consecutive runs, markdown snapshot, and exit code 3 on invalid flags/values.
+- **Files created/changed:** `packages/core/src/runner.ts`, `apps/cli/src/format.ts`, `apps/cli/src/index.ts`, `docs/report-format.md`, `docs/ci.md`, `action.yml`, `packages/schemas/test/report-stability.test.ts`, `apps/cli/test/ci.test.ts`, `docs/PHASE4.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (264/264 tests across 41 suites passed)
+  - `npm run eval`: Passed (100% detection, 0% false positives)
+  - Exit code matrix tests pass and are documented: Verified
+  - `--ci` output is deterministic with no ANSI codes or prompts: Verified
+  - JSON shape change fails a snapshot test: Verified
+  - Workflow/action use minimal permissions and SHA-pinned actions: Verified
+  - No untrusted input is interpolated into shell commands in the action: Verified
+- **Problems / errors:** Fixed ESLint `no-control-regex` by checking ANSI prefix via `.includes("\x1b[")`; resolved unused variable in schema stability test.
+- **Decisions made:** Composite action passes inputs exclusively via environment variables; schema stability protected by automated JSON shape snapshot.
+- **Next step:** Phase 4, Run 4C: Report comparison (CLI, API, web).
+- **Status:** Done
+
+
 
 
 

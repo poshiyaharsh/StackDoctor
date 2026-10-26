@@ -16,7 +16,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
 | 4A | GitHub issue draft generation | Done | 5fae252 | 2026-10-26 |
-| 4B | CI mode, stable output, GitHub Actions integration | Not started | - | - |
+| 4B | CI mode, stable output, GitHub Actions integration | Done | pending | 2026-10-26 |
 | 4C | Report comparison (CLI, API, web) | Not started | - | - |
 | 4D | Documentation links + contributor rule interface | Not started | - | - |
 | 4E | Docs, end-to-end checks, final verification | Not started | - | - |
@@ -130,17 +130,34 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Exit code matrix tests pass and are documented
-- [ ] `--ci` output is deterministic with no ANSI codes or prompts
-- [ ] JSON shape change fails a snapshot test
-- [ ] Workflow/action use minimal permissions and SHA-pinned actions
-- [ ] No untrusted input is interpolated into shell commands in the action
+- [x] Exit code matrix tests pass and are documented
+- [x] `--ci` output is deterministic with no ANSI codes or prompts
+- [x] JSON shape change fails a snapshot test
+- [x] Workflow/action use minimal permissions and SHA-pinned actions
+- [x] No untrusted input is interpolated into shell commands in the action
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/core/src/runner.ts`: Added deterministic sorting `sortFindingsDeterministically` (by severity descending, then ruleId ascending) to `runDiagnostics`.
+  - `apps/cli/src/format.ts`: Added `formatMarkdownReport` formatting compact summaries for `$GITHUB_STEP_SUMMARY` with severity counts, detected issues table, collapsed finding details, and secret/path redaction.
+  - `apps/cli/src/index.ts`: Added `--ci`, `--fail-on <severity>`, `--quiet`, `--format <text|json|markdown>` flags to `scan`; added `InvalidUsageError` returning exit code 3 on bad syntax/flags; updated help documentation with exit code contract (0, 1, 2, 3).
+  - `docs/report-format.md`: Authored comprehensive JSON report schema documentation describing all top-level and nested fields, enums, stability guarantee, and CHANGELOG.
+  - `docs/ci.md`: Comprehensive CI guide with copy-paste GitHub Actions workflow, SHA-pinned dependencies, minimal `contents: read` permissions, exit codes, and GitLab CI example.
+  - `action.yml`: Reusable GitHub composite action wrapping StackDoctor scan with safe env-variable input passing and SHA-pinned steps.
+  - `packages/schemas/test/report-stability.test.ts`: Snapshot test validating the Report JSON structure against unintentional breaking changes.
+  - `apps/cli/test/ci.test.ts`: 14 tests covering exit code matrix (`info`, `low`, `medium`, `high`, `critical`), ANSI code absence in `--ci`, deterministic findings order across runs, markdown snapshot, and exit code 3 on invalid usage.
 - Command results:
+  - `npm run build`: Exit 0
+  - `npm run lint`: Exit 0 (0 errors, 0 warnings)
+  - `npm run typecheck`: Exit 0
+  - `npm test`: Exit 0 (41/41 suites, 264/264 tests passed)
+  - `npm run eval`: Exit 0 (100% detection, 0% false positives)
 - Problems:
+  - ESLint `no-control-regex` triggered on ANSI test: Replaced regex with `.includes("\x1b[")` to eliminate control characters cleanly.
+  - Unused result in schema stability test: Added assertion `expect(result.success).toBe(true)`.
 - Decisions:
+  - Stable exit codes: 0 = OK, 1 = findings at/above `--fail-on`, 2 = tool error, 3 = invalid usage.
+  - Action inputs passed via environment variables (never directly interpolated into shell command strings) to prevent injection.
 
 ---
 
