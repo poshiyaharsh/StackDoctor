@@ -23,7 +23,7 @@ Never skip a run or change the order.
 | 1A | Scaffold | Done | d4eae7b | 2026-10-26 |
 | 1B | Schemas | Done | be4a071 | 2026-10-26 |
 | 1C | Core (redaction, scanner, lifecycle) | Done | 9a878c1 | 2026-10-26 |
-| 1D | Rules registry | Not started | - | - |
+| 1D | Rules registry | Done | pending | 2026-10-26 |
 | 1E | CLI + final verification | Not started | - | - |
 
 Status values: Not started, In progress, Needs fixes, Done.
@@ -284,16 +284,16 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Duplicate rule ID is rejected
-- [ ] Both rules have trigger and non-trigger tests
-- [ ] Findings contain evidence and possibleCauses as separate fields
-- [ ] No env values are read or printed
+- [x] Duplicate rule ID is rejected
+- [x] Both rules have trigger and non-trigger tests
+- [x] Findings contain evidence and possibleCauses as separate fields
+- [x] No env values are read or printed
 
 **Run log (Antigravity fills):**
-- Files:
-- Command results:
-- Problems:
-- Decisions:
+- Files: `packages/rules/src/types.ts`, `packages/rules/src/registry.ts`, `packages/rules/src/rules/node-deps-not-installed.ts`, `packages/rules/src/rules/env-example-no-env.ts`, `packages/rules/src/index.ts`, `packages/rules/test/registry.test.ts`, `packages/rules/test/node-deps.test.ts`, `packages/rules/test/env-example.test.ts`, `docs/diagnostics.md`
+- Command results: npm run build (0), npm test (49/49 passed across 13 test suites), npm run lint (0), npm run typecheck (0)
+- Problems: None. All rule schemas and finding validations passed.
+- Decisions: Rules enforce strict evidence separation from hypotheses. Variable values are never read or stored from `.env` or `.env.example`.
 
 ---
 

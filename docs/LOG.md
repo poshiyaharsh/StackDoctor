@@ -90,3 +90,26 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Decisions made:** Scanner checks `fs.realpath` against project directory to reject symlinks escaping project bounds. Runner protects checks with `Promise.race` timeouts and redacts error messages.
 - **Next step:** Phase 1, Run 1D: Rule Registry (packages/rules).
 - **Status:** Done
+
+---
+
+### [2026-10-26] Phase 1, Run 1D: Rule Registry (packages/rules)
+- **Prompt used:** PHASE1.md > Run 1D: Rule Registry (packages/rules)
+- **What was done:** Created the diagnostic Rule interface and `RuleRegistry` in `@stackdoctor/rules` with strict validation against missing fields and duplicate rule IDs. Implemented two deterministic, evidence-based rules:
+  1. `NODE_DEPS_NOT_INSTALLED`: Triggered when `package.json` exists but `node_modules` is missing. Separate facts from hypotheses; tailors remediation (`npm install`, `pnpm install`, `yarn install`, etc.) based on detected lockfile.
+  2. `ENV_EXAMPLE_PRESENT_NO_ENV`: Triggered when `.env.example` exists but `.env` is missing. Extracts and reports variable names only, never reading or leaking values.
+  Documented both rules with observed evidence, hypotheses, and remediation in `docs/diagnostics.md`. Added comprehensive unit tests covering triggers, non-triggers, duplicate ID rejection, missing field rejection, and strict evidence separation.
+- **Files created/changed:** `packages/rules/src/types.ts`, `packages/rules/src/registry.ts`, `packages/rules/src/rules/node-deps-not-installed.ts`, `packages/rules/src/rules/env-example-no-env.ts`, `packages/rules/src/index.ts`, `packages/rules/test/registry.test.ts`, `packages/rules/test/node-deps.test.ts`, `packages/rules/test/env-example.test.ts`, `docs/diagnostics.md`, `docs/PHASE1.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (exit code 0)
+  - `npm test`: Passed (49/49 tests across 13 test suites passed)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - Duplicate rule ID is rejected: Verified
+  - Both rules have trigger and non-trigger tests: Verified
+  - Findings contain evidence and possibleCauses as separate fields: Verified
+  - No env values are read or printed: Verified
+- **Problems / errors:** None.
+- **Decisions made:** Rules strictly isolate hypotheses inside `possibleCauses` and facts inside `evidence`. `extractEnvVarNames` regex ignores comment lines and isolates key identifiers before delimiters.
+- **Next step:** Phase 1, Run 1E: CLI, output, README, final verification (apps/cli).
+- **Status:** Done
