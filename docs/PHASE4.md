@@ -17,7 +17,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 |---|---|---|---|---|
 | 4A | GitHub issue draft generation | Done | 5fae252 | 2026-10-26 |
 | 4B | CI mode, stable output, GitHub Actions integration | Done | c17c702 | 2026-10-26 |
-| 4C | Report comparison (CLI, API, web) | Done | pending | 2026-10-26 |
+| 4C | Report comparison (CLI, API, web) | Done | 6167481 | 2026-10-26 |
 | 4D | Documentation links + contributor rule interface | Not started | - | - |
 | 4E | Docs, end-to-end checks, final verification | Not started | - | - |
 
