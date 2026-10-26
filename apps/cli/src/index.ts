@@ -8,12 +8,18 @@ import {
   validateDirectory,
   scanProject,
   buildIssueDraft,
+  compareReports,
   type DiagnosticRule,
   type DiagnosticCheck
 } from "@stackdoctor/core";
 import { createDefaultRuleRegistry } from "@stackdoctor/rules";
 import { validateReport, type Report, type Severity, CURRENT_TOOL_VERSION } from "@stackdoctor/schemas";
-import { formatTerminalReport, formatMarkdownReport } from "./format.js";
+import {
+  formatTerminalReport,
+  formatMarkdownReport,
+  formatComparisonTerminal,
+  formatComparisonMarkdown
+} from "./format.js";
 import { collectEvaluationContext } from "./collector.js";
 import {
   saveConfig,
@@ -32,8 +38,11 @@ export class InvalidUsageError extends Error {
 }
 
 export interface CliOptions {
-  command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "help" | "version";
+  command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "help" | "version";
   targetPath: string;
+  baseReportPath?: string;
+  headReportPath?: string;
+  failOnNew?: Severity;
   json: boolean;
   outFile?: string;
   noColor: boolean;
@@ -55,8 +64,11 @@ export interface CliOptions {
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
-  let command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "help" | "version" = "scan";
+  let command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "help" | "version" = "scan";
   let targetPath = ".";
+  let baseReportPath: string | undefined;
+  let headReportPath: string | undefined;
+  let failOnNew: Severity | undefined;
   let json = false;
   let outFile: string | undefined;
   let noColor = false;
@@ -140,6 +152,22 @@ export function parseCliArgs(argv: string[]): CliOptions {
         throw new InvalidUsageError(`Invalid severity "${val}" for --fail-on flag. Must be info|low|medium|high|critical`);
       }
       failOn = val;
+    } else if (arg === "--fail-on-new") {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        const val = argv[++i] as Severity;
+        if (!VALID_SEVERITIES.has(val)) {
+          throw new InvalidUsageError(`Invalid severity "${val}" for --fail-on-new flag. Must be info|low|medium|high|critical`);
+        }
+        failOnNew = val;
+      } else {
+        throw new InvalidUsageError("Missing severity value for --fail-on-new flag. Must be info|low|medium|high|critical");
+      }
+    } else if (arg?.startsWith("--fail-on-new=")) {
+      const val = arg.slice(14) as Severity;
+      if (!VALID_SEVERITIES.has(val)) {
+        throw new InvalidUsageError(`Invalid severity "${val}" for --fail-on-new flag. Must be info|low|medium|high|critical`);
+      }
+      failOnNew = val;
     } else if (arg === "--min-severity") {
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         const val = argv[++i] as Severity;
@@ -212,6 +240,14 @@ export function parseCliArgs(argv: string[]): CliOptions {
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         targetPath = argv[++i] as string;
       }
+    } else if (arg === "compare") {
+      command = "compare";
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        baseReportPath = argv[++i] as string;
+      }
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        headReportPath = argv[++i] as string;
+      }
     } else if (arg === "scan") {
       command = "scan";
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
@@ -220,13 +256,28 @@ export function parseCliArgs(argv: string[]): CliOptions {
     } else if (arg.startsWith("-")) {
       throw new InvalidUsageError(`Unknown flag "${arg}"`);
     } else {
-      targetPath = arg as string;
+      if (command === "compare") {
+        if (!baseReportPath) {
+          baseReportPath = arg as string;
+        } else if (!headReportPath) {
+          headReportPath = arg as string;
+        }
+      } else {
+        targetPath = arg as string;
+      }
     }
+  }
+
+  if (command === "compare" && (!baseReportPath || !headReportPath)) {
+    throw new InvalidUsageError("Missing required arguments. Usage: stackdoctor compare <baseReport.json> <headReport.json> [flags]");
   }
 
   return {
     command,
     targetPath,
+    baseReportPath,
+    headReportPath,
+    failOnNew,
     json,
     outFile,
     noColor,
@@ -260,6 +311,7 @@ USAGE:
   stackdoctor logout
   stackdoctor upload [reportFile | path] [flags]
   stackdoctor issue [reportFile | path] [flags]
+  stackdoctor compare <baseReport.json> <headReport.json> [flags]
 
 COMMANDS:
   scan [path]        Scan and diagnose a project directory (default: current directory, 100% offline)
@@ -268,14 +320,16 @@ COMMANDS:
   logout             Remove stored server credentials
   upload [target]    Upload a diagnostic report with interactive preview and confirmation
   issue [target]     Generate sanitized GitHub issue draft (100% offline, never sends data)
+  compare <b.json> <h.json> Compare two diagnostic reports (100% offline diff, new/resolved/changed)
 
 FLAGS:
   --ci               Run in CI mode (non-interactive, deterministic ordering, no ANSI colors)
   --fail-on <s>      Fail with exit code 1 if findings meet or exceed severity (info|low|medium|high|critical, default: high)
+  --fail-on-new <s>  Fail with exit code 1 if new findings meet or exceed severity (info|low|medium|high|critical)
   --format <fmt>     Output format (text|json|markdown, default: text)
   --quiet, -q        Suppress non-essential console output
   --json             Print valid JSON report to stdout (shorthand for --format json)
-  --out <file>       Write report or issue draft to a file
+  --out <file>       Write report, diff, or issue draft to a file
   --min-severity <s> Filter issue draft findings by minimum severity (info|low|medium|high|critical)
   --copy             Copy generated issue draft to clipboard
   --no-evidence      Omit observed evidence section from issue draft
@@ -290,8 +344,8 @@ FLAGS:
   --help, -h         Display this help message
 
 EXIT CODES:
-  0                  Success (no findings at or above --fail-on threshold)
-  1                  Findings detected at or above --fail-on threshold (or auth failure)
+  0                  Success (no findings at or above --fail-on / --fail-on-new threshold)
+  1                  Findings detected at or above threshold (or auth failure)
   2                  Tool error (invalid directory path, schema validation failure, file I/O error)
   3                  Invalid usage (unknown flag, missing flag argument, invalid flag value)
 `);
@@ -682,6 +736,95 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
       } else {
         console.log("\nNotice: Clipboard tool not available. The issue draft is printed above.");
       }
+    }
+
+    return 0;
+  }
+
+  // --- COMMAND: compare ---
+  if (opts.command === "compare") {
+    if (!opts.baseReportPath || !opts.headReportPath) {
+      console.error("Usage error: stackdoctor compare <baseReport.json> <headReport.json> [flags]");
+      return 3;
+    }
+
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
+
+    const loadAndValidate = (filePath: string, label: string): Report | null => {
+      const resolved = path.resolve(filePath);
+      if (!fs.existsSync(resolved)) {
+        console.error(`Error: ${label} file "${filePath}" does not exist.`);
+        return null;
+      }
+      try {
+        const stat = fs.statSync(resolved);
+        if (stat.isDirectory()) {
+          console.error(`Error: ${label} path "${filePath}" is a directory, expected a JSON report file.`);
+          return null;
+        }
+        if (stat.size > MAX_FILE_SIZE) {
+          console.error(`Error: ${label} file "${filePath}" exceeds the 10MB limit (${stat.size} bytes).`);
+          return null;
+        }
+        const content = fs.readFileSync(resolved, "utf-8");
+        const json = JSON.parse(content);
+        const validation = validateReport(json);
+        if (!validation.success) {
+          console.error(`Error: ${label} file "${filePath}" is not a valid StackDoctor report:`);
+          for (const err of validation.errors) {
+            console.error(`  - ${err}`);
+          }
+          return null;
+        }
+        return validation.data;
+      } catch (err) {
+        console.error(`Error reading ${label} file "${filePath}": ${err instanceof Error ? err.message : String(err)}`);
+        return null;
+      }
+    };
+
+    const baseReport = loadAndValidate(opts.baseReportPath, "Base report");
+    if (!baseReport) return 2;
+    const headReport = loadAndValidate(opts.headReportPath, "Head report");
+    if (!headReport) return 2;
+
+    const comparison = compareReports(baseReport, headReport);
+
+    let formattedOutput: string;
+    if (opts.format === "json") {
+      formattedOutput = JSON.stringify(comparison, null, 2);
+    } else if (opts.format === "markdown") {
+      formattedOutput = formatComparisonMarkdown(comparison);
+    } else {
+      formattedOutput = formatComparisonTerminal(comparison, { noColor: opts.noColor });
+    }
+
+    if (opts.outFile) {
+      try {
+        fs.writeFileSync(path.resolve(opts.outFile), formattedOutput + "\n", "utf-8");
+      } catch (err) {
+        console.error(`Failed to write comparison to file "${opts.outFile}": ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+    }
+
+    if (!opts.quiet || opts.format === "json" || opts.format === "markdown") {
+      console.log(formattedOutput);
+    }
+
+    if (opts.failOnNew) {
+      const SEVERITY_LEVELS: Record<Severity, number> = {
+        info: 0,
+        low: 1,
+        medium: 2,
+        high: 3,
+        critical: 4
+      };
+      const thresholdLevel = SEVERITY_LEVELS[opts.failOnNew] ?? 0;
+      const hasFailingNewFindings = comparison.newFindings.some(
+        (f) => (SEVERITY_LEVELS[f.severity] ?? 0) >= thresholdLevel
+      );
+      return hasFailingNewFindings ? 1 : 0;
     }
 
     return 0;

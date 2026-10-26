@@ -1,5 +1,5 @@
 import type { Report } from "@stackdoctor/schemas";
-import { redactText } from "@stackdoctor/core";
+import { redactText, type ReportComparison } from "@stackdoctor/core";
 
 export interface FormatOptions {
   noColor?: boolean;
@@ -321,4 +321,211 @@ export function formatMarkdownReport(
 
   return output;
 }
+
+export function formatComparisonTerminal(
+  comparison: ReportComparison,
+  options: FormatOptions = {}
+): string {
+  const useColor = !options.noColor && !process.env.NO_COLOR;
+
+  const c = {
+    bold: (s: string) => (useColor ? `\x1b[1m${s}\x1b[0m` : s),
+    dim: (s: string) => (useColor ? `\x1b[2m${s}\x1b[0m` : s),
+    green: (s: string) => (useColor ? `\x1b[32m${s}\x1b[0m` : s),
+    yellow: (s: string) => (useColor ? `\x1b[33m${s}\x1b[0m` : s),
+    red: (s: string) => (useColor ? `\x1b[31m${s}\x1b[0m` : s),
+    cyan: (s: string) => (useColor ? `\x1b[36m${s}\x1b[0m` : s)
+  };
+
+  const lines: string[] = [];
+  lines.push(c.bold("=== StackDoctor Diagnostic Report Comparison ==="));
+  lines.push(`Base: ${comparison.baseProject} (${comparison.baseTimestamp})`);
+  lines.push(`Head: ${comparison.headProject} (${comparison.headTimestamp})`);
+  lines.push("");
+
+  const formatDelta = (num: number) => (num > 0 ? `+${num}` : `${num}`);
+
+  lines.push(c.bold("--- Summary Delta ---"));
+  lines.push(
+    `  Findings: ${formatDelta(comparison.summaryDelta.findingsDelta)} (New: ${comparison.newFindings.length}, Resolved: ${comparison.resolvedFindings.length}, Changed: ${comparison.changedFindings.length})`
+  );
+  lines.push(
+    c.dim(
+      `  Severity Changes: Critical: ${formatDelta(comparison.summaryDelta.severityDeltas.critical)}, High: ${formatDelta(comparison.summaryDelta.severityDeltas.high)}, Medium: ${formatDelta(comparison.summaryDelta.severityDeltas.medium)}, Low: ${formatDelta(comparison.summaryDelta.severityDeltas.low)}, Info: ${formatDelta(comparison.summaryDelta.severityDeltas.info)}`
+    )
+  );
+  lines.push("");
+
+  lines.push(c.bold(`--- New Findings (${comparison.newFindings.length}) ---`));
+  if (comparison.newFindings.length === 0) {
+    lines.push(c.dim("  None."));
+  } else {
+    for (const f of comparison.newFindings) {
+      lines.push(`  ${c.red(`[+NEW ${f.severity.toUpperCase()}]`)} ${c.bold(f.ruleId)}: ${f.title}`);
+    }
+  }
+  lines.push("");
+
+  lines.push(c.bold(`--- Resolved Findings (${comparison.resolvedFindings.length}) ---`));
+  if (comparison.resolvedFindings.length === 0) {
+    lines.push(c.dim("  None."));
+  } else {
+    for (const f of comparison.resolvedFindings) {
+      lines.push(`  ${c.green(`[-RESOLVED ${f.severity.toUpperCase()}]`)} ${c.bold(f.ruleId)}: ${f.title}`);
+    }
+  }
+  lines.push("");
+
+  lines.push(c.bold(`--- Changed Findings (${comparison.changedFindings.length}) ---`));
+  if (comparison.changedFindings.length === 0) {
+    lines.push(c.dim("  None."));
+  } else {
+    for (const cf of comparison.changedFindings) {
+      const details: string[] = [];
+      if (cf.changes.severity) {
+        details.push(`severity: ${cf.changes.severity.before.toUpperCase()} -> ${cf.changes.severity.after.toUpperCase()}`);
+      }
+      if (cf.changes.confidence) {
+        details.push(`confidence: ${cf.changes.confidence.before} -> ${cf.changes.confidence.after}`);
+      }
+      if (cf.changes.status) {
+        details.push(`status: ${cf.changes.status.before} -> ${cf.changes.status.after}`);
+      }
+      lines.push(`  ${c.yellow("[~CHANGED]")} ${c.bold(cf.finding.ruleId)}: ${cf.finding.title} (${details.join(", ")})`);
+    }
+  }
+  lines.push("");
+
+  const env = comparison.environmentChanges;
+  const tech = comparison.technologyChanges;
+  const hasEnvChanges =
+    env.operatingSystem ||
+    env.toolVersion ||
+    env.runtimeVersions.length > 0 ||
+    tech.added.length > 0 ||
+    tech.removed.length > 0;
+
+  if (hasEnvChanges) {
+    lines.push(c.bold("--- Environment & Technology Changes ---"));
+    if (env.operatingSystem) {
+      lines.push(`  OS: ${env.operatingSystem.before} -> ${env.operatingSystem.after}`);
+    }
+    if (env.toolVersion) {
+      lines.push(`  StackDoctor Version: ${env.toolVersion.before} -> ${env.toolVersion.after}`);
+    }
+    for (const rt of env.runtimeVersions) {
+      lines.push(`  Runtime ${rt.runtime}: ${rt.before ?? "(none)"} -> ${rt.after ?? "(none)"}`);
+    }
+    for (const t of tech.added) {
+      lines.push(`  ${c.green("[+TECH]")} ${t.name}`);
+    }
+    for (const t of tech.removed) {
+      lines.push(`  ${c.yellow("[-TECH]")} ${t.name}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+export function formatComparisonMarkdown(comparison: ReportComparison): string {
+  const formatDelta = (num: number) => (num > 0 ? `+${num}` : `${num}`);
+
+  const lines: string[] = [];
+  lines.push("# 🩺 StackDoctor Report Comparison");
+  lines.push("");
+  lines.push("| Run | Project | Timestamp |");
+  lines.push("|---|---|---|");
+  lines.push(`| **Base** | ${comparison.baseProject} | ${comparison.baseTimestamp} |`);
+  lines.push(`| **Head** | ${comparison.headProject} | ${comparison.headTimestamp} |`);
+  lines.push("");
+
+  lines.push("### Summary Delta");
+  lines.push(
+    `- **Total Findings Delta**: ${formatDelta(comparison.summaryDelta.findingsDelta)}`
+  );
+  lines.push(
+    `- **New Findings**: ${comparison.newFindings.length} | **Resolved**: ${comparison.resolvedFindings.length} | **Changed**: ${comparison.changedFindings.length} | **Unchanged**: ${comparison.unchangedFindings.length}`
+  );
+  lines.push(
+    `- **Severity Deltas**: Critical: \`${formatDelta(comparison.summaryDelta.severityDeltas.critical)}\`, High: \`${formatDelta(comparison.summaryDelta.severityDeltas.high)}\`, Medium: \`${formatDelta(comparison.summaryDelta.severityDeltas.medium)}\`, Low: \`${formatDelta(comparison.summaryDelta.severityDeltas.low)}\`, Info: \`${formatDelta(comparison.summaryDelta.severityDeltas.info)}\``
+  );
+  lines.push("");
+
+  if (comparison.newFindings.length > 0) {
+    lines.push("### 🚨 New Findings");
+    lines.push("| Severity | Rule ID | Title |");
+    lines.push("|---|---|---|");
+    for (const f of comparison.newFindings) {
+      lines.push(`| **${f.severity.toUpperCase()}** | \`${f.ruleId}\` | ${f.title} |`);
+    }
+    lines.push("");
+  }
+
+  if (comparison.resolvedFindings.length > 0) {
+    lines.push("### ✅ Resolved Findings");
+    lines.push("| Severity | Rule ID | Title |");
+    lines.push("|---|---|---|");
+    for (const f of comparison.resolvedFindings) {
+      lines.push(`| **${f.severity.toUpperCase()}** | \`${f.ruleId}\` | ${f.title} |`);
+    }
+    lines.push("");
+  }
+
+  if (comparison.changedFindings.length > 0) {
+    lines.push("### ⚠️ Changed Findings");
+    lines.push("| Rule ID | Title | Changes |");
+    lines.push("|---|---|---|");
+    for (const cf of comparison.changedFindings) {
+      const details: string[] = [];
+      if (cf.changes.severity) {
+        details.push(`Severity: ${cf.changes.severity.before.toUpperCase()} -> ${cf.changes.severity.after.toUpperCase()}`);
+      }
+      if (cf.changes.confidence) {
+        details.push(`Confidence: ${cf.changes.confidence.before} -> ${cf.changes.confidence.after}`);
+      }
+      if (cf.changes.status) {
+        details.push(`Status: ${cf.changes.status.before} -> ${cf.changes.status.after}`);
+      }
+      lines.push(`| \`${cf.finding.ruleId}\` | ${cf.finding.title} | ${details.join(", ")} |`);
+    }
+    lines.push("");
+  }
+
+  const env = comparison.environmentChanges;
+  const tech = comparison.technologyChanges;
+  const hasEnvChanges =
+    env.operatingSystem ||
+    env.toolVersion ||
+    env.runtimeVersions.length > 0 ||
+    tech.added.length > 0 ||
+    tech.removed.length > 0;
+
+  if (hasEnvChanges) {
+    lines.push("### 🌐 Environment & Technology Changes");
+    if (env.operatingSystem) {
+      lines.push(`- **OS**: \`${env.operatingSystem.before}\` -> \`${env.operatingSystem.after}\``);
+    }
+    if (env.toolVersion) {
+      lines.push(`- **Tool Version**: \`${env.toolVersion.before}\` -> \`${env.toolVersion.after}\``);
+    }
+    for (const rt of env.runtimeVersions) {
+      lines.push(`- **Runtime ${rt.runtime}**: \`${rt.before ?? "(none)"}\` -> \`${rt.after ?? "(none)"}\``);
+    }
+    for (const t of tech.added) {
+      lines.push(`- **Added Technology**: \`${t.name}\``);
+    }
+    for (const t of tech.removed) {
+      lines.push(`- **Removed Technology**: \`${t.name}\``);
+    }
+    lines.push("");
+  }
+
+  lines.push("<sub>Generated by StackDoctor (100% offline). Run `stackdoctor compare <base.json> <head.json>` to inspect diffs locally.</sub>");
+
+  let output = lines.join("\n");
+  output = redactText(output);
+  return output;
+}
+
 

@@ -47,6 +47,9 @@ export function Navbar() {
               <Link to="/projects" className="btn btn-ghost btn-sm">
                 Projects
               </Link>
+              <Link to="/compare" className="btn btn-ghost btn-sm">
+                Compare
+              </Link>
               <Link to="/settings" className="btn btn-ghost btn-sm">
                 Settings
               </Link>

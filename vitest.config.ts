@@ -21,6 +21,7 @@ export default defineConfig({
       "@stackdoctor/rules": path.resolve(__dirname, "packages/rules/src/index.ts"),
       "@stackdoctor/adapters": path.resolve(__dirname, "packages/adapters/src/index.ts"),
       "@stackdoctor/core/issue-draft": path.resolve(__dirname, "packages/core/src/issue-draft.ts"),
+      "@stackdoctor/core/compare": path.resolve(__dirname, "packages/core/src/compare.ts"),
       "@stackdoctor/core": path.resolve(__dirname, "packages/core/src/index.ts"),
       "stackdoctor": path.resolve(__dirname, "apps/cli/src/index.ts")
     }

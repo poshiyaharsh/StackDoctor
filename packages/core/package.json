@@ -12,6 +12,10 @@
     "./issue-draft": {
       "types": "./dist/issue-draft.d.ts",
       "import": "./dist/issue-draft.js"
+    },
+    "./compare": {
+      "types": "./dist/compare.d.ts",
+      "import": "./dist/compare.js"
     }
   },
   "dependencies": {

@@ -617,8 +617,49 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
   - No untrusted input is interpolated into shell commands in the action: Verified
 - **Problems / errors:** Fixed ESLint `no-control-regex` by checking ANSI prefix via `.includes("\x1b[")`; resolved unused variable in schema stability test.
 - **Decisions made:** Composite action passes inputs exclusively via environment variables; schema stability protected by automated JSON shape snapshot.
-- **Next step:** Phase 4, Run 4C: Report comparison (CLI, API, web).
+---
+
+### [2026-10-26] Phase 4, Run 4C: Report Comparison (Core, CLI, API, Web)
+- **Prompt used:** PHASE4.md > Run 4C: Compare reports
+- **What was done:**
+  1. Implemented core pure and deterministic comparison engine in `packages/core/src/compare.ts`:
+     - Finding identity defined as `${ruleId}::${subjectKey}` using evidence subject extraction (ports, compose services, env var names, source file basenames).
+     - Computes `newFindings`, `resolvedFindings`, `unchangedFindings`, `changedFindings` (severity/confidence/status with before/after), `environmentChanges` (OS, tool version, runtimes), `technologyChanges` (added, removed, unchanged), `summaryDelta`, and `hasRegressions`.
+     - Exported from `@stackdoctor/core` with `./compare` subpath export in `package.json`.
+  2. Implemented CLI compare command and formatters:
+     - `formatComparisonTerminal` and `formatComparisonMarkdown` in `apps/cli/src/format.ts`.
+     - `stackdoctor compare <base.json> <head.json>` with `--format <text|json|markdown>`, `--fail-on-new <severity>`, `--out <file>`, and 10MB file size limit.
+     - Never executes code from files; exits with code 1 if new findings meet or exceed `--fail-on-new` threshold.
+  3. Implemented API comparison endpoint:
+     - `GET /api/v1/diagnostic-runs/compare?base=<runId>&head=<runId>` in `apps/api/src/routes/diagnostic-runs.ts`.
+     - Strictly scoped to caller's `ownerId` with 404 anti-enumeration (returns 404 if either run is missing or belongs to another user).
+     - Reuses the shared core `compareReports` function.
+  4. Implemented Web Compare UI:
+     - Created `apps/web/src/pages/ComparePage.tsx` with project and run dropdown selectors, regression banner, side-by-side summary metrics, New/Resolved/Changed groups, and environment/technology diff cards.
+     - Added "Compare with previous run" button in `apps/web/src/pages/ReportDetailPage.tsx`.
+     - Registered `/compare` route in `apps/web/src/App.tsx` and added Compare nav link in `Navbar.tsx`.
+     - Rendered all text safely using React JSX escaping (guaranteed zero HTML injection).
+  5. Added comprehensive test suites:
+     - `packages/core/test/compare.test.ts`: 5 tests covering self-comparison empty diff, new/resolved/unchanged/changed detection, multi-finding subject disambiguation, and environment diffs.
+     - `apps/cli/test/compare.test.ts`: 10 tests covering text/json/markdown formats, exit code matrix for `--fail-on-new`, file validation, and offline guarantees.
+     - `apps/api/test/compare.test.ts`: 7 tests covering auth enforcement, ObjectId validation, 404 anti-enumeration on cross-user comparison, and diff computation.
+     - `apps/web/test/app-pages.test.tsx`: Tested "Compare with previous run" button navigation and ComparePage rendering & injection safety.
+- **Files created/changed:** `packages/core/src/compare.ts`, `packages/core/src/index.ts`, `packages/core/package.json`, `packages/core/test/compare.test.ts`, `apps/cli/src/format.ts`, `apps/cli/src/index.ts`, `apps/cli/test/compare.test.ts`, `apps/api/src/routes/diagnostic-runs.ts`, `apps/api/test/compare.test.ts`, `apps/web/src/lib/api.ts`, `apps/web/src/pages/ComparePage.tsx`, `apps/web/src/pages/ReportDetailPage.tsx`, `apps/web/src/App.tsx`, `apps/web/src/components/layout/Navbar.tsx`, `apps/web/test/app-pages.test.tsx`, `vitest.config.ts`, `apps/web/vite.config.ts`, `docs/PHASE4.md`, `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (289/289 tests across 44 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
+  - Comparing a report with itself gives an empty diff: Verified
+  - Cross-user comparison attempts return 404: Verified
+  - CLI, API, and web all use the single core function: Verified
+  - `--fail-on-new` exit codes tested: Verified
+- **Problems / errors:** Corrected test report fixture schema requirements for `summary.byStatus`; resolved lint warning on unused import and typed `toReport` run parameter.
+- **Decisions made:** Finding identity uses rule ID + evidence subject key to avoid collisions across multiple findings of the same rule; cross-user comparison attempts return 404 to block identifier harvesting.
+- **Next step:** Phase 4, Run 4D: Documentation links and contributor rule interface (`docs/PHASE4.md`).
 - **Status:** Done
+
 
 
 

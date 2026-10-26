@@ -1,8 +1,9 @@
 import { Router, Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import { z } from "zod";
-import { validateReport } from "@stackdoctor/schemas";
-import { DiagnosticRun } from "../models/diagnostic-run.js";
+import { validateReport, type Report } from "@stackdoctor/schemas";
+import { compareReports } from "@stackdoctor/core";
+import { DiagnosticRun, type DiagnosticRunDocument } from "../models/diagnostic-run.js";
 import { Project } from "../models/project.js";
 import { requireAuth, isValidObjectId } from "../middleware/auth.js";
 import {
@@ -238,6 +239,103 @@ diagnosticRunsRouter.get(
           limit,
           totalPages
         }
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * GET /api/v1/diagnostic-runs/compare?base=<runId>&head=<runId>
+ * Compare two diagnostic runs belonging to the authenticated user.
+ */
+diagnosticRunsRouter.get(
+  "/compare",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { base, head } = req.query;
+
+      if (!base || typeof base !== "string" || !head || typeof head !== "string") {
+        res.status(400).json({
+          error: {
+            code: "BadRequest",
+            message: "Query parameters 'base' and 'head' are required"
+          }
+        });
+        return;
+      }
+
+      if (!isValidObjectId(base) || !isValidObjectId(head)) {
+        res.status(400).json({
+          error: {
+            code: "InvalidId",
+            message: "Invalid diagnostic run ID format for base or head"
+          }
+        });
+        return;
+      }
+
+      const ownerId = new mongoose.Types.ObjectId(req.session.userId);
+
+      const [baseRun, headRun] = await Promise.all([
+        DiagnosticRun.findOne({ _id: new mongoose.Types.ObjectId(base), ownerId }),
+        DiagnosticRun.findOne({ _id: new mongoose.Types.ObjectId(head), ownerId })
+      ]);
+
+      if (!baseRun || !headRun) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "One or both diagnostic runs not found"
+          }
+        });
+        return;
+      }
+
+      const [baseProj, headProj] = await Promise.all([
+        Project.findById(baseRun.projectId),
+        Project.findById(headRun.projectId)
+      ]);
+
+      const toReport = (run: DiagnosticRunDocument, projectName: string): Report => ({
+        schemaVersion: "1.0.0",
+        toolVersion: run.toolVersion || "0.1.0",
+        operatingSystem: run.operatingSystem || "unknown",
+        startedAt:
+          run.startedAt instanceof Date
+            ? run.startedAt.toISOString()
+            : String(run.startedAt),
+        completedAt:
+          run.completedAt instanceof Date
+            ? run.completedAt.toISOString()
+            : String(run.completedAt),
+        status: (run.status as Report["status"]) || "completed",
+        projectName: projectName || "project",
+        technologies:
+          (baseProj?.detectedTechnologies?.map((t: string) => ({
+            name: t,
+            confidence: "confirmed" as const,
+            evidence: []
+          })) ??
+            []),
+        checks: [],
+        findings: (run.findings as Report["findings"]) || [],
+        summary: (run.summary as unknown as Report["summary"]) || {
+          totalChecks: 0,
+          totalFindings: ((run.findings as unknown[]) || []).length,
+          bySeverity: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+          byStatus: { passed: 0, failed: 0, warning: 0, skipped: 0, error: 0 }
+        }
+      });
+
+      const comparison = compareReports(
+        toReport(baseRun, baseProj?.name ?? "Base Project"),
+        toReport(headRun, headProj?.name ?? "Head Project")
+      );
+
+      res.status(200).json({
+        comparison
       });
     } catch (err) {
       next(err);

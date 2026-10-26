@@ -11,6 +11,7 @@ export default defineConfig({
     alias: {
       "@stackdoctor/schemas": path.resolve(__dirname, "../../packages/schemas/src/index.ts"),
       "@stackdoctor/core/issue-draft": path.resolve(__dirname, "../../packages/core/src/issue-draft.ts"),
+      "@stackdoctor/core/compare": path.resolve(__dirname, "../../packages/core/src/compare.ts"),
       "@stackdoctor/core": path.resolve(__dirname, "../../packages/core/src/issue-draft.ts")
     }
   },

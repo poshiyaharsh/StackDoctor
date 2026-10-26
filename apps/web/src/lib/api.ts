@@ -1,3 +1,5 @@
+import type { ReportComparison } from "@stackdoctor/core";
+
 let currentCsrfToken: string | null = null;
 
 export function setCsrfToken(token: string | null): void {
@@ -284,6 +286,11 @@ export const api = {
     async get(id: string): Promise<{ run: DiagnosticRunItem }> {
       const res = await apiFetch<{ run?: DiagnosticRunItem; diagnosticRun?: DiagnosticRunItem }>(`/api/v1/diagnostic-runs/${id}`);
       return { run: (res.run || res.diagnosticRun)! };
+    },
+    async compare(baseId: string, headId: string): Promise<{ comparison: ReportComparison }> {
+      return apiFetch<{ comparison: ReportComparison }>(
+        `/api/v1/diagnostic-runs/compare?base=${encodeURIComponent(baseId)}&head=${encodeURIComponent(headId)}`
+      );
     },
     async delete(id: string): Promise<{ success: boolean }> {
       return apiFetch<{ success: boolean }>(`/api/v1/diagnostic-runs/${id}`, {

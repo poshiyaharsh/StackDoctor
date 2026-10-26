@@ -20,6 +20,7 @@ export function ReportDetailPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [prevRunId, setPrevRunId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -30,6 +31,19 @@ export function ReportDetailPage() {
         setError(null);
         const data = await api.runs.get(id);
         if (mounted) setRun(data.run);
+
+        if (data.run?.projectId) {
+          try {
+            const listData = await api.runs.list(data.run.projectId);
+            const runsList = listData.runs || [];
+            const currentIndex = runsList.findIndex((r) => r.id === id);
+            if (currentIndex !== -1 && currentIndex < runsList.length - 1) {
+              if (mounted) setPrevRunId(runsList[currentIndex + 1].id);
+            }
+          } catch {
+            // Ignore list failure
+          }
+        }
       } catch (err) {
         if (mounted) setError(err instanceof Error ? err.message : "Failed to load diagnostic report.");
       } finally {
@@ -159,7 +173,20 @@ export function ReportDetailPage() {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "0.75rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (prevRunId) {
+                navigate(`/compare?base=${prevRunId}&head=${id}${run.projectId ? `&project=${run.projectId}` : ""}`);
+              } else {
+                navigate(`/compare?head=${id}${run.projectId ? `&project=${run.projectId}` : ""}`);
+              }
+            }}
+          >
+            Compare with previous run
+          </Button>
           <Button
             variant="secondary"
             size="sm"

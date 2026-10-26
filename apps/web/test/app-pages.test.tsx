@@ -9,7 +9,9 @@ import { ProjectsPage } from "../src/pages/ProjectsPage.js";
 import { ProjectDetailPage } from "../src/pages/ProjectDetailPage.js";
 import { ReportDetailPage } from "../src/pages/ReportDetailPage.js";
 import { FindingDetailPage } from "../src/pages/FindingDetailPage.js";
+import { ComparePage } from "../src/pages/ComparePage.js";
 import { SettingsPage } from "../src/pages/SettingsPage.js";
+import type { ReportComparison } from "@stackdoctor/core";
 import { AuthProvider } from "../src/context/AuthContext.js";
 import { ToastProvider } from "../src/components/ui/Toast.js";
 import { api, StatsResponse, ProjectItem, DiagnosticRunItem } from "../src/lib/api.js";
@@ -346,6 +348,56 @@ describe("StackDoctor Web Application Pages (Run 3E)", () => {
       expect(copiedText).toContain("NODE_DEPS_NOT_INSTALLED");
       expect(screen.getByText("✓ Copied Issue Draft")).toBeInTheDocument();
     });
+
+    it("renders 'Compare with previous run' button and navigates to compare page", async () => {
+      const mockRun: DiagnosticRunItem = {
+        id: "run_head_123",
+        projectId: "proj_999",
+        toolVersion: "0.1.0",
+        operatingSystem: "linux",
+        status: "completed",
+        findings: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      vi.spyOn(api.runs, "get").mockResolvedValue({ run: mockRun });
+      vi.spyOn(api.runs, "list").mockResolvedValue({
+        total: 2,
+        runs: [
+          mockRun,
+          {
+            id: "run_base_456",
+            projectId: "proj_999",
+            toolVersion: "0.1.0",
+            operatingSystem: "linux",
+            status: "failed",
+            findings: [],
+            createdAt: new Date(Date.now() - 60000).toISOString(),
+            updatedAt: new Date(Date.now() - 60000).toISOString()
+          }
+        ]
+      });
+
+      renderWithProviders(
+        <Routes>
+          <Route path="/reports/:id" element={<ReportDetailPage />} />
+          <Route path="/compare" element={<div>Compare Target Page</div>} />
+        </Routes>,
+        "/reports/run_head_123"
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Compare with previous run")).toBeInTheDocument();
+      });
+
+      const compareBtn = screen.getByText("Compare with previous run");
+      fireEvent.click(compareBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText("Compare Target Page")).toBeInTheDocument();
+      });
+    });
   });
 
   describe("4. Finding Details Page", () => {
@@ -470,6 +522,210 @@ describe("StackDoctor Web Application Pages (Run 3E)", () => {
 
       expect(screen.getByText("Report Retention Policy")).toBeInTheDocument();
       expect(screen.getByText("Run Retention Cleanup Now")).toBeInTheDocument();
+    });
+  });
+
+  describe("6. Compare Page (Run 4C)", () => {
+    const mockComparison: ReportComparison = {
+      baseProject: "Base App",
+      headProject: "Head App",
+      baseTimestamp: "2026-10-26T10:00:00Z",
+      headTimestamp: "2026-10-26T11:00:00Z",
+      newFindings: [
+        {
+          ruleId: "NEW_RULE_REGRESSION",
+          title: "New Critical Regression Detected",
+          category: "security",
+          severity: "critical",
+          confidence: "confirmed",
+          status: "failed",
+          evidence: [
+            {
+              id: "ev_new",
+              kind: "security_probe",
+              description: "Secret key exposed",
+              observed: "Found unencrypted private key",
+              source: "probe",
+              collectedAt: "2026-10-26T11:00:00Z"
+            }
+          ],
+          possibleCauses: ["Accidentally committed private key"],
+          recommendations: [],
+          verificationStatus: "unverified",
+          docs: []
+        }
+      ],
+      resolvedFindings: [
+        {
+          ruleId: "OLD_BUG_FIXED",
+          title: "Resolved Database Timeout",
+          category: "databases",
+          severity: "high",
+          confidence: "confirmed",
+          status: "failed",
+          evidence: [],
+          possibleCauses: [],
+          recommendations: [],
+          verificationStatus: "unverified",
+          docs: []
+        }
+      ],
+      unchangedFindings: [],
+      changedFindings: [
+        {
+          finding: {
+            ruleId: "ESCALATED_ISSUE",
+            title: "Memory leak escalated",
+            category: "memory",
+            severity: "critical",
+            confidence: "confirmed",
+            status: "failed",
+            evidence: [],
+            possibleCauses: [],
+            recommendations: [],
+            verificationStatus: "unverified",
+            docs: []
+          },
+          previousFinding: {
+            ruleId: "ESCALATED_ISSUE",
+            title: "Memory leak escalated",
+            category: "memory",
+            severity: "medium",
+            confidence: "possible",
+            status: "warning",
+            evidence: [],
+            possibleCauses: [],
+            recommendations: [],
+            verificationStatus: "unverified",
+            docs: []
+          },
+          changes: {
+            severity: { before: "medium", after: "critical" },
+            confidence: { before: "possible", after: "confirmed" },
+            status: { before: "warning", after: "failed" }
+          }
+        }
+      ],
+      environmentChanges: {
+        operatingSystem: { before: "ubuntu-20.04", after: "ubuntu-22.04" },
+        toolVersion: { before: "0.0.9", after: "0.1.0" },
+        runtimeVersions: [
+          { runtime: "Node.js", before: "v18.0.0", after: "v20.0.0" }
+        ]
+      },
+      technologyChanges: {
+        added: [{ name: "Redis", confidence: "confirmed", evidence: [] }],
+        removed: [{ name: "MySQL", confidence: "likely", evidence: [] }],
+        unchanged: []
+      },
+      summaryDelta: {
+        checksDelta: 0,
+        findingsDelta: 0,
+        severityDeltas: { critical: 1, high: -1, medium: 0, low: 0, info: 0 }
+      },
+      hasRegressions: true
+    };
+
+    it("renders comparison results with New, Resolved, Changed, and Environment groups", async () => {
+      vi.spyOn(api.projects, "list").mockResolvedValue({
+        total: 1,
+        projects: [{ id: "proj_1", name: "Test Proj", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), runCount: 2 }]
+      });
+      vi.spyOn(api.runs, "list").mockResolvedValue({
+        total: 2,
+        runs: [
+          { id: "run_head", projectId: "proj_1", toolVersion: "0.1.0", operatingSystem: "linux", status: "failed", findings: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+          { id: "run_base", projectId: "proj_1", toolVersion: "0.1.0", operatingSystem: "linux", status: "completed", findings: [], createdAt: new Date(Date.now() - 3600000).toISOString(), updatedAt: new Date(Date.now() - 3600000).toISOString() }
+        ]
+      });
+      vi.spyOn(api.runs, "compare").mockResolvedValue({ comparison: mockComparison });
+
+      renderWithProviders(
+        <Routes>
+          <Route path="/compare" element={<ComparePage />} />
+        </Routes>,
+        "/compare?base=run_base&head=run_head&project=proj_1"
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Diagnostic Report Comparison")).toBeInTheDocument();
+        expect(screen.getByText(/Regressions Detected/i)).toBeInTheDocument();
+      });
+
+      // New Findings group
+      expect(screen.getByText("New Critical Regression Detected")).toBeInTheDocument();
+      expect(screen.getByText("NEW_RULE_REGRESSION")).toBeInTheDocument();
+
+      // Resolved Findings group
+      expect(screen.getByText("Resolved Database Timeout")).toBeInTheDocument();
+      expect(screen.getByText("OLD_BUG_FIXED")).toBeInTheDocument();
+
+      // Changed Findings group
+      expect(screen.getByText("Memory leak escalated")).toBeInTheDocument();
+      expect(screen.getByText(/MEDIUM → CRITICAL/i)).toBeInTheDocument();
+
+      // Environment & Technology Changes
+      expect(screen.getByText(/ubuntu-20.04 → ubuntu-22.04/i)).toBeInTheDocument();
+      expect(screen.getByText(/0.0.9 → 0.1.0/i)).toBeInTheDocument();
+      expect(screen.getByText(/v18.0.0 → v20.0.0/i)).toBeInTheDocument();
+      expect(screen.getByText(/\+ Added Technology:/i)).toBeInTheDocument();
+      expect(screen.getByText(/Redis/i)).toBeInTheDocument();
+      expect(screen.getByText(/- Removed Technology:/i)).toBeInTheDocument();
+      expect(screen.getByText(/MySQL/i)).toBeInTheDocument();
+    });
+
+    it("safely renders potential injection payloads as plain text", async () => {
+      const maliciousComparison: ReportComparison = {
+        ...mockComparison,
+        hasRegressions: false,
+        newFindings: [
+          {
+            ruleId: "<script>alert('xss')</script>",
+            title: "<img src=x onerror=alert(1)>Malicious Title",
+            category: "<b>injection</b>",
+            severity: "high",
+            confidence: "confirmed",
+            status: "failed",
+            evidence: [
+              {
+                id: "ev_xss",
+                kind: "<div style='color:red'>kind</div>",
+                description: "<iframe src='evil.com'></iframe>",
+                observed: "<svg onload=alert(2) />",
+                source: "probe",
+                collectedAt: "2026-10-26T11:00:00Z"
+              }
+            ],
+            possibleCauses: ["<p>evil hypothesis</p>"],
+            recommendations: [],
+            verificationStatus: "unverified",
+            docs: []
+          }
+        ],
+        resolvedFindings: [],
+        changedFindings: []
+      };
+
+      vi.spyOn(api.projects, "list").mockResolvedValue({ total: 0, projects: [] });
+      vi.spyOn(api.runs, "list").mockResolvedValue({ total: 0, runs: [] });
+      vi.spyOn(api.runs, "compare").mockResolvedValue({ comparison: maliciousComparison });
+
+      renderWithProviders(
+        <Routes>
+          <Route path="/compare" element={<ComparePage />} />
+        </Routes>,
+        "/compare?base=b1&head=h1"
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("<img src=x onerror=alert(1)>Malicious Title")).toBeInTheDocument();
+      });
+
+      // Confirm raw strings are in text content and no executable elements were injected
+      expect(screen.getByText("<script>alert('xss')</script>")).toBeInTheDocument();
+      expect(screen.getByText("<svg onload=alert(2) />")).toBeInTheDocument();
+      expect(document.querySelector("script[src='x']")).toBeNull();
+      expect(document.querySelector("img[src='x']")).toBeNull();
     });
   });
 });

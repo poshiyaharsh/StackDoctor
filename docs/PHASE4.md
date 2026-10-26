@@ -17,7 +17,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 |---|---|---|---|---|
 | 4A | GitHub issue draft generation | Done | 5fae252 | 2026-10-26 |
 | 4B | CI mode, stable output, GitHub Actions integration | Done | c17c702 | 2026-10-26 |
-| 4C | Report comparison (CLI, API, web) | Not started | - | - |
+| 4C | Report comparison (CLI, API, web) | Done | pending | 2026-10-26 |
 | 4D | Documentation links + contributor rule interface | Not started | - | - |
 | 4E | Docs, end-to-end checks, final verification | Not started | - | - |
 
@@ -188,16 +188,42 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Comparing a report with itself gives an empty diff
-- [ ] Cross-user comparison attempts return 404
-- [ ] CLI, API, and web all use the single core function
-- [ ] `--fail-on-new` exit codes tested
+- [x] Comparing a report with itself gives an empty diff
+- [x] Cross-user comparison attempts return 404
+- [x] CLI, API, and web all use the single core function
+- [x] `--fail-on-new` exit codes tested
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/core/src/compare.ts`: Implemented `compareReports(base, head)` and `extractFindingSubjectKey` returning deterministic `ReportComparison` with `newFindings`, `resolvedFindings`, `unchangedFindings`, `changedFindings`, `environmentChanges`, `technologyChanges`, and `summaryDelta`.
+  - `packages/core/src/index.ts`: Exported `compareReports` and comparison types.
+  - `packages/core/package.json`: Exported `./compare` subpath.
+  - `packages/core/test/compare.test.ts`: Created 5 unit tests verifying empty diff on self-comparison, new/resolved/unchanged detection, changed finding detection (severity/confidence/status with before/after), multi-finding subject disambiguation, and environment differences.
+  - `apps/cli/src/format.ts`: Added `formatComparisonTerminal` and `formatComparisonMarkdown` with secret redaction.
+  - `apps/cli/src/index.ts`: Added `stackdoctor compare <base.json> <head.json>` command with `--format <text|json|markdown>`, `--fail-on-new <severity>`, `--out <file>`, and 10MB input file limit.
+  - `apps/cli/test/compare.test.ts`: Added 10 CLI compare tests verifying text/json/markdown outputs, empty diffs, `--fail-on-new` exit codes (1 on regression, 0 below threshold), and error handling.
+  - `apps/api/src/routes/diagnostic-runs.ts`: Added `GET /api/v1/diagnostic-runs/compare?base=<runId>&head=<runId>` strictly scoped to caller's `ownerId` with 404 anti-enumeration.
+  - `apps/api/test/compare.test.ts`: Added 7 API tests verifying auth requirement, query validation, 404 on cross-user comparison, empty diff on self-comparison, and accurate diff on distinct runs.
+  - `apps/web/src/lib/api.ts`: Added `api.runs.compare(baseId, headId)`.
+  - `apps/web/src/pages/ComparePage.tsx`: Created ComparePage with project and run selectors, side-by-side summary metrics, New/Resolved/Changed groups, and safe plain-text rendering (no HTML injection).
+  - `apps/web/src/pages/ReportDetailPage.tsx`: Added "Compare with previous run" button navigating to comparison view.
+  - `apps/web/src/App.tsx`: Registered `/compare` route.
+  - `apps/web/src/components/layout/Navbar.tsx`: Added Compare navigation link.
+  - `apps/web/test/app-pages.test.tsx`: Added tests for "Compare with previous run" button and `ComparePage` rendering & injection safety.
+  - `vitest.config.ts` & `apps/web/vite.config.ts`: Aliased `@stackdoctor/core/compare`.
 - Command results:
+  - `npm run build`: Exit 0
+  - `npm run lint`: Exit 0 (0 errors, 0 warnings)
+  - `npm run typecheck`: Exit 0
+  - `npm test`: Exit 0 (44/44 test files, 289/289 tests passed)
+  - `npm run eval`: Exit 0 (100% detection accuracy, 0% false positives)
 - Problems:
+  - CLI compare test report fixture lacked `summary.byStatus`: updated fixture to adhere to full Report schema.
+  - Unused `CardHeader` in `ComparePage.tsx` and explicit `any` in `diagnostic-runs.ts`: typed parameter as `DiagnosticRunDocument` and cleaned unused imports.
 - Decisions:
+  - Finding identity across runs is `${ruleId}::${subjectKey}` using evidence subject keys (ports, docker service names, env vars, source paths) so multiple findings from the same rule diff independently.
+  - Cross-user compare requests return 404 (not 403) to prevent unauthorized ID enumeration.
+  - `--fail-on-new` only inspects newly added findings, ignoring pre-existing unchanged findings.
 
 ---
 

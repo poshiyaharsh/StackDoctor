@@ -10,6 +10,7 @@ import { ProjectsPage } from "./pages/ProjectsPage.js";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage.js";
 import { ReportDetailPage } from "./pages/ReportDetailPage.js";
 import { FindingDetailPage } from "./pages/FindingDetailPage.js";
+import { ComparePage } from "./pages/ComparePage.js";
 import { SettingsPage } from "./pages/SettingsPage.js";
 import { NotFoundPage } from "./pages/NotFoundPage.js";
 
@@ -60,6 +61,14 @@ export function App() {
               element={
                 <ProtectedRoute>
                   <FindingDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/compare"
+              element={
+                <ProtectedRoute>
+                  <ComparePage />
                 </ProtectedRoute>
               }
             />
