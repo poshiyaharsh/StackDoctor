@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run dry-run publish only without pushing to npm"
+        required: true
+        type: boolean
+        default: true
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Full CI Verification Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: 22.x
+          cache: "npm"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Secret Scan
+        run: npm run check:secrets
+
+      - name: License Audit
+        run: npm run check:licenses
+
+      - name: Build Monorepo
+        run: npm run build
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run Typecheck
+        run: npm run typecheck
+
+      - name: Run Test Suite
+        run: npm test
+
+      - name: Run Diagnostic Accuracy Evaluation
+        run: npm run eval
+
+      - name: Run AI Safety Evaluation
+        run: npm run eval:ai
+
+      - name: Run Package Inspection
+        run: npm run check:pack
+
+      - name: Run Fresh Install Verification
+        run: npm run test:install
+
+  publish:
+    name: Publish to npm & Draft GitHub Release
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: 22.x
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+
+      - name: Install Dependencies & Build Monorepo
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish CLI Package to npm
+        cwd: apps/cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          IS_DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          if [ "$IS_DRY_RUN" = "true" ]; then
+            echo "[INFO] Running npm publish in dry-run mode..."
+            npm publish --access public --dry-run
+          else
+            echo "[INFO] Publishing stackdoctor to npm with provenance..."
+            npm publish --access public --provenance
+          fi
+
+      - name: Create Draft GitHub Release
+        uses: softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda # v2.2.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: true
+          prerelease: false
+          body_path: CHANGELOG.md
+          generate_release_notes: true

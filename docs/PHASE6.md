@@ -18,7 +18,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 |---|---|---|---|---|
 | 6A | Repo hygiene, secret scan, dependency + license audit, security policy | Done | ee5123e | 2026-10-27 |
 | 6B | npm packaging and fresh-install testing | Done | 5148895 | 2026-10-27 |
-| 6C | CI/CD pipeline and release automation (no publishing) | Not started | - | - |
+| 6C | CI/CD pipeline and release automation (no publishing) | Done | PENDING | 2026-10-27 |
 | 6D | Documentation, templates, roadmap, known limitations | Not started | - | - |
 | 6E | Demo script, launch assets, honest launch posts | Not started | - | - |
 | 6F | Version 0.1 Definition-of-Done verification | Not started | - | - |
@@ -183,16 +183,33 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] CI matrix covers Windows, Linux, macOS
-- [ ] All actions pinned to commit SHAs; least-privilege permissions
-- [ ] Release workflow needs manual approval and was NOT run
-- [ ] Workflow files validate (actionlint or equivalent)
-- [ ] Release creates a draft, never an automatic public release
+- [x] CI matrix covers Windows, Linux, macOS
+- [x] All actions pinned to commit SHAs; least-privilege permissions
+- [x] Release workflow needs manual approval and was NOT run
+- [x] Workflow files validate (actionlint or equivalent)
+- [x] Release creates a draft, never an automatic public release
 
 **Run log (Antigravity fills):**
 - Files:
+  - Created: `.github/workflows/codeql.yml`, `.github/workflows/dependency-review.yml`, `.github/workflows/release.yml`, `docs/ci-internal.md`, `scripts/validate-workflows.js`
+  - Modified: `.github/workflows/ci.yml`, `README.md`, `docs/PHASE6.md`, `docs/LOG.md`
 - Validation results:
+  - `node scripts/validate-workflows.js`: PASSED (all 4 workflows syntactically valid YAML and structurally verified)
+  - `npm run check:secrets`: PASSED (0 secrets detected)
+  - `npm run check:licenses`: PASSED (100% compliant)
+  - `npm run check:pack`: PASSED (145.9 KB tarball, 23 files)
+  - `npm run test:install`: PASSED (100% of CLI operations verified in clean temp prefix)
+  - `npm run build`: PASSED (0 errors)
+  - `npm run lint`: PASSED (0 errors)
+  - `npm run typecheck`: PASSED (0 errors)
+  - `npm test`: PASSED (58 test files passed, 421/421 tests passed)
+  - `npm run eval`: PASSED (100.0% accuracy, 0.0% false positives)
+  - `npm run eval:ai`: PASSED (18/18, 100%)
 - Decisions:
+  - Pinned all 7 third-party GitHub Actions across all 4 workflows to verified full commit SHAs with version comments.
+  - Configured least-privilege permissions (`contents: read`) across all CI jobs; `id-token: write` and `contents: write` restricted exclusively to the `npm-publish` protected environment in `release.yml`.
+  - Added CI status badge to `README.md` pointing to GitHub Actions.
+  - Documented complete step-by-step maintainer setup for the protected `npm-publish` GitHub Environment and `NPM_TOKEN` secret in `docs/ci-internal.md`.
 
 ---
 

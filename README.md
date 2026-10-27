@@ -1,5 +1,8 @@
 # StackDoctor
 
+[![CI](https://github.com/poshiyaharsh/StackDoctor/actions/workflows/ci.yml/badge.svg)](https://github.com/poshiyaharsh/StackDoctor/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 > Find the cause. Fix the environment. Ship the code.
 
 StackDoctor is an open-source developer environment diagnostics tool designed to help developers identify and fix local configuration, dependency, and runtime issues with clear evidence and actionable remediation.

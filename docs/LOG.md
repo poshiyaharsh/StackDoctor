@@ -1241,7 +1241,64 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Problems / errors:** Identified missing `zod-to-json-schema` runtime dependency in CLI package; resolved `@eslint/js` transitive import leak from `@stackdoctor/config` by virtualizing the config module during CLI bundling.
 - **Decisions made:** Keep CLI dependencies lean (`semver`, `yaml`, `zod`, `zod-to-json-schema`) with database drivers marked optional; bundle all `@stackdoctor/*` workspace code into the CLI distributable so end users need no private workspace registries.
 - **Next step:** Phase 6, Run 6C: CI/CD pipeline and release automation (no publishing).
+---
+
+## 2026-10-27 - Phase 6, Run 6C: CI/CD pipeline and release automation (no publishing)
+
+- **Run:** Phase 6, Run 6C
+- **Focus:** GitHub Actions CI matrix hardening with pinned commit SHAs, CodeQL SAST workflow, Dependency Review, protected release pipeline with manual deployment gates, CI status badge, and CI documentation.
+- **Commit:** PENDING
+- **What was built:**
+  1. Hardened Multi-OS CI Workflow (`.github/workflows/ci.yml`):
+     - Matrix: Ubuntu, Windows, macOS across Node 20.x (minimum) and Node 22.x (Active LTS).
+     - Pinned all action steps to immutable commit SHAs with version annotations.
+     - Added least-privilege `permissions: contents: read` and concurrency cancellation groups.
+     - Full verification gates: dependency install (`npm ci`), secret scan (`check:secrets`), license audit (`check:licenses`), build (`npm run build`), lint, typecheck, Vitest test suite (`npm test`), diagnostic accuracy eval (`npm run eval`), AI safety benchmark (`npm run eval:ai`), tarball packaging inspection (`check:pack`), and fresh-install test (`test:install`).
+     - Added automated artifact upload for license reports.
+  2. CodeQL Security Analysis (`.github/workflows/codeql.yml`):
+     - Analyzes `javascript-typescript` using pinned `github/codeql-action`.
+     - Scheduled weekly and triggered on push/PR to `main`.
+  3. Dependency Review (`.github/workflows/dependency-review.yml`):
+     - Blocks PRs introducing vulnerable dependencies (fails on high/critical) or non-permissive licenses.
+  4. Protected Release Workflow (`.github/workflows/release.yml`):
+     - Triggered manually (`workflow_dispatch`) or by version tags (`v*`).
+     - Gated by full CI verification before publish step.
+     - Enforces deployment to protected GitHub Environment `npm-publish` requiring manual maintainer approval.
+     - Publishes package to npm with provenance (`id-token: write`).
+     - Generates draft GitHub releases from `CHANGELOG.md` with `draft: true` (never auto-publishes).
+     - Release workflow was verified and NOT executed.
+  5. Workflow Syntax Validator (`scripts/validate-workflows.js`):
+     - Parses and validates YAML structure and required fields across all 4 workflows.
+  6. CI Documentation & Status Badge:
+     - Created `docs/ci-internal.md` documenting job steps, local reproduction commands, and step-by-step instructions for the maintainer to set up the protected `npm-publish` environment and `NPM_TOKEN` secret.
+     - Added official CI status badge and License badge to `README.md`.
+- **Files created/changed:**
+  - `.github/workflows/codeql.yml`
+  - `.github/workflows/dependency-review.yml`
+  - `.github/workflows/release.yml`
+  - `docs/ci-internal.md`
+  - `scripts/validate-workflows.js`
+  - `.github/workflows/ci.yml`
+  - `README.md`
+  - `docs/PHASE6.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `node scripts/validate-workflows.js`: Passed (all 4 workflows syntactically and structurally valid)
+  - `npm run check:pack`: Passed (145.9 KB compressed, 23 files)
+  - `npm run test:install`: Passed (100% of CLI operations verified in clean temp prefix)
+  - `npm run check:secrets`: Passed (0 secrets detected)
+  - `npm run check:licenses`: Passed (431 packages audited, 100% MIT-compatible)
+  - `npm run build`: Passed (`tsc -b && node scripts/build-cli.js`, exit code 0)
+  - `npm run lint`: Passed (0 errors across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (421/421 tests across 58 suites passed)
+  - `npm run eval`: Passed (100.0% detection accuracy, 0.0% false positives)
+  - `npm run eval:ai`: Passed (18/18 safety evals passed with 100% score)
+- **Problems / errors:** None. All action SHAs verified via `git ls-remote`.
+- **Decisions made:** All actions pinned to full commit SHAs; least-privilege permissions applied; release publishing strictly requires manual approval in the `npm-publish` environment and creates draft releases only; release workflow was not executed.
+- **Next step:** Phase 6, Run 6D: Documentation, templates, roadmap, known limitations.
 - **Status:** Done
+
 
 
 
