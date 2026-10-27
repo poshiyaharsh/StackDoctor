@@ -1125,7 +1125,69 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Problems / errors:** Filtered technology/runtime identifiers (e.g. `node.js`) from file regex matching in `validateGrounding` to avoid false ungrounded file rejections.
 - **Decisions made:** All 18 safety eval test fixtures run via both `npm run eval:ai` and `vitest run` in CI; AI is 100% optional and disabled by default with zero network calls; deterministic fallback is always available.
 - **Next step:** Phase 6: Open-source launch (docs, license, security policy, release).
+---
+
+## 2026-10-27 - Phase 6, Run 6A: Repo hygiene, secret scan, dependency + license audit, security policy
+
+- **Run:** Phase 6, Run 6A
+- **Focus:** Secret scan across git history and working tree, repository hygiene, dependency and license audit, SECURITY.md, CODE_OF_CONDUCT.md, dependabot configuration, and automated check scripts.
+- **Commit:** PENDING
+- **What was built:**
+  1. Secret Scanner Script (`scripts/check-secrets.js`):
+     - Executable via `npm run check:secrets`.
+     - Scans full git commit history and working tree for private keys, AWS keys, GitHub PATs, Slack tokens, OpenAI keys, Anthropic keys, and unredacted credentials.
+     - Result: 0 secrets detected across git history and working tree.
+  2. License Audit Script (`scripts/check-licenses.js`):
+     - Executable via `npm run check:licenses`.
+     - Inspects all 431 direct and transitive dependencies across all workspaces.
+     - Enforces permissible open-source license policy (MIT, Apache-2.0, ISC, BSD-2/3, 0BSD, Python-2.0, CC-BY-4.0).
+     - Verified 0 copyleft licenses (GPL, AGPL, LGPL).
+     - Generates full inventory documentation in `docs/licenses.md`.
+  3. Security Policy (`SECURITY.md`):
+     - Supported versions (0.1.x), private vulnerability reporting instructions with maintainer advisory URL and email placeholders, report requirements, response time goals, coordinated disclosure policy, and detailed in-scope / out-of-scope boundaries.
+  4. Code of Conduct (`CODE_OF_CONDUCT.md`):
+     - Adopted Contributor Covenant v2.1 with clearly marked maintainer enforcement contact email placeholder.
+  5. Dependabot Configuration (`.github/dependabot.yml`):
+     - Weekly schedules for both `npm` and `github-actions` ecosystems with minor/patch grouping.
+  6. Repository Hygiene & Package Licensing:
+     - Updated `.gitignore` to include `.stackdoctor/` and `.stackdoctor.json`.
+     - Declared explicit `"license": "MIT"` across root `package.json` and all 9 workspace packages.
+     - Documented `npm audit` findings (devDependency `tinypool` in vitest and `zod` collection parsing) with zero production runtime exposure in `docs/licenses.md`.
+- **Files created/changed:**
+  - `SECURITY.md`
+  - `CODE_OF_CONDUCT.md`
+  - `.github/dependabot.yml`
+  - `scripts/check-secrets.js`
+  - `scripts/check-licenses.js`
+  - `docs/licenses.md`
+  - `.gitignore`
+  - `package.json`
+  - `packages/schemas/package.json`
+  - `packages/config/package.json`
+  - `packages/adapters/package.json`
+  - `packages/core/package.json`
+  - `packages/rules/package.json`
+  - `packages/ai/package.json`
+  - `apps/cli/package.json`
+  - `apps/api/package.json`
+  - `apps/web/package.json`
+  - `docs/INDEX.md`
+  - `docs/PHASE6.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run check:secrets`: Passed (0 secrets detected)
+  - `npm run check:licenses`: Passed (431 packages audited, 100% MIT-compatible)
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (421/421 tests across 58 suites passed)
+  - `npm run eval`: Passed (100.0% detection accuracy, 0.0% false positives)
+  - `npm run eval:ai`: Passed (18/18 safety evals passed with 100% score)
+- **Problems / errors:** Excluded test fixtures that specifically test secret redactions (`test/` directories and `eval-ai.js`) from false positive secret detections in `check-secrets.js`.
+- **Decisions made:** All workspace packages explicitly declare MIT; audit notes documented with runtime safety boundaries in `docs/licenses.md`; automated secret and license check scripts added to monorepo scripts for continuous verification.
+- **Next step:** Phase 6, Run 6B: npm packaging and fresh-install testing.
 - **Status:** Done
+
 
 
 

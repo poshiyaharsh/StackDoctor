@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "license": "MIT",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -13,6 +14,8 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "test": "vitest run",
+    "check:secrets": "node scripts/check-secrets.js",
+    "check:licenses": "node scripts/check-licenses.js",
     "eval": "node scripts/eval.js",
     "eval:ai": "node scripts/eval-ai.js",
     "new-rule": "node scripts/new-rule.js",

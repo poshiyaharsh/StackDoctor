@@ -16,6 +16,10 @@ coverage/
 !examples/**/.env
 !examples/**/.env.*
 
+# StackDoctor local state
+.stackdoctor/
+.stackdoctor.json
+
 # Allow fixture dummy node_modules
 !examples/healthy-node-project/node_modules/
 !examples/healthy-node-project/node_modules/**
