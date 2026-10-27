@@ -17,7 +17,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 |---|---|---|---|---|
 | 5A | AI package: provider interface, input sanitization, prompt construction | Done | 920f90c | 2026-10-27 |
 | 5B | Output validation, grounding checks, command allowlist | Done | c8f79d0 | 2026-10-27 |
-| 5C | Providers + CLI `ai-explain` with consent preview | Done | pending | 2026-10-27 |
+| 5C | Providers + CLI `ai-explain` with consent preview | Done | d586d15 | 2026-10-27 |
 | 5D | API explanation endpoint + web UI | Not started | - | - |
 | 5E | User-approved remediation (allowlisted operations only) | Not started | - | - |
 | 5F | Safety evals, docs, final verification | Not started | - | - |
