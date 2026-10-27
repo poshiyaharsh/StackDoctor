@@ -21,6 +21,21 @@ for (const file of fs.readdirSync(wfDir)) {
       if (!parsed.name || !parsed.on || !parsed.jobs) {
         throw new Error("Missing required workflow fields (name, on, or jobs)");
       }
+      for (const [jobId, job] of Object.entries(parsed.jobs)) {
+        if (!job || typeof job !== "object") {
+          throw new Error(`Job '${jobId}' must be an object`);
+        }
+        if (job.steps && Array.isArray(job.steps)) {
+          for (let i = 0; i < job.steps.length; i++) {
+            const step = job.steps[i];
+            if (step && typeof step === "object") {
+              if ("cwd" in step) {
+                throw new Error(`Job '${jobId}' step #${i + 1} ('${step.name || "unnamed"}') uses invalid property 'cwd'. Use 'working-directory' instead.`);
+              }
+            }
+          }
+        }
+      }
       console.log(`[PASS] Valid Workflow: ${file.padEnd(25)} (jobs: ${Object.keys(parsed.jobs).join(", ")})`);
     } catch (err) {
       console.error(`[FAIL] Error in ${file}: ${err.message}`);

@@ -67,11 +67,18 @@ jobs:
       - name: Run Fresh Install Verification
         run: npm run test:install
 
+      - name: Verify Rules Documentation Synchronized
+        run: npm run docs:rules -- --check
+
+      - name: Verify Documentation Links and Snippets
+        run: npm run test:docs
+
   publish:
     name: Publish to npm & Draft GitHub Release
     needs: verify
     runs-on: ubuntu-latest
-    environment: npm-publish
+    environment:
+      name: npm-publish
     permissions:
       contents: write
       id-token: write
@@ -93,7 +100,7 @@ jobs:
           npm run build
 
       - name: Publish CLI Package to npm
-        cwd: apps/cli
+        working-directory: apps/cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           IS_DRY_RUN: ${{ github.event.inputs.dry_run }}
