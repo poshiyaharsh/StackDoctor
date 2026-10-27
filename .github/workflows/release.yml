@@ -3,11 +3,16 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
+      tag_name:
+        description: "Release tag name (e.g. v0.1.0)"
+        required: false
+        type: string
+        default: "v0.1.0"
       dry_run:
         description: "Run dry-run publish only without pushing to npm"
         required: true
         type: boolean
-        default: true
+        default: false
   push:
     tags:
       - "v*"
@@ -113,12 +118,14 @@ jobs:
             npm publish --access public --provenance
           fi
 
-      - name: Create Draft GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda # v2.2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          draft: true
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          name: "StackDoctor ${{ github.event.inputs.tag_name || github.ref_name }}"
+          draft: ${{ github.event.inputs.dry_run == 'true' }}
           prerelease: false
           body_path: CHANGELOG.md
           generate_release_notes: true
