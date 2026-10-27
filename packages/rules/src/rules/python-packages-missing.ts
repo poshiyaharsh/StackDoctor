@@ -21,7 +21,8 @@ export const pythonPackagesMissingRule: Rule = {
       commandOrAction: "pip install -r requirements.txt",
       expectedResult: "All declared packages are installed in the active virtual environment.",
       risks: "Installs packages into current Python environment; ensure a virtualenv is active.",
-      verification: "stackdoctor scan"
+      verification: "stackdoctor scan",
+      operationId: "PYTHON_INSTALL_REQUIREMENTS"
     }
   ],
   verification: "Verify all declared packages are present in pip list.",
@@ -71,7 +72,8 @@ export const pythonPackagesMissingRule: Rule = {
           commandOrAction: "pip install -r requirements.txt",
           expectedResult: "Required packages are installed into environment.",
           risks: "Downloads packages from PyPI.",
-          verification: "stackdoctor scan"
+          verification: "stackdoctor scan",
+          operationId: "PYTHON_INSTALL_REQUIREMENTS"
         }
       ],
       verificationStatus: "unverified",

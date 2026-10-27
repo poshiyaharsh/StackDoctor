@@ -22,7 +22,8 @@ export const pythonVenvMissingRule: Rule = {
       expectedResult: "A clean, isolated virtual environment folder (.venv) is initialized.",
       risks: "Creates a local .venv directory; harmless to existing code.",
       undo: "rm -rf .venv",
-      verification: "test -d .venv"
+      verification: "test -d .venv",
+      operationId: "PYTHON_CREATE_VENV"
     }
   ],
   verification: "Confirm that .venv directory exists or VIRTUAL_ENV is active.",
@@ -67,7 +68,8 @@ export const pythonVenvMissingRule: Rule = {
             expectedResult: "Creates an isolated virtual environment directory at .venv.",
             risks: "Creates a local .venv folder; suggestion only.",
             undo: "rm -rf .venv",
-            verification: "test -d .venv"
+            verification: "test -d .venv",
+            operationId: "PYTHON_CREATE_VENV"
           }
         ],
         verificationStatus: "unverified",

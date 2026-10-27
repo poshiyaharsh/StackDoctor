@@ -24,6 +24,7 @@ export interface RunCommandOptions {
   cwd?: string;
   timeoutMs?: number;
   maxOutputBytes?: number;
+  onOutput?: (chunk: string, stream: "stdout" | "stderr") => void;
 }
 
 export interface CommandResult {
@@ -37,6 +38,29 @@ export interface CommandResult {
 
 const DEFAULT_TIMEOUT_MS = 5_000;
 const DEFAULT_MAX_OUTPUT_BYTES = 100 * 1024; // 100 KB
+
+export function isExecutableAllowlisted(executable: string, cwd?: string): boolean {
+  if (ALLOWED_EXECUTABLES.has(executable)) {
+    return true;
+  }
+  if (path.resolve(executable) === path.resolve(process.execPath)) {
+    return true;
+  }
+  if (cwd) {
+    const resolvedPath = path.resolve(cwd, executable);
+    const resolvedCwd = path.resolve(cwd);
+    const venvDir = path.join(resolvedCwd, ".venv");
+    const relativeToVenv = path.relative(venvDir, resolvedPath);
+    const isInsideVenv = !relativeToVenv.startsWith("..") && !path.isAbsolute(relativeToVenv);
+    if (isInsideVenv) {
+      const baseName = path.basename(resolvedPath).replace(/\.exe$/i, "").toLowerCase();
+      if (["python", "python3", "pip", "pip3"].includes(baseName)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 /**
  * Executes a fixed executable with argument array safely.
@@ -52,7 +76,7 @@ export async function runCommand(
   args: string[] = [],
   options: RunCommandOptions = {}
 ): Promise<CommandResult> {
-  if (!ALLOWED_EXECUTABLES.has(executable)) {
+  if (!isExecutableAllowlisted(executable, options.cwd)) {
     throw new Error(
       `Executable not allowlisted: "${executable}". Allowed: ${Array.from(ALLOWED_EXECUTABLES).join(", ")}`
     );
@@ -170,6 +194,17 @@ export async function runCommand(
         notFound: false
       });
     });
+
+    if (options.onOutput) {
+      child.stdout?.on("data", (chunk: Buffer | string) => {
+        const text = typeof chunk === "string" ? chunk : chunk.toString("utf-8");
+        options.onOutput?.(redactText(text), "stdout");
+      });
+      child.stderr?.on("data", (chunk: Buffer | string) => {
+        const text = typeof chunk === "string" ? chunk : chunk.toString("utf-8");
+        options.onOutput?.(redactText(text), "stderr");
+      });
+    }
 
     child.on("error", (err: NodeJS.ErrnoException) => {
       if (err.code === "ENOENT" || err.code === "EINVAL") {

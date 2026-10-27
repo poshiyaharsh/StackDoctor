@@ -10,7 +10,8 @@ export const RecommendationSchema = z.object({
   expectedResult: z.string().min(1).max(1000),
   risks: z.string().min(1).max(1000),
   undo: z.string().max(2000).optional(),
-  verification: z.string().min(1).max(1000)
+  verification: z.string().min(1).max(1000),
+  operationId: z.string().max(128).optional()
 });
 export type Recommendation = z.infer<typeof RecommendationSchema>;
 

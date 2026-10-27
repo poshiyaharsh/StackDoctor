@@ -384,18 +384,49 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Dry run is the default and executes nothing
-- [ ] Execution needs `--apply` plus typed confirmation
-- [ ] Only the four allowlisted operations exist (grep and test prove it)
-- [ ] AI can reference operation IDs but never supply commands or arguments
-- [ ] Verification re-runs after a fix; history is logged without secrets
-- [ ] Nothing runs outside the project directory
+- [x] Dry run is the default and executes nothing
+- [x] Execution needs `--apply` plus typed confirmation
+- [x] Only the four allowlisted operations exist (grep and test prove it)
+- [x] AI can reference operation IDs but never supply commands or arguments
+- [x] Verification re-runs after a fix; history is logged without secrets
+- [x] Nothing runs outside the project directory
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/adapters/src/operations.ts`
+  - `packages/adapters/src/exec.ts`
+  - `packages/adapters/src/index.ts`
+  - `packages/adapters/test/operations.test.ts`
+  - `packages/schemas/src/findings.ts`
+  - `packages/rules/src/rules/node-deps-not-installed.ts`
+  - `packages/rules/src/rules/python-venv-missing.ts`
+  - `packages/rules/src/rules/python-packages-missing.ts`
+  - `packages/rules/src/rules/env-example-no-env.ts`
+  - `packages/ai/src/command-safety.ts`
+  - `apps/cli/src/fix.ts`
+  - `apps/cli/src/index.ts`
+  - `apps/cli/test/fix.test.ts`
+  - `apps/web/src/lib/api.ts`
+  - `apps/web/src/pages/ReportDetailPage.tsx`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
 - Command results:
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (397/397 tests across 56 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
 - Problems:
+  - Ensured `runCommand` allows Python binaries located inside the project's `.venv` directory while maintaining strict allowlisting of executables.
+  - Linked `operationId` across `RecommendationSchema` in schemas and `FindingItem` in web API types.
 - Decisions:
+  - Exactly 4 allowlisted operations are supported (`NODE_INSTALL_DEPENDENCIES`, `PYTHON_CREATE_VENV`, `PYTHON_INSTALL_REQUIREMENTS`, `COPY_ENV_EXAMPLE`); destructive actions (file deletion, killing processes, database changes, sudo) are forbidden.
+  - `stackdoctor fix` is DRY RUN by default, printing planned command, risks, undo instructions, and expected result without spawning child processes.
+  - Applying fixes requires `--apply` and explicit typed confirmation of the operation ID. Operations with install/network effects strictly reject `--yes` bypass.
+  - Execution is strictly refused in `--ci` mode or when `process.env.CI` is set.
+  - Audit history is recorded to `.stackdoctor/fix-history.json` (gitignored by default) with all tokens/secrets redacted.
+  - The Web UI never executes fixes directly; it only displays the safe remediation description and the CLI command.
+
 
 ---
 

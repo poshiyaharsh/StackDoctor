@@ -987,6 +987,78 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 5, Run 5E: User-approved remediation (allowlisted operations only).
 - **Status:** Done
 
+---
+
+### [2026-10-27] Phase 5, Run 5E: User-Approved Safe Remediation (Allowlisted Operations Only)
+- **Prompt used:** PHASE5.md > Run 5E: User-approved remediation (allowlisted operations only)
+- **What was done:**
+  1. Safe Operation Registry (`packages/adapters/src/operations.ts`):
+     - Implemented registry strictly defining EXACTLY four allowlisted remediation operations:
+       - `NODE_INSTALL_DEPENDENCIES`: runs project's detected package manager (`npm ci` / `pnpm install --frozen-lockfile` / `yarn install --immutable`) with `--ignore-scripts` by default.
+       - `PYTHON_CREATE_VENV`: initializes an isolated `.venv` virtual environment in the project directory.
+       - `PYTHON_INSTALL_REQUIREMENTS`: installs dependencies from `requirements.txt` into the local `.venv` ONLY (refuses to run if `.venv` does not exist).
+       - `COPY_ENV_EXAMPLE`: copies `.env.example` to `.env` ONLY if `.env` does not exist (strictly refuses to overwrite).
+     - Defined `EmptyArgumentSchema` (`z.object({}).strict()`) ensuring AI suggestions or user inputs can never supply arbitrary commands, arguments, or flags.
+     - Strictly forbade unsupported and destructive operations (killing processes, deleting files/folders, database migrations, firewall/network configs, system package installs, sudo).
+     - Provided path safety guards (`validateProjectDirectory`, `assertInsideProject`) guaranteeing that nothing can be targeted or run outside the scanned project directory.
+     - Implemented `verify` methods for all four operations to check post-remediation status.
+     - Implemented `appendFixHistory` recording audit entries to `.stackdoctor/fix-history.json` with automatic `.gitignore` protection and secret redaction.
+  2. Executable & Runtime Hardening (`packages/adapters/src/exec.ts`):
+     - Extended `isExecutableAllowlisted` to permit Python binaries located strictly inside the project's `.venv` directory while preserving zero-shell (`shell: false`) enforcement.
+     - Added real-time redacted output streaming (`onOutput` callback in `RunCommandOptions`).
+  3. Rule Remediation & AI Integration:
+     - Updated `RecommendationSchema` in `packages/schemas/src/findings.ts` to include optional `operationId`.
+     - Updated rules (`node-deps-not-installed.ts`, `python-venv-missing.ts`, `python-packages-missing.ts`, `env-example-no-env.ts`) to reference their respective allowlisted operation IDs.
+     - Updated `DEFAULT_ALLOWLISTED_OPERATIONS` in `packages/ai/src/command-safety.ts` to strictly allow only the four operations and drop any unknown or unverified operation IDs from AI outputs.
+  4. CLI Fix Command (`apps/cli/src/fix.ts`, `apps/cli/src/index.ts`):
+     - Added `stackdoctor fix <ruleId | operationId> [path] [--apply]` command.
+     - DRY RUN by default: prints planned command, target directory, risks, undo instructions, expected result, and verification check without spawning any child processes or modifying files.
+     - Execution requires `--apply` flag AND interactive typed confirmation of the exact operation ID.
+     - Rejection of `--yes` bypass: operations with install/network effects (`NODE_INSTALL_DEPENDENCIES`, `PYTHON_INSTALL_REQUIREMENTS`) cannot bypass typed confirmation.
+     - Strict refusal in CI mode: rejects execution when `--ci` is passed or `process.env.CI` is set.
+     - Automatic pre- and post-fix verification reporting and audit logging.
+  5. Web UI Guidance (`apps/web`):
+     - Added `operationId` to `FindingItem` in `apps/web/src/lib/api.ts`.
+     - Updated `ReportDetailPage.tsx` to display the safe remediation CLI command (`stackdoctor fix <operationId>`) and note that the web app never executes fixes directly.
+  6. Test Suites:
+     - `packages/adapters/test/operations.test.ts` (14 tests): Exact 4 allowlisted operations assertion, rejection of forbidden operations, rule-to-operation mapping, argument schema strictness, lockfile detection, venv-only install guard, copy without overwrite, directory traversal defense, audit logging with secret redaction.
+     - `apps/cli/test/fix.test.ts` (11 tests): Missing ID usage, unknown ID rejection, dry run process absence assertion, rule ID mapping, CI mode refusal, typed confirmation mismatch abort, `--yes` bypass prevention on network operations, `--apply` successful execution with verification and audit log, `.env` overwrite prevention, `.venv` missing guard, and shell injection safety.
+- **Files created/changed:**
+  - `packages/adapters/src/operations.ts`
+  - `packages/adapters/src/exec.ts`
+  - `packages/adapters/src/index.ts`
+  - `packages/adapters/test/operations.test.ts`
+  - `packages/schemas/src/findings.ts`
+  - `packages/rules/src/rules/node-deps-not-installed.ts`
+  - `packages/rules/src/rules/python-venv-missing.ts`
+  - `packages/rules/src/rules/python-packages-missing.ts`
+  - `packages/rules/src/rules/env-example-no-env.ts`
+  - `packages/ai/src/command-safety.ts`
+  - `apps/cli/src/fix.ts`
+  - `apps/cli/src/index.ts`
+  - `apps/cli/test/fix.test.ts`
+  - `apps/web/src/lib/api.ts`
+  - `apps/web/src/pages/ReportDetailPage.tsx`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (397/397 tests across 56 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
+  - Dry run is the default and executes nothing: Verified
+  - Execution needs `--apply` plus typed confirmation: Verified
+  - Only the four allowlisted operations exist (grep and test prove it): Verified
+  - AI can reference operation IDs but never supply commands or arguments: Verified
+  - Verification re-runs after a fix; history is logged without secrets: Verified
+  - Nothing runs outside the project directory: Verified
+- **Problems / errors:** Handled executable allowlisting for `.venv` python binaries safely; resolved `operationId` property propagation through Web finding types.
+- **Decisions made:** Strict allowlist of 4 operations only; destructive actions are completely disallowed; dry-run by default; typed confirmation required for execution; CI mode refuses execution; web UI never runs fixes directly.
+- **Next step:** Phase 5, Run 5F: Safety evals, docs, final verification.
+- **Status:** Done
+
+
 
 
 

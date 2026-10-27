@@ -146,6 +146,7 @@ export interface FindingItem {
     expectedResult?: string;
     risks?: string;
     verification?: string;
+    operationId?: string;
   }>;
   verification?: string;
   docs?: string[];

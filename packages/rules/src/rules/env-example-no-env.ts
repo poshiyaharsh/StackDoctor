@@ -43,7 +43,8 @@ export const envExamplePresentNoEnvRule: Rule = {
       expectedResult: ".env file will be created based on template variable declarations.",
       risks: "Requires manual configuration of appropriate values for this local environment.",
       undo: "rm -f .env",
-      verification: "test -f .env"
+      verification: "test -f .env",
+      operationId: "COPY_ENV_EXAMPLE"
     }
   ],
   verification: "Confirm that .env file exists in project root.",
@@ -90,7 +91,8 @@ export const envExamplePresentNoEnvRule: Rule = {
             expectedResult: "A local .env configuration file will be initialized.",
             risks: "Template values may need adjustment with valid local secrets.",
             undo: "rm -f .env",
-            verification: "test -f .env"
+            verification: "test -f .env",
+            operationId: "COPY_ENV_EXAMPLE"
           }
         ],
         verificationStatus: "unverified",

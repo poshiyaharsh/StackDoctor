@@ -1,11 +1,10 @@
 import type { AiExplanation } from "./schema.js";
 
 export const DEFAULT_ALLOWLISTED_OPERATIONS = [
-  "npm_install",
-  "pip_install",
-  "create_env_file",
-  "kill_port_process",
-  "create_directory"
+  "NODE_INSTALL_DEPENDENCIES",
+  "PYTHON_CREATE_VENV",
+  "PYTHON_INSTALL_REQUIREMENTS",
+  "COPY_ENV_EXAMPLE"
 ];
 
 // Dangerous or privileged shell command verbs and constructs

@@ -630,6 +630,30 @@ export function ReportDetailPage() {
                             Verify: <code>{rem.verification}</code>
                           </div>
                         ) : null}
+
+                        {rem.operationId ? (
+                          <div style={{ marginTop: "0.5rem", padding: "0.75rem", backgroundColor: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)", borderRadius: "var(--radius-sm)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--color-primary)", textTransform: "uppercase" }}>
+                                Safe Remediation CLI Command (Dry Run by Default)
+                              </span>
+                              <Badge variant="info">CLI ONLY</Badge>
+                            </div>
+                            <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", margin: "0.25rem 0" }}>
+                              StackDoctor Web never executes remediation commands directly on your system. Run this in your local terminal:
+                            </p>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "var(--color-bg)", padding: "0.375rem 0.625rem", borderRadius: "var(--radius-sm)", fontFamily: "var(--font-mono)", fontSize: "0.8125rem", marginTop: "0.25rem" }}>
+                              <code>stackdoctor fix {rem.operationId}</code>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyToClipboard(`stackdoctor fix ${rem.operationId}`, `cli_fix_${index}_${remIdx}`)}
+                              >
+                                {copiedKey === `cli_fix_${index}_${remIdx}` ? "✓ Copied" : "Copy CLI Fix"}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>

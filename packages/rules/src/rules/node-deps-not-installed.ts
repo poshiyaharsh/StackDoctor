@@ -22,7 +22,8 @@ export const nodeDepsNotInstalledRule: Rule = {
       expectedResult: "Dependencies will be downloaded and linked into node_modules.",
       risks: "Network download and build scripts; suggest only with user confirmation.",
       undo: "rm -rf node_modules",
-      verification: "test -d node_modules"
+      verification: "test -d node_modules",
+      operationId: "NODE_INSTALL_DEPENDENCIES"
     }
   ],
   verification: "Verify that node_modules directory exists after installation.",
@@ -73,7 +74,8 @@ export const nodeDepsNotInstalledRule: Rule = {
             expectedResult: `node_modules will be created and populated using ${lockfileType}.`,
             risks: "Downloads external packages; suggestion only until user approves.",
             undo: "rm -rf node_modules",
-            verification: "test -d node_modules"
+            verification: "test -d node_modules",
+            operationId: "NODE_INSTALL_DEPENDENCIES"
           }
         ],
         verificationStatus: "unverified",

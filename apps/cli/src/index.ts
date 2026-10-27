@@ -30,6 +30,7 @@ import {
 import { formatReportPreview, uploadReport } from "./uploader.js";
 import { copyToClipboard } from "./clipboard.js";
 import { handleAiExplain, handleAiSetup, handleAiStatus } from "./ai-explain.js";
+import { handleFix } from "./fix.js";
 import type { AiProvider } from "@stackdoctor/ai";
 
 export class InvalidUsageError extends Error {
@@ -40,8 +41,11 @@ export class InvalidUsageError extends Error {
 }
 
 export interface CliOptions {
-  command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "ai-explain" | "ai-setup" | "ai-status" | "help" | "version";
+  command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "ai-explain" | "ai-setup" | "ai-status" | "fix" | "help" | "version";
   targetPath: string;
+  fixTarget?: string;
+  apply?: boolean;
+  askConfirmation?: (promptText: string) => Promise<string>;
   baseReportPath?: string;
   headReportPath?: string;
   failOnNew?: Severity;
@@ -73,8 +77,10 @@ export interface CliOptions {
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
-  let command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "ai-explain" | "ai-setup" | "ai-status" | "help" | "version" = "scan";
+  let command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "ai-explain" | "ai-setup" | "ai-status" | "fix" | "help" | "version" = "scan";
   let targetPath = ".";
+  let fixTarget: string | undefined;
+  let apply = false;
   let baseReportPath: string | undefined;
   let headReportPath: string | undefined;
   let failOnNew: Severity | undefined;
@@ -321,6 +327,13 @@ export function parseCliArgs(argv: string[]): CliOptions {
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         ruleId = argv[++i] as string;
       }
+    } else if (arg === "--apply") {
+      apply = true;
+    } else if (arg === "fix") {
+      command = "fix";
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        fixTarget = argv[++i] as string;
+      }
     } else if (arg === "scan") {
       command = "scan";
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
@@ -339,6 +352,12 @@ export function parseCliArgs(argv: string[]): CliOptions {
         if (!ruleId) {
           ruleId = arg as string;
         }
+      } else if (command === "fix") {
+        if (!fixTarget) {
+          fixTarget = arg as string;
+        } else {
+          targetPath = arg as string;
+        }
       } else {
         targetPath = arg as string;
       }
@@ -356,6 +375,8 @@ export function parseCliArgs(argv: string[]): CliOptions {
   return {
     command,
     targetPath,
+    fixTarget,
+    apply,
     baseReportPath,
     headReportPath,
     failOnNew,
@@ -403,6 +424,7 @@ USAGE:
   stackdoctor upload [reportFile | path] [flags]
   stackdoctor issue [reportFile | path] [flags]
   stackdoctor compare <baseReport.json> <headReport.json> [flags]
+  stackdoctor fix <ruleId | operationId> [path] [--apply]
 
 COMMANDS:
   scan [path]        Scan and diagnose a project directory (default: current directory, 100% offline)
@@ -411,6 +433,7 @@ COMMANDS:
   ai setup           Interactively configure optional AI provider and privacy settings
   ai status          Display current AI configuration and environment key availability
   ai-explain [path]  Generate evidence-grounded AI explanation with consent preview
+  fix <id> [path]    Approve and run safe, allowlisted remediation (DRY RUN by default)
   login              Authenticate with a StackDoctor server and securely store API token
   logout             Remove stored server credentials
   upload [target]    Upload a diagnostic report with interactive preview and confirmation
@@ -418,6 +441,7 @@ COMMANDS:
   compare <b.json> <h.json> Compare two diagnostic reports (100% offline diff, new/resolved/changed)
 
 FLAGS:
+  --apply            Execute approved remediation (requires interactive confirmation; refused in --ci)
   --ci               Run in CI mode (non-interactive, deterministic ordering, no ANSI colors)
   --fail-on <s>      Fail with exit code 1 if findings meet or exceed severity (info|low|medium|high|critical, default: high)
   --fail-on-new <s>  Fail with exit code 1 if new findings meet or exceed severity (info|low|medium|high|critical)
@@ -1131,6 +1155,16 @@ export async function runCli(
       showPayload: opts.showPayload,
       json: opts.json || opts.format === "json",
       customMockProvider: opts.customMockProvider
+    });
+  }
+
+  // --- COMMAND: fix (Safe, allowlisted remediation) ---
+  if (opts.command === "fix") {
+    return handleFix(opts.fixTarget || opts.ruleId, opts.targetPath, {
+      apply: opts.apply,
+      ci: opts.ci,
+      yes: opts.yes,
+      askConfirmation: opts.askConfirmation
     });
   }
 
