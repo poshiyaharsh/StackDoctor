@@ -47,14 +47,23 @@ describe("Database Diagnostics Adapter (database.ts)", () => {
   });
 
   it("Stage 3: skips authentication check when opt-in dbUrlEnvVar is not set", async () => {
-    const diag = await runStagedDatabaseCheck({
-      host: "localhost",
-      port: 27017,
-      dbType: "mongodb"
-    });
+    const server = net.createServer();
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
+    const address = server.address() as net.AddressInfo;
+    const testPort = address.port;
 
-    expect(diag.stages.auth.status).toBe("skipped");
-    expect(diag.stages.auth.details).toContain("no --db-url-env opt-in specified");
+    try {
+      const diag = await runStagedDatabaseCheck({
+        host: "127.0.0.1",
+        port: testPort,
+        dbType: "mongodb"
+      });
+
+      expect(diag.stages.auth.status).toBe("skipped");
+      expect(diag.stages.auth.details).toContain("no --db-url-env opt-in specified");
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   it("CRITICAL RULE: Canary secret password NEVER appears in any output, evidence, or error", async () => {

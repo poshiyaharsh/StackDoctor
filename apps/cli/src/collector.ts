@@ -110,15 +110,6 @@ export async function collectEvaluationContext(
   const dbDiagnostics: NonNullable<RuleEvaluationContext["database"]>["diagnostics"] = [];
   const dbEndpointsToCheck: Array<{ dbType: "mongodb" | "mysql"; host: string; port: number }> = [];
 
-  for (const s of composeServices) {
-    if (s.includes("mongo")) {
-      dbEndpointsToCheck.push({ dbType: "mongodb", host: "localhost", port: 27017 });
-    }
-    if (s.includes("mysql")) {
-      dbEndpointsToCheck.push({ dbType: "mysql", host: "localhost", port: 3306 });
-    }
-  }
-
   const envFilesToScan = [envPath, envExamplePath];
   for (const ef of envFilesToScan) {
     if (fs.existsSync(ef)) {
@@ -157,6 +148,39 @@ export async function collectEvaluationContext(
       } catch {
         // Ignore read errors
       }
+    }
+  }
+
+  const hasMongoEndpoint =
+    dbEndpointsToCheck.some((e) => e.dbType === "mongodb") ||
+    envFilesToScan.some((ef) => {
+      if (!fs.existsSync(ef)) return false;
+      try {
+        const c = fs.readFileSync(ef, "utf-8");
+        return /MONGO_HOST|mongodb:\/\//i.test(c);
+      } catch {
+        return false;
+      }
+    });
+
+  const hasMysqlEndpoint =
+    dbEndpointsToCheck.some((e) => e.dbType === "mysql") ||
+    envFilesToScan.some((ef) => {
+      if (!fs.existsSync(ef)) return false;
+      try {
+        const c = fs.readFileSync(ef, "utf-8");
+        return /MYSQL_HOST|mysql:\/\//i.test(c);
+      } catch {
+        return false;
+      }
+    });
+
+  for (const s of composeServices) {
+    if (s.includes("mongo") && !hasMongoEndpoint) {
+      dbEndpointsToCheck.push({ dbType: "mongodb", host: "localhost", port: 27017 });
+    }
+    if (s.includes("mysql") && !hasMysqlEndpoint) {
+      dbEndpointsToCheck.push({ dbType: "mysql", host: "localhost", port: 3306 });
     }
   }
 
