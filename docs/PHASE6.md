@@ -16,7 +16,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
-| 6A | Repo hygiene, secret scan, dependency + license audit, security policy | Done | PENDING | 2026-10-27 |
+| 6A | Repo hygiene, secret scan, dependency + license audit, security policy | Done | ee5123e | 2026-10-27 |
 | 6B | npm packaging and fresh-install testing | Not started | - | - |
 | 6C | CI/CD pipeline and release automation (no publishing) | Not started | - | - |
 | 6D | Documentation, templates, roadmap, known limitations | Not started | - | - |
