@@ -1247,7 +1247,7 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 
 - **Run:** Phase 6, Run 6C
 - **Focus:** GitHub Actions CI matrix hardening with pinned commit SHAs, CodeQL SAST workflow, Dependency Review, protected release pipeline with manual deployment gates, CI status badge, and CI documentation.
-- **Commit:** PENDING
+- **Commit:** 2128cc7
 - **What was built:**
   1. Hardened Multi-OS CI Workflow (`.github/workflows/ci.yml`):
      - Matrix: Ubuntu, Windows, macOS across Node 20.x (minimum) and Node 22.x (Active LTS).
