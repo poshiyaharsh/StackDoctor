@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@stackdoctor/adapters": "*",
+    "@stackdoctor/ai": "*",
     "@stackdoctor/config": "*",
     "@stackdoctor/core": "*",
     "@stackdoctor/rules": "*",

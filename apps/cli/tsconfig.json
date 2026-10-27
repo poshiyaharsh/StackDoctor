@@ -11,6 +11,7 @@
     { "path": "../../packages/schemas" },
     { "path": "../../packages/rules" },
     { "path": "../../packages/adapters" },
-    { "path": "../../packages/core" }
+    { "path": "../../packages/core" },
+    { "path": "../../packages/ai" }
   ]
 }

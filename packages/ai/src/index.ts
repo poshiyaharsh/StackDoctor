@@ -23,6 +23,10 @@ export * from "./parser.js";
 export * from "./grounding.js";
 export * from "./command-safety.js";
 export * from "./fallback.js";
+export * from "./providers/http-client.js";
+export * from "./providers/anthropic.js";
+export * from "./providers/openai-compatible.js";
+export * from "./providers/factory.js";
 
 export interface ExplainWithAiOptions {
   provider: AiProvider;

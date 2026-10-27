@@ -866,6 +866,65 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 5, Run 5C: Providers (Anthropic, OpenAI-compatible) and CLI `ai-explain` with consent preview (`packages/ai`, `apps/cli`).
 - **Status:** Done
 
+---
+
+### [2026-10-27] Phase 5, Run 5C: Providers and CLI with Consent Preview
+- **Prompt used:** PHASE5.md > Run 5C: Providers + CLI (packages/ai, apps/cli)
+- **What was done:**
+  1. AI Providers (`packages/ai/src/providers/`):
+     - Resilient HTTP Client (`http-client.ts`): Enforces HTTPS for all remote hosts (allowing HTTP strictly for localhost/127.0.0.1); handles timeout via AbortSignal; caps response payloads at `responseSizeCapBytes`; retries with exponential backoff on 429 and 5xx; strictly never logs bodies or leaks API keys.
+     - Anthropic Provider (`anthropic.ts`): Messages API integration with `x-api-key` loaded from environment variable whose name is configured.
+     - OpenAI-Compatible Provider (`openai-compatible.ts`): Chat completions integration for OpenAI and local servers (Ollama) via configurable base URL.
+     - Provider Factory (`factory.ts`): Instantiates providers based on typed configuration.
+  2. CLI Configuration Store (`apps/cli/src/ai-config-store.ts`):
+     - Stores AI settings in `~/.stackdoctor/ai.json` (mode 0600) with provider, model, baseUrl, and environment variable name. Never stores raw API keys.
+  3. CLI Commands and Consent Preview (`apps/cli/src/ai-explain.ts`, `apps/cli/src/index.ts`):
+     - `stackdoctor ai setup`: Interactively configures provider, model, and environment variable name, explaining privacy guarantees.
+     - `stackdoctor ai status`: Displays current configuration and checks whether the key environment variable is set without leaking values.
+     - `stackdoctor ai-explain [reportFile | path]`:
+       - Shows consent preview displaying target provider, model, payload byte size, findings count, environment, and privacy guarantees.
+       - Requires interactive confirmation (`y/N`) unless `--yes` / `-y` is provided. If declined, aborts transmission and renders deterministic fallback.
+       - If AI is unconfigured or disabled, prints setup instructions and displays deterministic fallback.
+       - Formats explanation with verified facts citing evidence IDs, probabilistic hypotheses, root cause ranking, remediation checklist, and quarantined command suggestions.
+       - On network/API errors, safely catches errors and serves deterministic fallback.
+  4. Guarantees:
+     - `stackdoctor scan` makes zero AI calls under all circumstances (100% offline).
+  5. Test Suites:
+     - `packages/ai/test/providers.test.ts` (7 tests): HTTPS enforcement, 429 retries with backoff, response size cap, Anthropic provider headers, local Ollama compatibility, canary key non-leakage, and factory construction.
+     - `apps/cli/test/ai-cli.test.ts` (4 tests): `ai setup` key secrecy, `ai status` rendering, unconfigured fallback, `--yes` non-interactive flow with MockProvider, and verification that `scan` makes zero AI calls.
+- **Files created/changed:**
+  - `packages/ai/src/config.ts`
+  - `packages/ai/src/providers/http-client.ts`
+  - `packages/ai/src/providers/anthropic.ts`
+  - `packages/ai/src/providers/openai-compatible.ts`
+  - `packages/ai/src/providers/factory.ts`
+  - `packages/ai/src/index.ts`
+  - `packages/ai/test/providers.test.ts`
+  - `apps/cli/package.json`
+  - `apps/cli/tsconfig.json`
+  - `apps/cli/src/ai-config-store.ts`
+  - `apps/cli/src/ai-explain.ts`
+  - `apps/cli/src/index.ts`
+  - `apps/cli/test/ai-cli.test.ts`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (347/347 tests across 52 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
+  - Nothing is sent without configuration AND confirmation: Verified
+  - The preview shows exactly what is sent: Verified
+  - API key never appears in config files, output, logs, or errors: Verified
+  - `scan` never calls AI: Verified
+  - Failure always falls back to deterministic explanation: Verified
+- **Problems / errors:** Linked `@stackdoctor/ai` in `apps/cli` via `npm install`; typed provider responses without any.
+- **Decisions made:** Remote connections enforce HTTPS; keys are loaded exclusively from environment variables; user consent preview is mandatory unless `--yes` is specified; `scan` is strictly offline.
+- **Next step:** Phase 5, Run 5D: API explanation endpoint and web UI (`apps/api`, `apps/web`).
+- **Status:** Done
+
+
 
 
 

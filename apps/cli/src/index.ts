@@ -29,6 +29,8 @@ import {
 } from "./config-store.js";
 import { formatReportPreview, uploadReport } from "./uploader.js";
 import { copyToClipboard } from "./clipboard.js";
+import { handleAiExplain, handleAiSetup, handleAiStatus } from "./ai-explain.js";
+import type { AiProvider } from "@stackdoctor/ai";
 
 export class InvalidUsageError extends Error {
   constructor(message: string) {
@@ -38,7 +40,7 @@ export class InvalidUsageError extends Error {
 }
 
 export interface CliOptions {
-  command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "help" | "version";
+  command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "ai-explain" | "ai-setup" | "ai-status" | "help" | "version";
   targetPath: string;
   baseReportPath?: string;
   headReportPath?: string;
@@ -62,10 +64,16 @@ export interface CliOptions {
   failOn: Severity;
   quiet: boolean;
   format: "text" | "json" | "markdown";
+  aiProvider?: "anthropic" | "openai" | "openai-compatible" | "mock";
+  aiModel?: string;
+  aiBaseUrl?: string;
+  aiKeyEnv?: string;
+  showPayload?: boolean;
+  customMockProvider?: AiProvider;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
-  let command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "help" | "version" = "scan";
+  let command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "ai-explain" | "ai-setup" | "ai-status" | "help" | "version" = "scan";
   let targetPath = ".";
   let baseReportPath: string | undefined;
   let headReportPath: string | undefined;
@@ -89,6 +97,11 @@ export function parseCliArgs(argv: string[]): CliOptions {
   let failOn: Severity = "high";
   let quiet = false;
   let format: "text" | "json" | "markdown" = "text";
+  let aiProvider: "anthropic" | "openai" | "openai-compatible" | "mock" | undefined;
+  let aiModel: string | undefined;
+  let aiBaseUrl: string | undefined;
+  let aiKeyEnv: string | undefined;
+  let showPayload = false;
 
   const VALID_SEVERITIES = new Set(["info", "low", "medium", "high", "critical"]);
   const VALID_FORMATS = new Set(["text", "json", "markdown"]);
@@ -226,6 +239,59 @@ export function parseCliArgs(argv: string[]): CliOptions {
       }
     } else if (arg?.startsWith("--db-url-env=")) {
       dbUrlEnv = arg.slice(13);
+    } else if (arg === "--provider") {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        aiProvider = argv[++i] as "anthropic" | "openai" | "openai-compatible" | "mock";
+      } else {
+        throw new InvalidUsageError("Missing provider name for --provider flag");
+      }
+    } else if (arg?.startsWith("--provider=")) {
+      aiProvider = arg.slice(11) as "anthropic" | "openai" | "openai-compatible" | "mock";
+    } else if (arg === "--model") {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        aiModel = argv[++i];
+      } else {
+        throw new InvalidUsageError("Missing model name for --model flag");
+      }
+    } else if (arg?.startsWith("--model=")) {
+      aiModel = arg.slice(8);
+    } else if (arg === "--base-url") {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        aiBaseUrl = argv[++i];
+      } else {
+        throw new InvalidUsageError("Missing URL for --base-url flag");
+      }
+    } else if (arg?.startsWith("--base-url=")) {
+      aiBaseUrl = arg.slice(11);
+    } else if (arg === "--key-env") {
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        aiKeyEnv = argv[++i];
+      } else {
+        throw new InvalidUsageError("Missing environment variable name for --key-env flag");
+      }
+    } else if (arg?.startsWith("--key-env=")) {
+      aiKeyEnv = arg.slice(10);
+    } else if (arg === "--show-payload") {
+      showPayload = true;
+    } else if (arg === "ai") {
+      if (i + 1 < argv.length && argv[i + 1] === "setup") {
+        command = "ai-setup";
+        i++;
+      } else if (i + 1 < argv.length && argv[i + 1] === "status") {
+        command = "ai-status";
+        i++;
+      } else {
+        throw new InvalidUsageError("Unknown ai subcommand. Usage: 'stackdoctor ai setup' or 'stackdoctor ai status'");
+      }
+    } else if (arg === "ai-setup") {
+      command = "ai-setup";
+    } else if (arg === "ai-status") {
+      command = "ai-status";
+    } else if (arg === "ai-explain") {
+      command = "ai-explain";
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        targetPath = argv[++i] as string;
+      }
     } else if (arg === "rules") {
       command = "rules";
     } else if (arg === "login") {
@@ -311,7 +377,12 @@ export function parseCliArgs(argv: string[]): CliOptions {
     ci,
     failOn,
     quiet,
-    format
+    format,
+    aiProvider,
+    aiModel,
+    aiBaseUrl,
+    aiKeyEnv,
+    showPayload
   };
 }
 
@@ -324,6 +395,9 @@ USAGE:
   stackdoctor scan [path] [flags]
   stackdoctor rules [flags]
   stackdoctor explain <ruleId> [flags]
+  stackdoctor ai setup [flags]
+  stackdoctor ai status
+  stackdoctor ai-explain [reportFile | path] [flags]
   stackdoctor login --server <url> [flags]
   stackdoctor logout
   stackdoctor upload [reportFile | path] [flags]
@@ -334,6 +408,9 @@ COMMANDS:
   scan [path]        Scan and diagnose a project directory (default: current directory, 100% offline)
   rules              List all diagnostic rules supported by StackDoctor
   explain <ruleId>   Explain rule details, evidence requirements, remediation, and docs
+  ai setup           Interactively configure optional AI provider and privacy settings
+  ai status          Display current AI configuration and environment key availability
+  ai-explain [path]  Generate evidence-grounded AI explanation with consent preview
   login              Authenticate with a StackDoctor server and securely store API token
   logout             Remove stored server credentials
   upload [target]    Upload a diagnostic report with interactive preview and confirmation
@@ -351,9 +428,14 @@ FLAGS:
   --min-severity <s> Filter issue draft findings by minimum severity (info|low|medium|high|critical)
   --copy             Copy generated issue draft to clipboard
   --no-evidence      Omit observed evidence section from issue draft
+  --provider <p>     AI provider (anthropic|openai|openai-compatible|mock)
+  --model <m>        AI model name
+  --base-url <url>   Base endpoint URL for OpenAI-compatible or local Ollama servers
+  --key-env <NAME>   Environment variable name providing API key (never stores key on disk)
+  --show-payload     Display full sanitized payload JSON in consent preview
   --server <url>     StackDoctor server URL (HTTPS required for remote servers; HTTP only for localhost)
   --token <token>    API token for authentication (or use STACKDOCTOR_TOKEN env var)
-  --yes, -y          Skip interactive confirmation prompt on report upload
+  --yes, -y          Skip interactive confirmation prompt on report upload and AI explain
   --project <name>   Target project name for upload
   --db-url-env <VAR> Opt-in to authenticated database checks using the named environment variable
   --allow-project-code Allow running safe, read-only project inspection commands
@@ -469,10 +551,16 @@ async function generateDirectoryReport(
 /**
  * Runs the CLI with the provided arguments and returns the process exit code.
  */
-export async function runCli(argv: string[] = process.argv.slice(2)): Promise<number> {
+export async function runCli(
+  argv: string[] = process.argv.slice(2),
+  overrides?: Partial<CliOptions>
+): Promise<number> {
   let opts: CliOptions;
   try {
     opts = parseCliArgs(argv);
+    if (overrides) {
+      opts = { ...opts, ...overrides };
+    }
   } catch (err) {
     if (err instanceof InvalidUsageError) {
       console.error(`Usage error: ${err.message}`);
@@ -974,6 +1062,76 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
     }
 
     return 0;
+  }
+
+  // --- COMMAND: ai-setup ---
+  if (opts.command === "ai-setup") {
+    return handleAiSetup({
+      provider: opts.aiProvider,
+      model: opts.aiModel,
+      baseUrl: opts.aiBaseUrl,
+      keyEnv: opts.aiKeyEnv,
+      yes: opts.yes
+    });
+  }
+
+  // --- COMMAND: ai-status ---
+  if (opts.command === "ai-status") {
+    return handleAiStatus();
+  }
+
+  // --- COMMAND: ai-explain ---
+  if (opts.command === "ai-explain") {
+    let report: Report;
+    const resolvedTarget = path.resolve(opts.targetPath);
+
+    // If target is an existing json report file
+    if (fs.existsSync(resolvedTarget) && fs.statSync(resolvedTarget).isFile()) {
+      try {
+        const fileContent = fs.readFileSync(resolvedTarget, "utf-8");
+        const parsedJson = JSON.parse(fileContent);
+        const validated = validateReport(parsedJson);
+        if (!validated.success) {
+          console.error(`Error: File "${opts.targetPath}" is not a valid StackDoctor report:`);
+          for (const err of validated.errors) {
+            console.error(`  - ${err}`);
+          }
+          return 2;
+        }
+        report = validated.data;
+      } catch (err) {
+        console.error(`Error reading report file: ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+    } else {
+      // Target is a directory: generate report offline
+      let realDir: string;
+      try {
+        realDir = validateDirectory(opts.targetPath);
+      } catch (err) {
+        console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+
+      try {
+        report = await generateDirectoryReport(realDir, opts);
+      } catch (err) {
+        console.error(`Diagnostic execution failed: ${err instanceof Error ? err.message : String(err)}`);
+        return 2;
+      }
+    }
+
+    return handleAiExplain({
+      report,
+      provider: opts.aiProvider,
+      model: opts.aiModel,
+      baseUrl: opts.aiBaseUrl,
+      keyEnv: opts.aiKeyEnv,
+      yes: opts.yes,
+      showPayload: opts.showPayload,
+      json: opts.json || opts.format === "json",
+      customMockProvider: opts.customMockProvider
+    });
   }
 
   // --- COMMAND: scan (purely local, 100% offline) ---

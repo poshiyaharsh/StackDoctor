@@ -17,7 +17,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 |---|---|---|---|---|
 | 5A | AI package: provider interface, input sanitization, prompt construction | Done | 920f90c | 2026-10-27 |
 | 5B | Output validation, grounding checks, command allowlist | Done | c8f79d0 | 2026-10-27 |
-| 5C | Providers + CLI `ai-explain` with consent preview | Not started | - | - |
+| 5C | Providers + CLI `ai-explain` with consent preview | Done | pending | 2026-10-27 |
 | 5D | API explanation endpoint + web UI | Not started | - | - |
 | 5E | User-approved remediation (allowlisted operations only) | Not started | - | - |
 | 5F | Safety evals, docs, final verification | Not started | - | - |
@@ -214,17 +214,43 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Nothing is sent without configuration AND confirmation
-- [ ] The preview shows exactly what is sent
-- [ ] API key never appears in config files, output, logs, or errors
-- [ ] `scan` never calls AI
-- [ ] Failure always falls back to the deterministic explanation
+- [x] Nothing is sent without configuration AND confirmation
+- [x] The preview shows exactly what is sent
+- [x] API key never appears in config files, output, logs, or errors
+- [x] `scan` never calls AI
+- [x] Failure always falls back to the deterministic explanation
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/ai/src/config.ts`
+  - `packages/ai/src/providers/http-client.ts`
+  - `packages/ai/src/providers/anthropic.ts`
+  - `packages/ai/src/providers/openai-compatible.ts`
+  - `packages/ai/src/providers/factory.ts`
+  - `packages/ai/src/index.ts`
+  - `packages/ai/test/providers.test.ts`
+  - `apps/cli/package.json`
+  - `apps/cli/tsconfig.json`
+  - `apps/cli/src/ai-config-store.ts`
+  - `apps/cli/src/ai-explain.ts`
+  - `apps/cli/src/index.ts`
+  - `apps/cli/test/ai-cli.test.ts`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
 - Command results:
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (347/347 tests across 52 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
 - Problems:
+  - Re-linked `@stackdoctor/ai` in `apps/cli` via `npm install`.
+  - Typed response payloads in HTTP providers to satisfy TypeScript and ESLint standards.
 - Decisions:
+  - Remote endpoints require HTTPS; HTTP is rejected unless connecting to localhost/127.0.0.1.
+  - Raw API keys are never stored on disk; only environment variable names are saved.
+  - `ai-explain` presents an interactive consent preview with payload byte size and privacy guarantees; transmission requires explicit confirmation or `--yes`.
+  - `scan` and other CLI commands make zero AI calls under all circumstances.
 
 ---
 
