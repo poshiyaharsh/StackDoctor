@@ -9,13 +9,15 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node scripts/build-cli.js",
     "clean": "tsc -b --clean",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "test": "vitest run",
     "check:secrets": "node scripts/check-secrets.js",
     "check:licenses": "node scripts/check-licenses.js",
+    "check:pack": "node scripts/check-pack.js",
+    "test:install": "node scripts/test-install.js",
     "eval": "node scripts/eval.js",
     "eval:ai": "node scripts/eval-ai.js",
     "new-rule": "node scripts/new-rule.js",

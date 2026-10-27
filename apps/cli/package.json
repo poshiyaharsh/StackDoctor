@@ -1,10 +1,31 @@
 {
   "name": "stackdoctor",
   "version": "0.1.0",
+  "description": "Find the cause. Fix the environment. Ship the code. Open-source developer environment diagnostics and remediation engine.",
+  "keywords": [
+    "diagnostics",
+    "developer-tools",
+    "devops",
+    "environment",
+    "cli",
+    "remediation",
+    "docker",
+    "nodejs",
+    "python"
+  ],
   "license": "MIT",
+  "author": "Harsh Poshiya",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poshiyaharsh/StackDoctor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/poshiyaharsh/StackDoctor/issues"
+  },
+  "homepage": "https://github.com/poshiyaharsh/StackDoctor#readme",
   "type": "module",
   "bin": {
-    "stackdoctor": "./dist/bin.js"
+    "stackdoctor": "dist/bin.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,7 +35,29 @@
       "import": "./dist/index.js"
     }
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "dependencies": {
+    "semver": "^7.6.3",
+    "yaml": "^2.9.1",
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.24.1"
+  },
+  "optionalDependencies": {
+    "mongodb": "^7.7.0",
+    "mysql2": "^3.24.6"
+  },
+  "devDependencies": {
     "@stackdoctor/adapters": "*",
     "@stackdoctor/ai": "*",
     "@stackdoctor/config": "*",
@@ -23,7 +66,7 @@
     "@stackdoctor/schemas": "*"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "node ../../scripts/build-cli.js",
     "clean": "tsc -b --clean"
   }
 }

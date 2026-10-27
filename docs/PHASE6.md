@@ -17,7 +17,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
 | 6A | Repo hygiene, secret scan, dependency + license audit, security policy | Done | ee5123e | 2026-10-27 |
-| 6B | npm packaging and fresh-install testing | Not started | - | - |
+| 6B | npm packaging and fresh-install testing | Done | PENDING | 2026-10-27 |
 | 6C | CI/CD pipeline and release automation (no publishing) | Not started | - | - |
 | 6D | Documentation, templates, roadmap, known limitations | Not started | - | - |
 | 6E | Demo script, launch assets, honest launch posts | Not started | - | - |
@@ -122,16 +122,36 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Tarball contains only intended files and no secrets or absolute paths
-- [ ] Fresh install from the tarball works and runs the main commands
-- [ ] `--version` matches package version and report toolVersion
-- [ ] `npm publish --dry-run` succeeds; nothing was actually published
+- [x] Tarball contains only intended files and no secrets or absolute paths
+- [x] Fresh install from the tarball works and runs the main commands
+- [x] `--version` matches package version and report toolVersion
+- [x] `npm publish --dry-run` succeeds; nothing was actually published
 
 **Run log (Antigravity fills):**
 - Files:
+  - Created: `scripts/build-cli.js`, `scripts/check-pack.js`, `scripts/test-install.js`, `apps/cli/README.md`, `apps/cli/LICENSE`
+  - Modified: `apps/cli/package.json`, `package.json`, `docs/PHASE6.md`, `docs/LOG.md`
 - Pack file list and size:
+  - Tarball: `stackdoctor-0.1.0.tgz`
+  - Compressed Size: 145.9 KB (Budget: <= 500 KB)
+  - Unpacked Size: 660.1 KB (Budget: <= 2048 KB)
+  - Total Files: 23 (LICENSE, README.md, package.json, dist/*.js, dist/*.d.ts; 0 map files, 0 test files, 0 secrets)
 - Command results:
+  - `npm run check:pack`: PASSED (145.9 KB compressed, 23 files, zero forbidden files)
+  - `npm run test:install`: PASSED (isolated prefix install, `--version`, `rules`, `explain`, `scan --json`, `scan --ci`)
+  - `npm publish --dry-run`: PASSED (dry-run output captured with 0 warnings)
+  - `npm run check:secrets`: PASSED (0 secrets detected)
+  - `npm run check:licenses`: PASSED (100% compliant)
+  - `npm run build`: PASSED (0 errors)
+  - `npm run lint`: PASSED (0 errors)
+  - `npm run typecheck`: PASSED (0 errors)
+  - `npm test`: PASSED (58 test files passed, 421/421 tests passed)
+  - `npm run eval`: PASSED (100.0% accuracy, 0.0% false positives)
+  - `npm run eval:ai`: PASSED (18/18, 100%)
 - Decisions:
+  - Bundled internal `@stackdoctor/*` packages directly into `apps/cli/dist/` using `esbuild` with an internal resolver plugin, virtualizing `@stackdoctor/config` to avoid dev-only `@eslint/js` dependencies in production.
+  - Published CLI package depends only on `semver`, `yaml`, `zod`, `zod-to-json-schema`, with `mongodb` and `mysql2` marked as `optionalDependencies`.
+  - Added automated `npm run check:pack` and `npm run test:install` scripts to guarantee every build produces a valid, installable tarball.
 
 ---
 

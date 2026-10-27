@@ -1186,7 +1186,63 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Problems / errors:** Excluded test fixtures that specifically test secret redactions (`test/` directories and `eval-ai.js`) from false positive secret detections in `check-secrets.js`.
 - **Decisions made:** All workspace packages explicitly declare MIT; audit notes documented with runtime safety boundaries in `docs/licenses.md`; automated secret and license check scripts added to monorepo scripts for continuous verification.
 - **Next step:** Phase 6, Run 6B: npm packaging and fresh-install testing.
+---
+
+## 2026-10-27 - Phase 6, Run 6B: npm packaging and fresh-install testing
+
+- **Run:** Phase 6, Run 6B
+- **Focus:** CLI bundling, tarball package inspection (`check:pack`), fresh-install testing in isolated temporary prefix (`test:install`), single source of truth version verification, and npm publish dry-run validation.
+- **Commit:** PENDING
+- **What was built:**
+  1. CLI Distribution Bundler (`scripts/build-cli.js`):
+     - Uses `esbuild` with an internal resolver plugin to inline `@stackdoctor/*` workspace packages into `apps/cli/dist/`.
+     - Virtualizes `@stackdoctor/config` to avoid pulling development-only `@eslint/js` dependencies into production runtime CLI code.
+     - Automatically cleans all `.map` source maps from `dist/` to prevent absolute host build paths in published packages.
+     - Ensures `dist/bin.js` has appropriate executable permissions (`0o755`).
+  2. CLI Package Configuration (`apps/cli/package.json`):
+     - Configured as published package `stackdoctor` (v0.1.0).
+     - Declared runtime dependencies: `semver`, `yaml`, `zod`, `zod-to-json-schema`.
+     - Declared optional dependencies: `mongodb`, `mysql2`.
+     - Added package metadata: keywords, description, repository, bugs, homepage, files allowlist (`dist`, `README.md`, `LICENSE`), engines (`>=20.0.0`), and publishConfig.
+     - Added package-level `README.md` and `LICENSE`.
+  3. Package Inspection Tool (`scripts/check-pack.js`):
+     - Executable via `npm run check:pack`.
+     - Asserts zero forbidden files (`.map`, `test/`, `.env`, fixtures, `.stackdoctor`).
+     - Enforces size budgets: compressed tarball <= 500 KB (achieved 145.9 KB), unpacked size <= 2048 KB (achieved 660.1 KB).
+  4. Fresh-Install Verification Harness (`scripts/test-install.js`):
+     - Executable via `npm run test:install`.
+     - Packs CLI into tarball and installs into an isolated temporary directory prefix.
+     - Verifies `stackdoctor --version`, `stackdoctor rules`, `stackdoctor explain <ruleId>`, `stackdoctor scan` on healthy fixture (exit code 0, toolVersion 0.1.0), and `stackdoctor scan` on broken fixture in CI mode (exit code 1).
+     - Confirms zero files outside the temporary directory are modified.
+  5. Dry-Run Publishing:
+     - Executed `npm publish --dry-run` in `apps/cli` with clean exit and zero warnings.
+- **Files created/changed:**
+  - `scripts/build-cli.js`
+  - `scripts/check-pack.js`
+  - `scripts/test-install.js`
+  - `apps/cli/README.md`
+  - `apps/cli/LICENSE`
+  - `apps/cli/package.json`
+  - `package.json`
+  - `docs/PHASE6.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run check:pack`: Passed (145.9 KB compressed, 23 files, zero forbidden files)
+  - `npm run test:install`: Passed (100% of CLI operations verified in clean temp prefix)
+  - `npm publish --dry-run`: Passed (0 errors, dry-run only, nothing published)
+  - `npm run check:secrets`: Passed (0 secrets detected)
+  - `npm run check:licenses`: Passed (431 packages audited, 100% MIT-compatible)
+  - `npm run build`: Passed (`tsc -b && node scripts/build-cli.js`, exit code 0)
+  - `npm run lint`: Passed (0 errors across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (421/421 tests across 58 suites passed)
+  - `npm run eval`: Passed (100.0% detection accuracy, 0.0% false positives)
+  - `npm run eval:ai`: Passed (18/18 safety evals passed with 100% score)
+- **Problems / errors:** Identified missing `zod-to-json-schema` runtime dependency in CLI package; resolved `@eslint/js` transitive import leak from `@stackdoctor/config` by virtualizing the config module during CLI bundling.
+- **Decisions made:** Keep CLI dependencies lean (`semver`, `yaml`, `zod`, `zod-to-json-schema`) with database drivers marked optional; bundle all `@stackdoctor/*` workspace code into the CLI distributable so end users need no private workspace registries.
+- **Next step:** Phase 6, Run 6C: CI/CD pipeline and release automation (no publishing).
 - **Status:** Done
+
 
 
 
