@@ -8,13 +8,13 @@ This guide outlines how to build and contribute new diagnostic rules, improve ex
 ---
 
 ## Table of Contents
-1. [Development Setup](#development-setup)
-2. [Step-by-Step Rule Authoring](#step-by-step-rule-authoring)
-3. [Evidence vs. Hypothesis Guide](#evidence-vs-hypothesis-guide)
-4. [The "Never Overclaim" Checklist](#the-never-overclaim-checklist)
-5. [Code Style & Best Practices](#code-style--best-practices)
-6. [Documentation Guidelines & Allowlist](#documentation-guidelines--allowlist)
-7. [Submitting a Pull Request](#submitting-a-pull-request)
+1. [Development Setup](#1-development-setup)
+2. [Step-by-Step Rule Authoring](#2-step-by-step-rule-authoring)
+3. [Evidence vs. Hypothesis Guide](#3-evidence-vs-hypothesis-guide)
+4. [The "Never Overclaim" Checklist](#4-the-never-overclaim-checklist)
+5. [Code Style & Best Practices](#5-code-style-best-practices)
+6. [Documentation Guidelines & Allowlist](#6-documentation-guidelines-allowlist)
+7. [Submitting a Pull Request](#7-submitting-a-pull-request)
 
 ---
 

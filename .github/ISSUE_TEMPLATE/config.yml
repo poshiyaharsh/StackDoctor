@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/poshiyaharsh/StackDoctor/discussions
+    about: Ask questions, share ideas, and discuss StackDoctor features with the community.
+  - name: Security Vulnerability Reporting
+    url: https://github.com/poshiyaharsh/StackDoctor/security/advisories/new
+    about: Privately report a security vulnerability in accordance with SECURITY.md.

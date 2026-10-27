@@ -1,0 +1,56 @@
+name: False Positive Report
+description: Report a diagnostic finding reported by StackDoctor that is inaccurate, spurious, or misleading.
+labels: ["false-positive", "rules", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        StackDoctor is committed to 0% false positives and factual evidence over conjecture. If a rule triggered when your environment is healthy, or overclaimed without evidence, please let us know!
+  - type: input
+    id: rule-id
+    attributes:
+      label: Rule ID
+      description: The ID of the rule that produced the false positive (from `docs/diagnostics.md` or scan output).
+      placeholder: "e.g. NODE_DEPS_NOT_INSTALLED or PORT_CONFLICT"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: StackDoctor Version
+      description: Run `npx stackdoctor --version`.
+      placeholder: "e.g. 0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Linux (Ubuntu/Debian)
+        - macOS
+        - Windows (PowerShell/CMD)
+        - Windows (WSL2)
+    validations:
+      required: true
+  - type: textarea
+    id: finding-output
+    attributes:
+      label: Diagnostic Finding Output
+      description: Paste the exact finding block from `npx stackdoctor scan` or `npx stackdoctor scan --json`.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: reality
+    attributes:
+      label: Actual State of Your Environment
+      description: Explain why this finding is inaccurate or what StackDoctor misinterpreted.
+      placeholder: "e.g. The port 3000 was reported in use, but the application was configured via PORT=8080 in a custom config file..."
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested Rule Improvement (Optional)
+      description: How should the rule's preconditions or fact collection be updated to avoid this false positive?

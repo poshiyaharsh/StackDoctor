@@ -1297,7 +1297,63 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Problems / errors:** None. All action SHAs verified via `git ls-remote`.
 - **Decisions made:** All actions pinned to full commit SHAs; least-privilege permissions applied; release publishing strictly requires manual approval in the `npm-publish` environment and creates draft releases only; release workflow was not executed.
 - **Next step:** Phase 6, Run 6D: Documentation, templates, roadmap, known limitations.
+### [2026-10-27] Phase 6, Run 6D: Documentation, templates, roadmap, known limitations
+- **Prompt used:** PHASE6.md > Run 6D: Documentation, templates, roadmap, known limitations
+- **What was done:**
+  - Rewrote `README.md` with honest front-door documentation, core principles, real fixture scan terminal report (`broken-node-project`), 20-rule summary table, optional features delineation, and complete doc links.
+  - Created `scripts/generate-rules-docs.js` (`npm run docs:rules`) with `--check` mode wired to CI to prevent documentation drift from `packages/rules`.
+  - Regenerated `docs/diagnostics.md` with complete details and anchor tags for all 20 rules.
+  - Created `docs/installation.md` with real cross-platform tested matrix and troubleshooting guide.
+  - Created `docs/privacy.md` documenting secret redaction, local offline guarantees, and optional self-hosted data retention.
+  - Created `docs/self-hosting.md` with Docker Compose setup, environment variable reference, and production hardening checklist.
+  - Created `docs/faq.md` with factual technical answers.
+  - Created `docs/known-limitations.md` and `ROADMAP.md` covering real platform limits and planned milestones (PostgreSQL, pnpm/bun workspaces, fix automation - marked planned, not promised).
+  - Created GitHub issue form templates (`.github/ISSUE_TEMPLATE/`): `config.yml`, `bug_report.yml`, `false_positive.yml`, `new_rule_proposal.yml`, `feature_request.yml`.
+  - Created `.github/PULL_REQUEST_TEMPLATE.md` with rule and verification checklists.
+  - Created `CONTRIBUTING.md` linking `docs/contributing.md`.
+  - Created `docs/good-first-issues.md` with curated starter issues derived from the roadmap.
+  - Created `scripts/test-docs.js` (`npm run test:docs`) verifying relative links and running safe read-only CLI commands in an isolated temp environment, integrated into CI.
+- **Files created/changed:**
+  - `ROADMAP.md`
+  - `docs/faq.md`
+  - `docs/good-first-issues.md`
+  - `docs/known-limitations.md`
+  - `docs/privacy.md`
+  - `docs/self-hosting.md`
+  - `scripts/generate-rules-docs.js`
+  - `scripts/test-docs.js`
+  - `.github/ISSUE_TEMPLATE/config.yml`
+  - `.github/ISSUE_TEMPLATE/bug_report.yml`
+  - `.github/ISSUE_TEMPLATE/false_positive.yml`
+  - `.github/ISSUE_TEMPLATE/new_rule_proposal.yml`
+  - `.github/ISSUE_TEMPLATE/feature_request.yml`
+  - `README.md`
+  - `docs/diagnostics.md`
+  - `docs/installation.md`
+  - `docs/contributing.md`
+  - `.github/pull_request_template.md`
+  - `.github/workflows/ci.yml`
+  - `package.json`
+  - `docs/PHASE6.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run docs:rules -- --check`: Passed (canonical rules match generated docs)
+  - `npm run test:docs`: Passed (0 broken links across 40 Markdown files, runnable CLI snippets verified)
+  - `npm run check:secrets`: Passed (0 secrets detected)
+  - `npm run check:licenses`: Passed (431 packages audited, 100% MIT-compatible)
+  - `npm run check:pack`: Passed (145.9 KB tarball, 23 files)
+  - `npm run test:install`: Passed (fresh install and binary verification in temp prefix)
+  - `npm run build`: Passed (exit code 0)
+  - `npm run lint`: Passed (0 errors)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (421/421 tests across 58 suites passed)
+  - `npm run eval`: Passed (100.0% detection accuracy, 0.0% false positives)
+  - `npm run eval:ai`: Passed (18/18 safety evals passed with 100% score)
+- **Problems / errors:** None.
+- **Decisions made:** All documentation verified automatically via CI tests (`test:docs`, `docs:rules --check`); zero fabricated claims, download counts, or stars; real fixture output used as primary visual demonstration.
+- **Next step:** Phase 6, Run 6E: Demo script, launch assets, honest launch posts.
 - **Status:** Done
+
 
 
 

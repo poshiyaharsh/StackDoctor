@@ -18,6 +18,8 @@
     "check:licenses": "node scripts/check-licenses.js",
     "check:pack": "node scripts/check-pack.js",
     "test:install": "node scripts/test-install.js",
+    "test:docs": "node scripts/test-docs.js",
+    "docs:rules": "node scripts/generate-rules-docs.js",
     "eval": "node scripts/eval.js",
     "eval:ai": "node scripts/eval-ai.js",
     "new-rule": "node scripts/new-rule.js",

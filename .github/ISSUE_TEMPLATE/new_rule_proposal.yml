@@ -1,0 +1,60 @@
+name: New Diagnostic Rule Proposal
+description: Propose a new diagnostic rule or analyzer for StackDoctor.
+labels: ["enhancement", "rules"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We welcome contributions of new diagnostic rules! Rules must be deterministic, fact-based, and adhere to our strict factual accuracy guidelines (see `docs/contributing.md`).
+  - type: input
+    id: proposed-rule-id
+    attributes:
+      label: Proposed Rule ID
+      description: Must be in `UPPER_SNAKE_CASE`.
+      placeholder: "e.g. POSTGRES_PORT_IN_USE"
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - dependencies
+        - network
+        - environment
+        - database
+        - containers
+        - runtime
+    validations:
+      required: true
+  - type: input
+    id: technologies
+    attributes:
+      label: Target Technologies
+      placeholder: "e.g. PostgreSQL, Prisma, Docker"
+    validations:
+      required: true
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Problem Description
+      description: What specific local development issue does this rule detect?
+      placeholder: "Describe the symptom, e.g. Node crashes on start because Postgres is not running on 5432."
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Concrete Evidence Required
+      description: What observable facts (files, ports, exit codes, process lists) prove this issue exists?
+      placeholder: "1. .env specifies DATABASE_URL with port 5432\n2. TCP connection probe to 127.0.0.1:5432 refused\n3. Docker container for postgres is exited or absent"
+    validations:
+      required: true
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Proposed Remediation Steps
+      description: Provide the concrete, copy-pasteable command to resolve the issue, along with its undo step and risks.
+      placeholder: "Command: docker compose up -d postgres\nRisk: Starts local container and consumes memory.\nUndo: docker compose stop postgres"
+    validations:
+      required: true

@@ -251,17 +251,35 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Every runnable command in the docs was executed and works
-- [ ] Rules reference is generated and CI-checked
-- [ ] Platform matrix reflects what was actually tested
-- [ ] Known limitations and roadmap are honest
-- [ ] No fabricated metrics, badges, or claims anywhere
-- [ ] All relative links resolve
+- [x] Every runnable command in the docs was executed and works
+- [x] Rules reference is generated and CI-checked
+- [x] Platform matrix reflects what was actually tested
+- [x] Known limitations and roadmap are honest
+- [x] No fabricated metrics, badges, or claims anywhere
+- [x] All relative links resolve
 
 **Run log (Antigravity fills):**
 - Files:
+  - Created: `ROADMAP.md`, `docs/faq.md`, `docs/good-first-issues.md`, `docs/known-limitations.md`, `docs/privacy.md`, `docs/self-hosting.md`, `scripts/generate-rules-docs.js`, `scripts/test-docs.js`, `.github/ISSUE_TEMPLATE/config.yml`, `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/false_positive.yml`, `.github/ISSUE_TEMPLATE/new_rule_proposal.yml`, `.github/ISSUE_TEMPLATE/feature_request.yml`
+  - Modified: `README.md`, `docs/diagnostics.md`, `docs/installation.md`, `docs/contributing.md`, `.github/pull_request_template.md`, `.github/workflows/ci.yml`, `package.json`, `docs/PHASE6.md`, `docs/LOG.md`
 - Command results:
+  - `npm run docs:rules -- --check`: PASSED (synchronized with canonical 20 rules in `packages/rules`)
+  - `npm run test:docs`: PASSED (0 broken links across 40 Markdown files, runnable CLI snippets verified)
+  - `npm run check:secrets`: PASSED (0 secrets detected)
+  - `npm run check:licenses`: PASSED (100% compliant)
+  - `npm run check:pack`: PASSED (145.9 KB tarball, 23 files)
+  - `npm run test:install`: PASSED (fresh install and binary verification in temp prefix)
+  - `npm run build`: PASSED (0 errors)
+  - `npm run lint`: PASSED (0 errors)
+  - `npm run typecheck`: PASSED (0 errors)
+  - `npm test`: PASSED (58 test files, 421 tests passed)
+  - `npm run eval`: PASSED (100% detection accuracy, 0% false positives)
+  - `npm run eval:ai`: PASSED (18/18, 100%)
 - Decisions:
+  - Wrote README.md front door with genuine value proposition, core principles, complete 20 rules reference table, and verbatim terminal output from a real fixture run (`broken-node-project`).
+  - Added programmatic generation script `scripts/generate-rules-docs.js` (`npm run docs:rules`) with `--check` mode wired directly into CI to prevent documentation drift.
+  - Added automated Markdown link auditor and runnable snippet runner `scripts/test-docs.js` (`npm run test:docs`) wired directly into CI.
+  - Documented real platform capabilities, limitations, and planned roadmap items without overclaiming or promising speculative timelines.
 
 ---
 

@@ -71,6 +71,12 @@ jobs:
       - name: Run Fresh Install Verification
         run: npm run test:install
 
+      - name: Verify Rules Documentation Synchronized
+        run: npm run docs:rules -- --check
+
+      - name: Verify Documentation Links and Snippets
+        run: npm run test:docs
+
       - name: Upload License Documentation Artifact
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         if: always()

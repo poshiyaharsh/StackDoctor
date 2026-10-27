@@ -1,0 +1,71 @@
+name: Bug Report
+description: Report unexpected behavior, crashes, or execution failures in StackDoctor.
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Before submitting, please check that this is not a diagnostic false positive (use the [False Positive form](false_positive.yml) for that) or an already open issue.
+  - type: input
+    id: version
+    attributes:
+      label: StackDoctor Version
+      description: Run `npx stackdoctor --version` or `node apps/cli/dist/bin.js --version`.
+      placeholder: "e.g. 0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Ubuntu / Debian Linux
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows 10/11 (PowerShell / CMD)
+        - Windows (WSL2)
+        - Other (specify in description)
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: Run `node -v`.
+      placeholder: "e.g. v20.12.0 or v22.2.0"
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command Executed
+      description: What exact command did you execute?
+      placeholder: "e.g. npx stackdoctor scan --json"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Provide clear steps or link to a minimal reproduction repository.
+      placeholder: |
+        1. In a directory containing package.json...
+        2. Run 'npx stackdoctor scan'
+        3. See unexpected crash/error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Output / Error Stack Trace
+      description: Paste terminal output, error logs, or stack trace. Please redact private secrets/tokens.
+      render: shell
+    validations:
+      required: true
