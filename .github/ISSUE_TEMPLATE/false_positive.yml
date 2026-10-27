@@ -54,3 +54,11 @@ body:
     attributes:
       label: Suggested Rule Improvement (Optional)
       description: How should the rule's preconditions or fact collection be updated to avoid this false positive?
+  - type: checkboxes
+    id: sanitization-check
+    attributes:
+      label: Privacy and Secret Review
+      description: StackDoctor automatically sanitizes tokens, but please double check before submitting.
+      options:
+        - label: I reviewed the report and confirmed no private secrets, tokens, or credentials are included.
+          required: true

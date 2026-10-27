@@ -1,0 +1,99 @@
+# .github/labels.yml
+# Standard GitHub repository labels for StackDoctor
+
+# --- Type Labels ---
+- name: "type: bug"
+  color: "d73a4a"
+  description: "Something is not working or throwing an unhandled error"
+
+- name: "type: false-positive"
+  color: "b60205"
+  description: "Diagnostic finding reported on a healthy, working environment"
+
+- name: "type: missed-issue"
+  color: "e99695"
+  description: "Environment breakage that StackDoctor failed to detect"
+
+- name: "type: feature-request"
+  color: "a2eeef"
+  description: "New diagnostic rule, framework adapter, or platform enhancement"
+
+- name: "type: docs"
+  color: "0075ca"
+  description: "Improvements or additions to documentation and guides"
+
+- name: "type: security"
+  color: "000000"
+  description: "Security-related findings, dependency vulnerabilities, or secret redaction"
+
+# --- Severity Labels ---
+- name: "severity: blocker"
+  color: "b60205"
+  description: "Crashes, process hangs, data loss risks, or security vulnerabilities"
+
+- name: "severity: high"
+  color: "d93f0b"
+  description: "Misleading false positives or unhandled critical breakages"
+
+- name: "severity: medium"
+  color: "fbca04"
+  description: "Inaccurate hypothesis causes, confusing output, or minor edge cases"
+
+- name: "severity: low"
+  color: "0e8a16"
+  description: "Cosmetic improvements, wording polish, or minor optimizations"
+
+# --- Area Labels ---
+- name: "area: cli"
+  color: "5319e7"
+  description: "Terminal user interface, CLI commands, arguments, or packaging"
+
+- name: "area: core"
+  color: "1d76db"
+  description: "Diagnostic engine, execution pipeline, and fact collectors"
+
+- name: "area: rules"
+  color: "0052cc"
+  description: "Diagnostic rules in @stackdoctor/rules"
+
+- name: "area: adapters"
+  color: "006b75"
+  description: "System adapters, port probes, command runner, and DB checkers"
+
+- name: "area: web"
+  color: "c5def5"
+  description: "Frontend web dashboard in apps/web"
+
+- name: "area: api"
+  color: "bfdadc"
+  description: "Backend ingestion API server in apps/api"
+
+- name: "area: docs"
+  color: "c2e0c6"
+  description: "Markdown documentation, guides, or examples"
+
+# --- Status & Workflow Labels ---
+- name: "status: new"
+  color: "ededed"
+  description: "Newly submitted issue awaiting triage review"
+
+- name: "status: triaged"
+  color: "c5def5"
+  description: "Reviewed, prioritized, and categorized by maintainer"
+
+- name: "status: needs-info"
+  color: "d4c5f9"
+  description: "Requires reproduction steps or information from the reporter"
+
+- name: "status: in-progress"
+  color: "bfd4f2"
+  description: "Currently being worked on"
+
+# --- Community & Help Labels ---
+- name: "good first issue"
+  color: "7057ff"
+  description: "Approachable task suitable for first-time open-source contributors"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention or community contribution needed"

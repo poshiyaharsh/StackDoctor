@@ -1429,8 +1429,54 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
   - `git tag -l`: Verified empty (0 release tags)
 - **Problems / errors:** None.
 - **Decisions made:** Audited against all DoD criteria; release workflow was not executed; maintainer instructions documented in `docs/release-steps.md`.
-- **Next step:** v0.1.0 Launch / Maintainer tag push when ready.
+- **Next step:** Phase 7, Run 7A: Feedback system, triage routine, labels.
 - **Status:** Done
+
+---
+
+### [2026-10-27] Phase 7, Run 7A: Feedback system, triage routine, labels
+- **Prompt used:** PHASE7.md > Run 7A: Feedback + triage system
+- **What was done:**
+  - Created `FEEDBACK.md` at repository root with structured tabular logging (columns: id, date, source, environment, what happened, expected, version, category, related rules, severity, status, linked issue/PR, fixed in version), allowed values reference, and strict privacy note.
+  - Authored `docs/triage.md` documenting weekly triage cadence, priority hierarchy (P0 crashes/security, P1 false positives, P2 install problems, P3 missed issues, P4 confusing output, P5 feature requests), response-time goals, and reproduction lifecycle.
+  - Authored `docs/false-positive-policy.md` outlining the 0.0% false-positive commitment and 5-step response procedure.
+  - Defined GitHub label taxonomy in `.github/labels.yml` (type, severity, area, status, community labels) and authored `scripts/sync-labels.md` explaining how maintainers sync labels via GitHub CLI without unauthorized API calls.
+  - Updated issue forms (`.github/ISSUE_TEMPLATE/bug_report.yml` and `false_positive.yml`) with prompt for `stackdoctor issue .` output and mandatory secret review checkboxes.
+  - Created `scripts/scorecard.js` (`npm run scorecard`) to aggregate and format feedback metrics from `FEEDBACK.md`, backed by unit tests in `packages/core/test/scorecard.test.ts`.
+  - Linked `FEEDBACK.md`, `docs/triage.md`, and `docs/false-positive-policy.md` in `README.md`.
+- **Files created/changed:**
+  - `FEEDBACK.md`
+  - `docs/triage.md`
+  - `docs/false-positive-policy.md`
+  - `.github/labels.yml`
+  - `scripts/sync-labels.md`
+  - `scripts/scorecard.js`
+  - `packages/core/test/scorecard.test.ts`
+  - `.github/ISSUE_TEMPLATE/bug_report.yml`
+  - `.github/ISSUE_TEMPLATE/false_positive.yml`
+  - `package.json`
+  - `README.md`
+  - `docs/PHASE7.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run scorecard`: Passed (calculated metrics from `FEEDBACK.md`)
+  - `npx vitest run packages/core/test/scorecard.test.ts`: Passed (3/3 tests)
+  - `npm run test:docs`: Passed (52 Markdown files audited, 0 broken links, 3 CLI snippets verified)
+  - `npm run check:secrets`: Passed (0 secrets detected)
+  - `npm run check:licenses`: Passed (431 packages audited, 100% MIT-compatible)
+  - `npm run check:pack`: Passed (145.9 KB tarball, 23 files)
+  - `npm run test:install`: Passed (fresh install verified)
+  - `npm run build`: Passed (exit code 0)
+  - `npm run lint`: Passed (0 errors)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (424/424 tests across 59 suites passed)
+  - `npm run eval`: Passed (100.0% detection accuracy, 0.0% false positives)
+  - `npm run eval:ai`: Passed (18/18 safety evals passed with 100% score)
+- **Problems / errors:** None. Parser hyphen handling in scorecard test adjusted to filter out `"-"`.
+- **Decisions made:** Feedback logs remain completely anonymized; priorities driven strictly by `scorecard` data; label application instructions provided via `gh` CLI rather than automated script execution.
+- **Next step:** Phase 7, Run 7B: Patch-release loop and regression-fixture workflow.
+- **Status:** Done
+
 
 
 

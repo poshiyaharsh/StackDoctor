@@ -65,7 +65,15 @@ body:
     id: actual
     attributes:
       label: Actual Output / Error Stack Trace
-      description: Paste terminal output, error logs, or stack trace. Please redact private secrets/tokens.
+      description: Paste terminal output, error logs, or output from `npx stackdoctor issue .`
       render: shell
     validations:
       required: true
+  - type: checkboxes
+    id: sanitization-check
+    attributes:
+      label: Privacy and Secret Review
+      description: StackDoctor automatically sanitizes tokens, but please double check before submitting.
+      options:
+        - label: I reviewed the report and confirmed no private secrets, tokens, or credentials are included.
+          required: true

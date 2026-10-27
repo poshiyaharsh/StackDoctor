@@ -16,7 +16,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 
 | Run | Focus | Gate | Status | Commit | Date |
 |---|---|---|---|---|---|
-| 7A | Feedback system, triage routine, labels | none | Not started | - | - |
+| 7A | Feedback system, triage routine, labels | none | Done | see git log | 2026-10-27 |
 | 7B | Patch-release loop (v0.1.x) and regression-fixture workflow | none | Not started | - | - |
 | 7C | Eval expansion from real feedback, per-rule precision/recall | needs real feedback | Not started | - | - |
 | 7D | PostgreSQL support | demand gate | Not started | - | - |
@@ -77,15 +77,36 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] FEEDBACK.md template, triage doc, and false-positive policy exist
-- [ ] Label definitions exist; nothing was applied to GitHub automatically
-- [ ] `npm run scorecard` works and is tested
-- [ ] Issue templates ask for the right details and a secrets-review checkbox
+- [x] FEEDBACK.md template, triage doc, and false-positive policy exist
+- [x] Label definitions exist; nothing was applied to GitHub automatically
+- [x] `npm run scorecard` works and is tested
+- [x] Issue templates ask for the right details and a secrets-review checkbox
 
 **Run log (Antigravity fills):**
 - Files:
+  - Created: `FEEDBACK.md`, `docs/triage.md`, `docs/false-positive-policy.md`, `.github/labels.yml`, `scripts/sync-labels.md`, `scripts/scorecard.js`, `packages/core/test/scorecard.test.ts`
+  - Modified: `package.json`, `README.md`, `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/false_positive.yml`, `docs/PHASE7.md`, `docs/LOG.md`
 - Command results:
+  - `npm run scorecard`: PASSED (parsed and printed formatted counts from `FEEDBACK.md`)
+  - `npx vitest run packages/core/test/scorecard.test.ts`: PASSED (3/3 unit tests passed)
+  - `npm run test:docs`: PASSED (52 Markdown files audited, 0 broken links, 3 CLI snippets verified)
+  - `npm run check:secrets`: PASSED (0 secrets detected)
+  - `npm run check:licenses`: PASSED (100% compliant)
+  - `npm run check:pack`: PASSED (145.9 KB tarball, 23 files)
+  - `npm run test:install`: PASSED (isolated prefix installation and binary verification)
+  - `npm run build`: PASSED (exit code 0)
+  - `npm run lint`: PASSED (0 errors)
+  - `npm run typecheck`: PASSED (exit code 0)
+  - `npm test`: PASSED (59 test suites, 424/424 tests passed)
+  - `npm run eval`: PASSED (100.0% accuracy, 0.0% false positives)
+  - `npm run eval:ai`: PASSED (18/18, 100%)
 - Decisions:
+  - Implemented structured feedback tracking in `FEEDBACK.md` with strict privacy requirements.
+  - Formulated weekly triage protocol in `docs/triage.md` prioritizing crashes (P0) and false positives (P1).
+  - Authored false-positive policy in `docs/false-positive-policy.md` reiterating the 0.0% false positive goal.
+  - Created `.github/labels.yml` with type, severity, area, and status taxonomy; provided local application instructions in `scripts/sync-labels.md` without making unauthorized GitHub API calls.
+  - Added data-driven scorecard script `scripts/scorecard.js` (`npm run scorecard`) backed by unit tests.
+  - Added sanitized `stackdoctor issue` output instructions and required secret-review checkboxes to issue forms.
 
 ---
 
