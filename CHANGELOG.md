@@ -81,3 +81,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated rule generator: `npm run new-rule -- --id <RULE_ID> --tech <tech>`.
   - Automated rule linter `packages/rules/test/rule-lint.test.ts` verifying all rules and failing on bad fixtures.
   - Contributor documentation `docs/contributing.md` and GitHub issue / pull request templates.
+
+#### Phase 5: AI-Assisted Explanations & Safe Remediation
+- **Safe-by-Default AI Package (`@stackdoctor/ai`)**:
+  - Multi-provider architecture supporting OpenAI, Anthropic, and local OpenAI-compatible endpoints (Ollama, vLLM, LM Studio) alongside local mock provider.
+  - 100% optional, disabled by default, making zero unsolicited external network calls.
+  - Automated pre-transmission redaction scrubbing keys, tokens, paths, connection strings, emails, and IPs.
+  - Strict payload size bounding capped at 16 KB (`maxInputBytes`).
+  - Structured output parsing and Zod schema enforcement (`AiExplanationSchema`).
+  - Rigorous grounding engine (`validateGrounding`) catching fabricated versions, ungrounded filenames, ungrounded services, and overclaims.
+  - Automated command quarantine (`sanitizeCommands`) isolating dangerous shell commands (`sudo`, `rm -rf`, `curl | bash`, `kill`, `iptables`).
+  - Deterministic rule fallback engine (`buildFallbackExplanation`).
+- **Web Platform AI & BYOK Integration**:
+  - Bring-Your-Own-Key (BYOK) architecture with AES-256-GCM encryption at rest in MongoDB.
+  - Write-only API endpoints with key masking (`***MASKED***`) and zero logging.
+  - Interactive payload preview modal and consent gating before transmission.
+  - AI Explanation view with confidence badges, grounded facts, hypotheses, and safe checklists.
+- **CLI AI & Safe Remediation Commands**:
+  - `stackdoctor explain <path | reportFile> [--preview-payload] [--confirm]`: Local preview, consent prompt, and formatted AI explanation.
+  - Allowlisted remediation registry in `@stackdoctor/adapters` strictly limited to 4 operations: `NODE_INSTALL_DEPENDENCIES`, `PYTHON_CREATE_VENV`, `PYTHON_INSTALL_REQUIREMENTS`, `COPY_ENV_EXAMPLE`.
+  - `stackdoctor fix <ruleId | operationId> [path] [--apply]`: Dry-run by default, typed user confirmation, strict refusal in CI mode, and audit logging to `.stackdoctor/fix-history.json`.
+- **AI Safety Evaluation Suite & Parity**:
+  - 18 safety evaluation fixtures in `scripts/eval-ai.js` and `packages/ai/test/evals.test.ts` achieving 100% pass rate across Hallucinations, Overclaims, Prompt Injections, and Unsafe Commands.
+  - No-AI parity test suite in `packages/ai/test/no-ai-parity.test.ts` verifying exact deterministic offline output for all fixtures without AI.
+  - Complete architecture documentation in `docs/ai.md` and AI threat model in `docs/security.md`.

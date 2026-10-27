@@ -212,14 +212,45 @@ StackDoctor includes an optional web platform featuring an interactive dashboard
 
 ---
 
+## AI Explanations & Safe Remediation (Phase 5)
+
+StackDoctor includes an optional AI-assisted explanation engine and safe remediation pipeline:
+
+- **100% Optional & Off by Default**: StackDoctor remains 100% functional offline without AI. Zero external network calls are made unless explicitly configured, enabled, and confirmed.
+- **Privacy First**: Sensitive data (keys, tokens, emails, paths, connection strings) is automatically redacted before transmission. Source code files and `.env` files are never sent.
+- **Strict Grounding**: Multi-tier validation eliminates hallucinations, ungrounded filenames, and speculative overclaims.
+- **Safe Remediation**: Destructive commands (`sudo`, `rm -rf`, piped curl, `kill`, `iptables`) are stripped and quarantined. Only 4 verified allowlisted operations (`NODE_INSTALL_DEPENDENCIES`, `PYTHON_CREATE_VENV`, `PYTHON_INSTALL_REQUIREMENTS`, `COPY_ENV_EXAMPLE`) can be executed via `stackdoctor fix`.
+- **Supported Providers**: OpenAI, Anthropic, and local OpenAI-compatible endpoints (Ollama, vLLM, LM Studio).
+
+```bash
+# Preview exact redacted payload before sending:
+stackdoctor explain . --preview-payload
+
+# Request AI explanation with explicit confirmation:
+stackdoctor explain . --confirm
+
+# Dry-run safe allowlisted remediation:
+stackdoctor fix NODE_DEPS_NOT_INSTALLED
+
+# Apply remediation after interactive review:
+stackdoctor fix NODE_DEPS_NOT_INSTALLED --apply
+```
+
+For complete architectural details, see [docs/ai.md](docs/ai.md) and [docs/security.md](docs/security.md).
+
+---
+
 ## Verification & Accuracy
 
 ```bash
-# Run complete test suite across monorepo (48 test suites, 320+ tests)
+# Run complete test suite across monorepo (50+ test suites)
 npm test
 
 # Run diagnostic accuracy evaluation across test fixtures
 npm run eval
+
+# Run AI safety evaluation suite (hallucinations, overclaims, prompt injections, unsafe commands)
+npm run eval:ai
 
 # Run end-to-end integration verifications
 npm run e2e:phase3
@@ -235,6 +266,7 @@ npm run typecheck
 ## Documentation
 
 - [System Architecture](docs/architecture.md)
+- [AI Explanations & Safe Remediation](docs/ai.md)
 - [Security & Credentials Policy](docs/security.md)
 - [CI & GitHub Actions Guide](docs/ci.md)
 - [JSON Report Format Specification](docs/report-format.md)

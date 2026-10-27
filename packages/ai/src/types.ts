@@ -41,6 +41,8 @@ export interface AiInputEvidenceItem {
   id: string;
   kind: string;
   observed: string;
+  description?: string;
+  source?: string;
 }
 
 export interface AiInputFinding {

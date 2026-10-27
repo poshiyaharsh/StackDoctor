@@ -22,7 +22,7 @@
 | 2 | Diagnostic engine | Reliable CLI that explains common failures | Done |
 | 3 | Web platform | Dashboard + API + optional report upload | Done |
 | 4 | Integrations | GitHub issue drafts, CI JSON, report compare | Done |
-| 5 | Optional AI | Evidence-grounded explanations | Not started |
+| 5 | Optional AI | Evidence-grounded explanations | Done |
 | 6 | Open-source launch | Docs, license, security policy, release | Not started |
 
 Status values: Not started, In progress, Needs fixes, Done.

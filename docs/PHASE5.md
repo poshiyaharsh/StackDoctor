@@ -18,9 +18,9 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | 5A | AI package: provider interface, input sanitization, prompt construction | Done | 920f90c | 2026-10-27 |
 | 5B | Output validation, grounding checks, command allowlist | Done | c8f79d0 | 2026-10-27 |
 | 5C | Providers + CLI `ai-explain` with consent preview | Done | d586d15 | 2026-10-27 |
-| 5D | API explanation endpoint + web UI | Not started | - | - |
-| 5E | User-approved remediation (allowlisted operations only) | Not started | - | - |
-| 5F | Safety evals, docs, final verification | Not started | - | - |
+| 5D | API explanation endpoint + web UI | Done | a09d3a1 | 2026-10-27 |
+| 5E | User-approved remediation (allowlisted operations only) | Done | 8b89e0e | 2026-10-27 |
+| 5F | Safety evals, docs, final verification | Done | 10b845e | 2026-10-27 |
 
 Status values: Not started, In progress, Needs fixes, Done.
 
@@ -458,25 +458,57 @@ Phase 5 checklist truly passed.
 ```
 
 **Final Phase 5 checklist**
-- [ ] Works identically with AI disabled (parity test passes)
-- [ ] Injection text in fixture files does not change AI pipeline output
-- [ ] Unsafe or non-allowlisted commands are blocked everywhere
-- [ ] Output clearly separates confirmed facts from hypotheses; ungrounded facts are removed
-- [ ] Nothing is sent to a provider without configuration and confirmation
-- [ ] API keys never appear in repo, logs, reports, errors, or API responses
-- [ ] Remediation is dry-run by default, allowlisted, user-approved, and verified afterwards
-- [ ] `eval:ai` results documented with known limitations
-- [ ] `npm audit` has no unaddressed high/critical issues
-- [ ] Docs match what actually exists
-- [ ] Everything committed and pushed
+- [x] Works identically with AI disabled (parity test passes)
+- [x] Injection text in fixture files does not change AI pipeline output
+- [x] Unsafe or non-allowlisted commands are blocked everywhere
+- [x] Output clearly separates confirmed facts from hypotheses; ungrounded facts are removed
+- [x] Nothing is sent to a provider without configuration and confirmation
+- [x] API keys never appear in repo, logs, reports, errors, or API responses
+- [x] Remediation is dry-run by default, allowlisted, user-approved, and verified afterwards
+- [x] `eval:ai` results documented with known limitations
+- [x] `npm audit` has no unaddressed high/critical issues
+- [x] Docs match what actually exists
+- [x] Everything committed and pushed
 
 **Run log (Antigravity fills):**
 - Files:
+  - `scripts/eval-ai.js` (18 safety eval test fixtures across 4 categories)
+  - `packages/ai/src/grounding.ts` (expanded grounding checks, runtime name filter, canary scanning)
+  - `packages/ai/src/types.ts` (added optional description and source to `AiInputEvidenceItem`)
+  - `packages/ai/test/evals.test.ts` (18 unit test cases mirroring eval suite)
+  - `packages/ai/test/no-ai-parity.test.ts` (parity test verifying identical offline behavior)
+  - `docs/ai.md` (comprehensive AI architecture, privacy, grounding, and usage documentation)
+  - `docs/security.md` (added Section 11 AI Threat Model & Defenses)
+  - `README.md` (added AI Explanations & Safe Remediation section)
+  - `CHANGELOG.md` (added Phase 5 feature changelog)
+  - `package.json` (added `"eval:ai": "node scripts/eval-ai.js"`)
+  - `docs/INDEX.md` (marked Phase 5 Done)
+  - `docs/PHASE5.md` (completed status and checklist)
+  - `docs/LOG.md` (recorded Run 5F details)
 - Command results:
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (421/421 tests across 58 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives across all 4 fixtures)
+  - `npm run eval:ai`: Passed (18/18 safety evals passed with 100% score)
+  - `npm run e2e:phase3`: Passed (100% OK)
+  - `npm run e2e:phase4`: Passed (100% OK)
 - Eval results:
+  - Hallucination: 5/5 (100.0%)
+  - Overclaim: 2/2 (100.0%)
+  - Prompt Injection: 5/5 (100.0%)
+  - Unsafe Recommendation: 6/6 (100.0%)
+  - Overall AI Safety: 18/18 (100.0%)
 - Audit results:
+  - 4 vulnerabilities documented in `docs/security.md` (GHSA-mrhx-c7xc-m3w5 mitigated by 1MB body limit; vitest/tinypool in devDependencies only).
 - Problems:
+  - Filtered runtime names (e.g. `node.js`) from file regex matching in `validateGrounding` so legitimate runtime assertions are recognized as grounded facts.
+  - Enhanced `combinedObserved` in grounding validator to include evidence description and source fields alongside kind and observed content.
 - Decisions:
+  - Ensured AI remains completely optional, off by default, and that all fixtures behave with 100% deterministic parity when AI is disabled.
+  - Required explicit confirmation and dry-run preview before any outbound AI payload is dispatched.
+  - Restricted remediation to an explicit allowlist of 4 safe operations with interactive approval and dry-run by default.
 
 ---
 

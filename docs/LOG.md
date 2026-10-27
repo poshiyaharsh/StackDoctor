@@ -1058,6 +1058,76 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 5, Run 5F: Safety evals, docs, final verification.
 - **Status:** Done
 
+---
+
+## 2026-10-27 - Phase 5, Run 5F: Safety evals, docs, final verification
+
+- **Run:** Phase 5, Run 5F
+- **Focus:** AI safety evaluation suite, no-AI parity verification, comprehensive AI & security documentation, and end-to-end verification.
+- **Commit:** 10b845e
+- **What was built:**
+  1. AI Safety Evaluation Harness (`scripts/eval-ai.js`):
+     - Executable via `npm run eval:ai`.
+     - 18 comprehensive safety test cases across 4 categories:
+       - Category 1: Hallucinations (5 cases: fabricated versions, ungrounded files, unmentioned services, non-existent evidence IDs, fabricated test failure status).
+       - Category 2: Overclaims (2 cases: connection refused treated as not installed, tentative cause overclaimed as definitive).
+       - Category 3: Prompt Injection (5 cases: instruction override in evidence, delimiter breaking, canary secret exfiltration, fake tool call syntax / JSON breakout, malicious instructions in checklist).
+       - Category 4: Unsafe Recommendations (6 cases: sudo commands, rm -rf destructive deletion, piped remote curl, process killing kill -9, firewall tampering iptables/netsh, markdown code fence command block).
+     - Formats and displays a structured pass rate score table by category.
+  2. Safety Evals Vitest Suite (`packages/ai/test/evals.test.ts`):
+     - 18 unit tests mirroring all safety eval cases, fully integrated into `npm test`.
+  3. No-AI Parity Suite (`packages/ai/test/no-ai-parity.test.ts`):
+     - Asserts `explainWithAi` returns `ai_disabled` with zero network calls when unconfigured.
+     - Asserts `buildFallbackExplanation` generates identical deterministic rule-based output without AI.
+     - Asserts CLI scan across all 4 fixtures (`healthy-node-project`, `broken-node-project`, `broken-django-project`, `broken-database-config`) produces exact baseline findings with 0 false positives without calling AI.
+  4. Grounding & Safety Pipeline Hardening (`packages/ai/src/grounding.ts`):
+     - Expanded `validateGrounding` with Checks (c)-(h) to catch ungrounded filenames, ungrounded services, ungrounded exit codes, ungrounded ports, definitive causality overclaims, and prompt injection jailbreaks.
+     - Excluded runtime names (`node.js`, `next.js`, `vue.js`, `react.js`, `deno.js`) from file regex check.
+     - Added optional `description` and `source` to `AiInputEvidenceItem` in `packages/ai/src/types.ts`.
+  5. Documentation:
+     - `docs/ai.md`: Comprehensive guide detailing what is sent, what is never sent, supported providers, consent preview, privacy guarantees, grounding validation, command safety, BYOK encryption, allowlisted remediation, and how to disable.
+     - `docs/security.md`: Added Section 11 AI Threat Model & Defenses (prompt injection, data exfiltration, command execution, BYOK handling).
+     - `README.md`: Added AI Explanations & Safe Remediation section and updated documentation links.
+     - `CHANGELOG.md`: Added Phase 5 feature release changelog.
+     - `package.json`: Added `"eval:ai": "node scripts/eval-ai.js"`.
+  6. Phase 5 Completion:
+     - Marked Phase 5 as Done in `docs/INDEX.md`.
+     - Marked all checklist items in `docs/PHASE5.md` as `[x]`.
+- **Files created/changed:**
+  - `scripts/eval-ai.js`
+  - `packages/ai/src/grounding.ts`
+  - `packages/ai/src/types.ts`
+  - `packages/ai/test/evals.test.ts`
+  - `packages/ai/test/no-ai-parity.test.ts`
+  - `packages/ai/test/grounding.test.ts`
+  - `docs/ai.md`
+  - `docs/security.md`
+  - `README.md`
+  - `CHANGELOG.md`
+  - `package.json`
+  - `docs/INDEX.md`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (421/421 tests across 58 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives across all 4 fixtures)
+  - `npm run eval:ai`: Passed (18/18 safety evals passed with 100% score)
+  - `npm run e2e:phase3`: Passed (100% OK)
+  - `npm run e2e:phase4`: Passed (100% OK)
+  - Parity test passes: Verified
+  - Unsafe or non-allowlisted commands blocked everywhere: Verified
+  - Nothing sent to a provider without configuration and confirmation: Verified
+  - API keys never appear in repo, logs, reports, errors, or API responses: Verified
+  - Remediation is dry-run by default, allowlisted, user-approved, and verified afterwards: Verified
+- **Problems / errors:** Filtered technology/runtime identifiers (e.g. `node.js`) from file regex matching in `validateGrounding` to avoid false ungrounded file rejections.
+- **Decisions made:** All 18 safety eval test fixtures run via both `npm run eval:ai` and `vitest run` in CI; AI is 100% optional and disabled by default with zero network calls; deterministic fallback is always available.
+- **Next step:** Phase 6: Open-source launch (docs, license, security policy, release).
+- **Status:** Done
+
+
 
 
 
