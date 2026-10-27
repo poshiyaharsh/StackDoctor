@@ -213,18 +213,20 @@ export function FindingDetailPage() {
             </CardHeader>
             <CardBody>
               <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-                {rule.docs.map((docUrl, idx) => (
-                  <li key={idx} style={{ marginBottom: "0.375rem" }}>
-                    <a
-                      href={docUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: "var(--color-primary)", wordBreak: "break-all" }}
-                    >
-                      {docUrl} ↗
-                    </a>
-                  </li>
-                ))}
+                {rule.docs
+                  .filter((docUrl) => typeof docUrl === "string" && docUrl.startsWith("https://"))
+                  .map((docUrl, idx) => (
+                    <li key={idx} style={{ marginBottom: "0.375rem" }}>
+                      <a
+                        href={docUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "var(--color-primary)", wordBreak: "break-all" }}
+                      >
+                        {docUrl} ↗
+                      </a>
+                    </li>
+                  ))}
               </ul>
             </CardBody>
           </Card>

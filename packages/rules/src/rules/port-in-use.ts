@@ -25,7 +25,7 @@ export const portInUseRule: Rule = {
     }
   ],
   verification: "Verify that the port is free using TCP probe or netstat.",
-  docs: ["https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers"],
+  docs: ["https://nodejs.org/api/errors.html#eaddrinuse"],
 
   preconditions(ctx: RuleEvaluationContext): boolean {
     return !!(

@@ -18,7 +18,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | 4A | GitHub issue draft generation | Done | 5fae252 | 2026-10-26 |
 | 4B | CI mode, stable output, GitHub Actions integration | Done | c17c702 | 2026-10-26 |
 | 4C | Report comparison (CLI, API, web) | Done | 6167481 | 2026-10-26 |
-| 4D | Documentation links + contributor rule interface | Not started | - | - |
+| 4D | Documentation links + contributor rule interface | Done | bfa9cf3 | 2026-10-27 |
 | 4E | Docs, end-to-end checks, final verification | Not started | - | - |
 
 Status values: Not started, In progress, Needs fixes, Done.
@@ -258,17 +258,41 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Non-allowlisted or http doc links are rejected
-- [ ] A new rule can be added using only docs/contributing.md and the generator
-- [ ] Rule-lint fails on a deliberately bad rule
-- [ ] `explain` works for every built-in rule
-- [ ] Issue and PR templates exist
+- [x] Non-allowlisted or http doc links are rejected
+- [x] A new rule can be added using only docs/contributing.md and the generator
+- [x] Rule-lint fails on a deliberately bad rule
+- [x] `explain` works for every built-in rule
+- [x] Issue and PR templates exist
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/schemas/src/rules.ts` & `packages/schemas/src/findings.ts`: Defined `ALLOWED_DOC_DOMAINS` allowlist, `isAllowedDocUrl`, and `DocUrlSchema` enforcing strictly HTTPS URLs from approved domains for rule and finding documentation links.
+  - `packages/rules/src/registry.ts`: Added validation to `RuleRegistry.register()` rejecting any rule with non-HTTPS or non-allowlisted documentation links.
+  - `packages/rules/src/rules/`: Replaced Wikipedia links with official authoritative documentation links across all rules (`port-invalid.ts`, `port-in-use.ts`, `db-host-not-resolved.ts`, `db-connection-timeout.ts`).
+  - `packages/rules/test/registry.test.ts`: Added tests verifying rejection of HTTP and non-allowlisted domain links.
+  - `apps/cli/src/index.ts`: Implemented `stackdoctor explain <ruleId>` command with formatted text output and `--json` format; added Levenshtein distance and token-overlap fuzzy suggestion helper `findSimilarRuleIds` for unknown rule IDs.
+  - `apps/cli/test/explain.test.ts`: Added CLI explain test suite covering text formatting, JSON output, unknown rule suggestion (exit code 2), missing rule ID (exit code 3), output to file, snapshot testing, and verifying explain on all 20 built-in rules.
+  - `apps/web/src/pages/FindingDetailPage.tsx`: Added defense-in-depth HTTPS filtering for rendered documentation links.
+  - `scripts/new-rule.js` & `package.json`: Implemented `npm run new-rule -- --id <RULE_ID> --tech <tech>` generator producing rule implementation, passing unit test with trigger/non-trigger/wording checks, and docs entry stub.
+  - `packages/rules/test/generator.test.ts`: Added tests verifying generator validation, file creation, compilation, and test execution.
+  - `packages/rules/test/rule-lint.test.ts`: Created rule linter asserting all 20 registered rules satisfy required fields, UPPER_SNAKE_CASE IDs, unique IDs, docs catalog entries, test coverage, recommendation verification, allowlisted HTTPS doc links, and absence of hypothesis words in evidence; tested deliberate failure fixtures.
+  - `docs/contributing.md`: Comprehensive rule authoring lifecycle, code style, evidence vs. hypothesis writing guide, and "never overclaim" checklist.
+  - `CONTRIBUTING.md`: Repo root guide linking to contributor documentation.
+  - `.github/pull_request_template.md`: Structured PR template with rule authoring and verification checklists.
+  - `.github/ISSUE_TEMPLATE/`: Added `bug_report.md` (with `stackdoctor issue` instructions), `new_rule_proposal.md`, and `false_positive_report.md`.
 - Command results:
+  - `npm run build`: Exit 0
+  - `npm run lint`: Exit 0 (0 errors, 0 warnings)
+  - `npm run typecheck`: Exit 0 (0 errors)
+  - `npm test`: Exit 0 (47/47 test files, 312/312 tests passed)
+  - `npm run eval`: Exit 0 (100% detection accuracy, 0% false positives)
 - Problems:
+  - Non-allowlisted links in 4 existing rules: replaced with official Node.js and MySQL documentation references.
+  - Vitest timeout during full suite run for generator test: increased timeout to 25s for child process execution.
+  - Unallowlisted link in schema test fixture `index.test.ts`: updated to official Node.js doc link.
 - Decisions:
+  - Documentation links are strictly derived from rule definitions (never from scanned user source code or evidence) and must pass HTTPS domain allowlisting.
+  - Evidence strings must be purely objective measurements; subjective words (`probably`, `might`, `seems`, `maybe`, `could be`, `likely`, `possibly`) are prohibited in evidence and restricted to `possibleCauses`.
 
 ---
 

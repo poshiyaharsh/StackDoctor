@@ -660,6 +660,56 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 4, Run 4D: Documentation links and contributor rule interface (`docs/PHASE4.md`).
 - **Status:** Done
 
+---
+
+### [2026-10-27] Phase 4, Run 4D: Documentation Links & Contributor Rule Interface
+- **Prompt used:** PHASE4.md > Run 4D: Doc links + contributing rules
+- **What was done:**
+  1. Documentation link security and domain allowlisting:
+     - Defined `ALLOWED_DOC_DOMAINS` allowlist (`nodejs.org`, `python.org`, `pip.pypa.io`, `pypa.io`, `djangoproject.com`, `mongodb.com`, `mysql.com`, `docker.com`, `npmjs.com`, `12factor.net`, `github.com`, `stackdoctor.dev`), `isAllowedDocUrl`, and `DocUrlSchema` in `@stackdoctor/schemas`.
+     - Added strict validation to `RuleRegistry.register()` in `@stackdoctor/rules` rejecting any rule with non-HTTPS or non-allowlisted documentation links.
+     - Replaced non-allowlisted Wikipedia links with authoritative official docs across all existing rules (`port-invalid.ts`, `port-in-use.ts`, `db-host-not-resolved.ts`, `db-connection-timeout.ts`).
+     - Added defense-in-depth HTTPS filtering in `apps/web/src/pages/FindingDetailPage.tsx`.
+  2. Implemented CLI `stackdoctor explain <ruleId>` command:
+     - In `apps/cli/src/index.ts`, added `explain` handler outputting title, category, severity, confidence, technologies, description, evidence required (observed facts), recommended checks, remediation actions (problem, relevance, command, risks, undo, verification), verification, and doc links.
+     - Added `--json` / `--format json` support and `--out <file>` writing.
+     - Implemented Levenshtein distance and token-overlap fuzzy matching helper `findSimilarRuleIds` that suggests close rule IDs on typos (with exit code 2).
+     - Missing rule ID returns exit code 3 (`InvalidUsageError`).
+  3. Built rule generator script:
+     - Implemented `scripts/new-rule.js` and added `"new-rule": "node scripts/new-rule.js"` in `package.json`.
+     - Validates required `--id <RULE_ID>` is strict `UPPER_SNAKE_CASE` and accepts `--tech <tech>`.
+     - Automatically generates `packages/rules/src/rules/<kebab-id>.ts`, unit test `packages/rules/test/<kebab-id>.test.ts` (with trigger, non-trigger, schema parse, and wording tests), and appends catalog stub to `docs/diagnostics.md`.
+     - Verified generated output compiles and passes tests out of the box.
+  4. Contributor documentation and GitHub templates:
+     - Authored `docs/contributing.md`: step-by-step 6-step rule addition lifecycle, code style, Evidence vs. Hypothesis writing guide, and "Never Overclaim" checklist with good/bad examples.
+     - Authored `CONTRIBUTING.md` at repo root linking to `docs/contributing.md`.
+     - Created `.github/pull_request_template.md` with rule authoring and verification checklists.
+     - Created `.github/ISSUE_TEMPLATE/bug_report.md` with offline `stackdoctor issue` drafting instructions.
+     - Created `.github/ISSUE_TEMPLATE/new_rule_proposal.md` and `false_positive_report.md`.
+  5. Built automated rule linter:
+     - Created `packages/rules/test/rule-lint.test.ts` asserting all 20 registered rules satisfy required fields, `UPPER_SNAKE_CASE` IDs, uniqueness, docs entries, test coverage, recommendation verification, allowlisted HTTPS doc links, and absence of hypothesis words in evidence.
+     - Tested deliberate failure fixtures (bad casing, non-HTTPS, unallowlisted domain, missing verification, hypothesis words in evidence).
+  6. Added comprehensive tests:
+     - `apps/cli/test/explain.test.ts`: 9 tests verifying text formatting, JSON output, unknown rule suggestion, missing rule ID, output to file, snapshot testing, and explain command on all 20 built-in rules.
+     - `packages/rules/test/generator.test.ts`: 3 tests verifying generator argument validation, file creation, compilation, and test execution.
+- **Files created/changed:** `packages/schemas/src/rules.ts`, `packages/schemas/src/findings.ts`, `packages/rules/src/registry.ts`, `packages/rules/src/rules/port-invalid.ts`, `packages/rules/src/rules/port-in-use.ts`, `packages/rules/src/rules/db-host-not-resolved.ts`, `packages/rules/src/rules/db-connection-timeout.ts`, `packages/rules/test/registry.test.ts`, `packages/rules/test/index.test.ts`, `packages/rules/test/generator.test.ts`, `packages/rules/test/rule-lint.test.ts`, `apps/cli/src/index.ts`, `apps/cli/test/explain.test.ts`, `apps/cli/test/__snapshots__/explain.test.ts.snap`, `apps/web/src/pages/FindingDetailPage.tsx`, `scripts/new-rule.js`, `package.json`, `docs/contributing.md`, `CONTRIBUTING.md`, `.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/bug_report.md`, `.github/ISSUE_TEMPLATE/new_rule_proposal.md`, `.github/ISSUE_TEMPLATE/false_positive_report.md`, `docs/PHASE4.md`, `docs/LOG.md`.
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (312/312 tests across 47 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
+  - Non-allowlisted or http doc links are rejected: Verified
+  - A new rule can be added using only docs/contributing.md and the generator: Verified
+  - Rule-lint fails on a deliberately bad rule: Verified
+  - `explain` works for every built-in rule: Verified
+  - Issue and PR templates exist: Verified
+- **Problems / errors:** Non-allowlisted Wikipedia links in 4 existing rules replaced with official Node.js and MySQL docs; vitest child process timeout adjusted for full-suite test load in generator test.
+- **Decisions made:** Rule docs links originate exclusively from rule definitions and must be allowlisted HTTPS URLs; evidence strings are restricted to objective facts and forbidden from containing hypothesis words.
+- **Next step:** Phase 4, Run 4E: Docs, end-to-end checks, final verification (`docs/PHASE4.md`).
+- **Status:** Done
+
+
 
 
 

@@ -26,7 +26,7 @@ export const dbConnectionTimeoutRule: Rule = {
     }
   ],
   verification: "Verify that TCP connection completes before timeout.",
-  docs: ["https://en.wikipedia.org/wiki/Connection_timeout"],
+  docs: ["https://dev.mysql.com/doc/refman/8.0/en/error-lost-connection.html"],
 
   preconditions(ctx: RuleEvaluationContext): boolean {
     return !!(
@@ -77,7 +77,7 @@ export const dbConnectionTimeoutRule: Rule = {
         }
       ],
       verificationStatus: "unverified",
-      docs: ["https://en.wikipedia.org/wiki/Connection_timeout"]
+      docs: ["https://dev.mysql.com/doc/refman/8.0/en/error-lost-connection.html"]
     };
   }
 };

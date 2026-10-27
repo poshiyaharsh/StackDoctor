@@ -38,11 +38,12 @@ export class InvalidUsageError extends Error {
 }
 
 export interface CliOptions {
-  command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "help" | "version";
+  command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "help" | "version";
   targetPath: string;
   baseReportPath?: string;
   headReportPath?: string;
   failOnNew?: Severity;
+  ruleId?: string;
   json: boolean;
   outFile?: string;
   noColor: boolean;
@@ -64,11 +65,12 @@ export interface CliOptions {
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
-  let command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "help" | "version" = "scan";
+  let command: "scan" | "rules" | "login" | "logout" | "upload" | "issue" | "compare" | "explain" | "help" | "version" = "scan";
   let targetPath = ".";
   let baseReportPath: string | undefined;
   let headReportPath: string | undefined;
   let failOnNew: Severity | undefined;
+  let ruleId: string | undefined;
   let json = false;
   let outFile: string | undefined;
   let noColor = false;
@@ -248,6 +250,11 @@ export function parseCliArgs(argv: string[]): CliOptions {
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
         headReportPath = argv[++i] as string;
       }
+    } else if (arg === "explain") {
+      command = "explain";
+      if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
+        ruleId = argv[++i] as string;
+      }
     } else if (arg === "scan") {
       command = "scan";
       if (i + 1 < argv.length && !argv[i + 1]?.startsWith("-")) {
@@ -262,6 +269,10 @@ export function parseCliArgs(argv: string[]): CliOptions {
         } else if (!headReportPath) {
           headReportPath = arg as string;
         }
+      } else if (command === "explain") {
+        if (!ruleId) {
+          ruleId = arg as string;
+        }
       } else {
         targetPath = arg as string;
       }
@@ -272,12 +283,17 @@ export function parseCliArgs(argv: string[]): CliOptions {
     throw new InvalidUsageError("Missing required arguments. Usage: stackdoctor compare <baseReport.json> <headReport.json> [flags]");
   }
 
+  if (command === "explain" && !ruleId) {
+    throw new InvalidUsageError("Missing rule ID. Usage: stackdoctor explain <ruleId>");
+  }
+
   return {
     command,
     targetPath,
     baseReportPath,
     headReportPath,
     failOnNew,
+    ruleId,
     json,
     outFile,
     noColor,
@@ -307,6 +323,7 @@ Tagline: "Find the cause. Fix the environment. Ship the code."
 USAGE:
   stackdoctor scan [path] [flags]
   stackdoctor rules [flags]
+  stackdoctor explain <ruleId> [flags]
   stackdoctor login --server <url> [flags]
   stackdoctor logout
   stackdoctor upload [reportFile | path] [flags]
@@ -316,6 +333,7 @@ USAGE:
 COMMANDS:
   scan [path]        Scan and diagnose a project directory (default: current directory, 100% offline)
   rules              List all diagnostic rules supported by StackDoctor
+  explain <ruleId>   Explain rule details, evidence requirements, remediation, and docs
   login              Authenticate with a StackDoctor server and securely store API token
   logout             Remove stored server credentials
   upload [target]    Upload a diagnostic report with interactive preview and confirmation
@@ -501,6 +519,134 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
       console.log(`  Technologies: ${r.technologies.join(", ")}`);
       console.log("");
     }
+    return 0;
+  }
+
+  // --- COMMAND: explain ---
+  if (opts.command === "explain") {
+    if (!opts.ruleId) {
+      console.error("Usage error: Missing ruleId. Usage: stackdoctor explain <ruleId>");
+      return 3;
+    }
+
+    const registry = createDefaultRuleRegistry();
+    const allRules = registry.list();
+    const rule = allRules.find(
+      (r) => r.id.toLowerCase() === opts.ruleId!.toLowerCase()
+    );
+
+    if (!rule) {
+      console.error(`Error: Unknown diagnostic rule ID "${opts.ruleId}".`);
+      const suggestions = findSimilarRuleIds(
+        opts.ruleId,
+        allRules.map((r) => r.id)
+      );
+      if (suggestions.length > 0) {
+        console.error("\nDid you mean one of these?");
+        for (const s of suggestions) {
+          console.error(`  • ${s}`);
+        }
+      }
+      console.error("\nRun `stackdoctor rules` to list all supported diagnostic rules.");
+      return 2;
+    }
+
+    if (opts.json || opts.format === "json") {
+      const output = JSON.stringify(
+        {
+          id: rule.id,
+          title: rule.title,
+          category: rule.category ?? "general",
+          description: rule.description,
+          technologies: rule.technologies,
+          severity: rule.severity,
+          confidence: rule.confidence,
+          requiredEvidence: rule.requiredEvidence,
+          recommendedChecks: rule.recommendedChecks,
+          remediation: rule.remediation,
+          verification: rule.verification,
+          docs: rule.docs
+        },
+        null,
+        2
+      );
+      console.log(output);
+      if (opts.outFile) {
+        fs.writeFileSync(path.resolve(opts.outFile), output + "\n", "utf-8");
+      }
+      return 0;
+    }
+
+    const lines: string[] = [];
+    lines.push(`=== StackDoctor Diagnostic Rule: ${rule.id} ===`);
+    lines.push(`Title        : ${rule.title}`);
+    lines.push(`Category     : ${rule.category ?? "general"}`);
+    lines.push(`Severity     : ${rule.severity.toUpperCase()}`);
+    lines.push(`Confidence   : ${rule.confidence}`);
+    lines.push(`Technologies : ${rule.technologies.join(", ")}`);
+    lines.push("");
+
+    lines.push("--- Description ---");
+    lines.push(rule.description);
+    lines.push("");
+
+    lines.push("--- Evidence Required (Observed Facts) ---");
+    if (rule.requiredEvidence.length === 0) {
+      lines.push("  None specified.");
+    } else {
+      for (const ev of rule.requiredEvidence) {
+        lines.push(`  • ${ev}`);
+      }
+    }
+    lines.push("");
+
+    lines.push("--- Recommended Checks ---");
+    if (rule.recommendedChecks.length === 0) {
+      lines.push("  None specified.");
+    } else {
+      for (const chk of rule.recommendedChecks) {
+        lines.push(`  • ${chk}`);
+      }
+    }
+    lines.push("");
+
+    lines.push("--- Remediation Actions ---");
+    if (rule.remediation.length === 0) {
+      lines.push("  No remediation steps defined.");
+    } else {
+      rule.remediation.forEach((rec, idx) => {
+        lines.push(`[Action ${idx + 1}] ${rec.commandOrAction}`);
+        lines.push(`  Problem      : ${rec.problem}`);
+        lines.push(`  Relevance    : ${rec.relevance}`);
+        lines.push(`  Risks        : ${rec.risks}`);
+        lines.push(`  Verification : ${rec.verification}`);
+        if (rec.undo) {
+          lines.push(`  Undo         : ${rec.undo}`);
+        }
+        lines.push("");
+      });
+    }
+
+    lines.push("--- Verification ---");
+    lines.push(rule.verification);
+    lines.push("");
+
+    lines.push("--- Documentation References ---");
+    if (rule.docs.length === 0) {
+      lines.push("  No documentation links.");
+    } else {
+      for (const doc of rule.docs) {
+        lines.push(`  • ${doc}`);
+      }
+    }
+
+    const output = lines.join("\n");
+    console.log(output);
+
+    if (opts.outFile) {
+      fs.writeFileSync(path.resolve(opts.outFile), output + "\n", "utf-8");
+    }
+
     return 0;
   }
 
@@ -892,5 +1038,60 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<nu
   return hasFailingFindings ? 1 : 0;
 }
 
+export function levenshteinDistance(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+  }
+
+  return dp[m][n];
+}
+
+export function findSimilarRuleIds(
+  target: string,
+  candidates: string[],
+  maxSuggestions = 3
+): string[] {
+  const targetLower = target.toLowerCase();
+  const targetTokens = targetLower.split(/[_-]/).filter(Boolean);
+
+  const scored = candidates.map((cand) => {
+    const candLower = cand.toLowerCase();
+    const candTokens = candLower.split(/[_-]/).filter(Boolean);
+
+    const commonTokens = targetTokens.filter((t) => candTokens.includes(t)).length;
+    const isSubstring = candLower.includes(targetLower) || targetLower.includes(candLower);
+    const dist = levenshteinDistance(targetLower, candLower);
+
+    let score = dist - commonTokens * 5;
+    if (isSubstring) {
+      score -= 5;
+    }
+
+    return { candidate: cand, score, commonTokens, dist };
+  });
+
+  scored.sort((a, b) => a.score - b.score || a.dist - b.dist);
+
+  const filtered = scored.filter(
+    (s) => s.commonTokens > 0 || s.dist <= Math.max(5, Math.floor(target.length * 0.5))
+  );
+
+  return filtered.slice(0, maxSuggestions).map((s) => s.candidate);
+}
+
 export const CLI_NAME = "stackdoctor";
 export const CLI_CORE = "@stackdoctor/core";
+

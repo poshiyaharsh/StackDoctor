@@ -1,4 +1,5 @@
 import type { Rule } from "./types.js";
+import { isAllowedDocUrl } from "@stackdoctor/schemas";
 
 const REQUIRED_RULE_FIELDS: Array<keyof Rule> = [
   "id",
@@ -20,7 +21,7 @@ export class RuleRegistry {
   private rules: Map<string, Rule> = new Map();
 
   /**
-   * Registers a rule after validating required fields and uniqueness.
+   * Registers a rule after validating required fields, uniqueness, and doc URLs.
    */
   register(rule: Rule): void {
     if (!rule || typeof rule !== "object") {
@@ -39,6 +40,18 @@ export class RuleRegistry {
 
     if (this.rules.has(rule.id)) {
       throw new Error(`Duplicate rule ID: "${rule.id}" is already registered`);
+    }
+
+    if (!Array.isArray(rule.docs)) {
+      throw new Error(`Invalid rule "${rule.id}": "docs" must be an array of URLs`);
+    }
+
+    for (const docUrl of rule.docs) {
+      if (!isAllowedDocUrl(docUrl)) {
+        throw new Error(
+          `Invalid rule "${rule.id}": doc link "${docUrl}" is not from an allowlisted domain or is not HTTPS`
+        );
+      }
     }
 
     this.rules.set(rule.id, rule);

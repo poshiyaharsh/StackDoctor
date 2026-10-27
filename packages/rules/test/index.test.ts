@@ -16,7 +16,7 @@ describe("packages/rules", () => {
       technologies: ["nodejs"],
       severity: "low",
       confidence: "likely",
-      docs: ["https://example.com"]
+      docs: ["https://nodejs.org/api/"]
     };
     const parsed = RuleMetadataSchema.parse(sampleRule);
     expect(parsed.id).toBe("TEST_RULE");

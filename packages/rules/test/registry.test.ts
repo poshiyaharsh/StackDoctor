@@ -22,7 +22,7 @@ describe("RuleRegistry (registry.ts)", () => {
       }
     ],
     verification: "Verify something",
-    docs: ["https://example.com/docs"],
+    docs: ["https://nodejs.org/api/"],
     preconditions: () => true,
     evaluate: () => null
   };
@@ -63,5 +63,27 @@ describe("RuleRegistry (registry.ts)", () => {
     // Wildcard rule ENV_EXAMPLE_PRESENT_NO_ENV matches, but Node rule does not
     expect(pythonRules.some((r) => r.id === "ENV_EXAMPLE_PRESENT_NO_ENV")).toBe(true);
     expect(pythonRules.some((r) => r.id === "NODE_DEPS_NOT_INSTALLED")).toBe(false);
+  });
+
+  it("CRITICAL RULE: rejects non-allowlisted documentation URLs", () => {
+    const registry = new RuleRegistry();
+    const badDomainRule: Rule = {
+      ...dummyRule,
+      docs: ["https://untrusted-domain.com/docs"]
+    };
+    expect(() => registry.register(badDomainRule)).toThrow(
+      /is not from an allowlisted domain/
+    );
+  });
+
+  it("CRITICAL RULE: rejects unencrypted HTTP documentation URLs", () => {
+    const registry = new RuleRegistry();
+    const httpRule: Rule = {
+      ...dummyRule,
+      docs: ["http://nodejs.org/api/"]
+    };
+    expect(() => registry.register(httpRule)).toThrow(
+      /is not from an allowlisted domain or is not HTTPS/
+    );
   });
 });

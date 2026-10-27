@@ -1,0 +1,34 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`StackDoctor CLI 'explain' Command (Run 4D) > matches snapshot for explain output 1`] = `
+"=== StackDoctor Diagnostic Rule: NODE_DEPS_NOT_INSTALLED ===
+Title        : Node.js dependencies not installed
+Category     : dependencies
+Severity     : HIGH
+Confidence   : confirmed
+Technologies : Node.js
+
+--- Description ---
+package.json exists in the project root, but the node_modules folder is missing.
+
+--- Evidence Required (Observed Facts) ---
+  • file_presence
+
+--- Recommended Checks ---
+  • Verify presence of package.json and absence of node_modules
+  • Identify available lockfile to select the declared package manager
+
+--- Remediation Actions ---
+[Action 1] npm install
+  Problem      : Node.js application dependencies are not present locally.
+  Relevance    : Application runtime and build scripts fail immediately without installed packages.
+  Risks        : Network download and build scripts; suggest only with user confirmation.
+  Verification : test -d node_modules
+  Undo         : rm -rf node_modules
+
+--- Verification ---
+Verify that node_modules directory exists after installation.
+
+--- Documentation References ---
+  • https://docs.npmjs.com/cli/v10/commands/npm-install"
+`;

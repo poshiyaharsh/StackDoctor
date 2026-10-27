@@ -26,7 +26,7 @@ export const dbHostNotResolvedRule: Rule = {
     }
   ],
   verification: "Verify hostname resolves via DNS lookup.",
-  docs: ["https://en.wikipedia.org/wiki/Domain_Name_System"],
+  docs: ["https://nodejs.org/api/dns.html#error-codes"],
 
   preconditions(ctx: RuleEvaluationContext): boolean {
     return !!(
@@ -76,7 +76,7 @@ export const dbHostNotResolvedRule: Rule = {
         }
       ],
       verificationStatus: "unverified",
-      docs: ["https://en.wikipedia.org/wiki/Domain_Name_System"]
+      docs: ["https://nodejs.org/api/dns.html#error-codes"]
     };
   }
 };

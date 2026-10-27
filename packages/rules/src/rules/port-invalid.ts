@@ -25,7 +25,7 @@ export const portInvalidRule: Rule = {
     }
   ],
   verification: "Verify that all declared port numbers are valid integers in the 1-65535 range.",
-  docs: ["https://en.wikipedia.org/wiki/Port_(computer_networking)"],
+  docs: ["https://nodejs.org/api/net.html#serverlistenport-host-backlog-callback"],
 
   preconditions(ctx: RuleEvaluationContext): boolean {
     return !!(
@@ -72,7 +72,7 @@ export const portInvalidRule: Rule = {
         }
       ],
       verificationStatus: "unverified",
-      docs: ["https://en.wikipedia.org/wiki/Port_(computer_networking)"]
+      docs: ["https://nodejs.org/api/net.html#serverlistenport-host-backlog-callback"]
     };
   }
 };

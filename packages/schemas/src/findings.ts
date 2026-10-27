@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { SeveritySchema, ConfidenceSchema, CheckStatusSchema, VerificationStatusSchema } from "./enums.js";
 import { EvidenceSchema } from "./evidence.js";
+import { DocUrlSchema } from "./rules.js";
 
 export const RecommendationSchema = z.object({
   problem: z.string().min(1).max(1000),
@@ -24,6 +25,6 @@ export const FindingSchema = z.object({
   possibleCauses: z.array(z.string().min(1).max(1000)).default([]),
   recommendations: z.array(RecommendationSchema).default([]),
   verificationStatus: VerificationStatusSchema.default("unverified"),
-  docs: z.array(z.string().url().or(z.string().min(1))).default([])
+  docs: z.array(DocUrlSchema).default([])
 });
 export type Finding = z.infer<typeof FindingSchema>;
