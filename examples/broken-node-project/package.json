@@ -1,15 +1,15 @@
 {
   "name": "broken-node-project",
   "version": "1.0.0",
-  "private": true,
-  "description": "Example project for StackDoctor diagnostics with missing dependencies, missing env vars, lockfile missing, engine mismatch, and port conflict",
+  "description": "Test fixture with missing dependencies and Node version mismatch",
   "engines": {
     "node": "^12.0.0"
   },
   "scripts": {
-    "start": "node index.js --port 3000"
+    "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.21.0"
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
   }
 }

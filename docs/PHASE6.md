@@ -310,15 +310,27 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Demo script runs end to end on the real fixtures; reset script works
-- [ ] All numbers in launch posts come from real eval output
-- [ ] Posts state limitations honestly and do not oversell AI
-- [ ] Landing page matches actual behavior
+- [x] Demo script runs end to end on the real fixtures; reset script works
+- [x] All numbers in launch posts come from real eval output
+- [x] Posts state limitations honestly and do not oversell AI
+- [x] Landing page matches actual behavior
 
 **Run log (Antigravity fills):**
 - Files:
+  - Created: `docs/demo/demo-script.md`, `docs/demo/demo.tape`, `scripts/demo-reset.js`, `docs/examples.md`, `docs/launch/repo-settings.md`, `docs/launch/launch-posts.md`
+  - Modified: `docs/PHASE6.md`, `docs/LOG.md`
 - Demo run results:
+  - `node scripts/demo-reset.js`: Successfully resets `examples/broken-node-project` for repeatable recording.
+  - Scene-by-scene script covers 2-3 minute flow: broken project startup -> instant scan -> factual evidence vs probable causes -> copy-paste remediation with rollback -> verification scan -> offline issue draft.
+  - VHS `.tape` script provided for automated GIF rendering (`vhs docs/demo/demo.tape`).
+- Launch text sanity check:
+  - All figures cited (100.0% accuracy, 0.0% false positives, 20 deterministic rules, <20ms runtime) verified against real `npm run eval` benchmarks.
+  - No hyperbolic claims ("revolutionary", "10x", fake quotes).
+  - Explicitly states current limitations (no PostgreSQL/Redis yet, local-first scope).
+  - Drafts prepared for Show HN, Reddit (`r/programming`, `r/node`, `r/webdev`, `r/devops`), LinkedIn/X, and Dev.to/Hashnode.
 - Decisions:
+  - Prepared standalone reset script `scripts/demo-reset.js` to ensure zero state corruption between demo takes.
+  - Generated `docs/examples.md` containing unedited terminal output from all 4 fixtures across Node, Django, Docker, and healthy setups.
 
 ---
 

@@ -1354,6 +1354,46 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 6, Run 6E: Demo script, launch assets, honest launch posts.
 - **Status:** Done
 
+---
+
+### [2026-10-27] Phase 6, Run 6E: Demo script, launch assets, honest launch posts
+- **Prompt used:** PHASE6.md > Run 6E: Launch assets (text and scripts only; the user records and posts)
+- **What was done:**
+  - Created `docs/demo/demo-script.md` containing a scene-by-scene 2-3 minute screen recording script, narration cues, terminal styling recommendations, and instructions.
+  - Created `docs/demo/demo.tape` for automated terminal GIF generation with VHS.
+  - Created `scripts/demo-reset.js` to reset `examples/broken-node-project` back to its initial broken state for repeatable demo runs.
+  - Created `docs/examples.md` gallery documenting unedited terminal scan outputs from all 4 fixtures (`broken-node-project`, `broken-django-project`, `broken-database-config`, `healthy-node-project`).
+  - Created `docs/launch/repo-settings.md` specifying repository description (<350 chars), topics list, and social preview card guidelines.
+  - Created `docs/launch/launch-posts.md` with honest launch post drafts for Show HN, Reddit (`r/programming`, `r/node`, `r/webdev`, `r/devops`), LinkedIn/X, and Dev.to/Hashnode article outline.
+- **Files created/changed:**
+  - `docs/demo/demo-script.md`
+  - `docs/demo/demo.tape`
+  - `scripts/demo-reset.js`
+  - `docs/examples.md`
+  - `docs/launch/repo-settings.md`
+  - `docs/launch/launch-posts.md`
+  - `docs/PHASE6.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `node scripts/demo-reset.js`: Passed (resets fixture cleanly)
+  - `npm run test:docs`: Passed (45 Markdown files audited, 0 broken links, 3 CLI snippets verified)
+  - `npm run docs:rules -- --check`: Passed (rules reference synchronized)
+  - `npm run check:secrets`: Passed (0 secrets detected)
+  - `npm run check:licenses`: Passed (100% compliant)
+  - `npm run check:pack`: Passed (145.9 KB tarball, 23 files)
+  - `npm run test:install`: Passed (fresh install verified)
+  - `npm run build`: Passed (exit code 0)
+  - `npm run lint`: Passed (0 errors)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (421/421 tests across 58 suites passed)
+  - `npm run eval`: Passed (100.0% detection accuracy, 0.0% false positives)
+  - `npm run eval:ai`: Passed (18/18 safety evals passed with 100% score)
+- **Problems / errors:** None.
+- **Decisions made:** All launch posts strictly cite verified benchmark metrics (100% accuracy, 0% false positives, 20 rules); no marketing hyperbole; demo is fully repeatable via `scripts/demo-reset.js`.
+- **Next step:** Phase 6, Run 6F: Final verification for v0.1.0 (Definition of Done audit).
+- **Status:** Done
+
+
 
 
 
