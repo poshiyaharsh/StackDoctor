@@ -15,7 +15,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
-| 5A | AI package: provider interface, input sanitization, prompt construction | Not started | - | - |
+| 5A | AI package: provider interface, input sanitization, prompt construction | Done | pending | 2026-10-27 |
 | 5B | Output validation, grounding checks, command allowlist | Not started | - | - |
 | 5C | Providers + CLI `ai-explain` with consent preview | Not started | - | - |
 | 5D | API explanation endpoint + web UI | Not started | - | - |
@@ -74,16 +74,42 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Disabled by default and makes no calls when disabled
-- [ ] Only allowlisted, redacted fields reach the prompt
-- [ ] Evidence text cannot break out of the data block (test proves it)
-- [ ] Output schema separates confirmed facts from hypotheses
+- [x] Disabled by default and makes no calls when disabled
+- [x] Only allowlisted, redacted fields reach the prompt
+- [x] Evidence text cannot break out of the data block (test proves it)
+- [x] Output schema separates confirmed facts from hypotheses
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/ai/package.json`
+  - `packages/ai/tsconfig.json`
+  - `packages/ai/src/types.ts`
+  - `packages/ai/src/mock-provider.ts`
+  - `packages/ai/src/config.ts`
+  - `packages/ai/src/schema.ts`
+  - `packages/ai/src/sanitizer.ts`
+  - `packages/ai/src/prompt.ts`
+  - `packages/ai/src/index.ts`
+  - `packages/ai/test/ai.test.ts`
+  - `packages/ai/test/__snapshots__/ai.test.ts.snap`
+  - `tsconfig.json`
+  - `vitest.config.ts`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
 - Command results:
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (328/328 tests across 49 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
 - Problems:
+  - Addressed ESLint slash-escape warnings in regex sanitizer by utilizing RegExp constructor.
+  - Eliminated any-types in package index and test suite with TypeScript type guards.
 - Decisions:
+  - AI defaults to disabled (`enabled: false`), instantly returning `{ status: "ai_disabled" }` without calling providers.
+  - Sanitizer strictly allowlists fields (`ruleId`, `title`, `severity`, `confidence`, `category`, `evidence` with `id`/`kind`/`observed`, `possibleCauses`, and environment), strips usernames/hostnames/paths, and re-runs core secret redaction.
+  - Delimiter breakout attacks (e.g. `</diagnostic_data>`) are neutralized to `[DELIMITER_ESCAPED]` in prompt construction.
+  - Strict output schema enforces `evidenceIds.min(1)` for confirmed facts.
 
 ---
 

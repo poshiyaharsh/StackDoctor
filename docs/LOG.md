@@ -761,6 +761,60 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 5: Optional AI (Evidence-grounded explanations) (`PHASES.md`).
 - **Status:** Done
 
+---
+
+### [2026-10-27] Phase 5, Run 5A: AI Foundation, Sanitization, and Prompt Construction
+- **Prompt used:** PHASE5.md > Run 5A: AI Foundation (new package packages/ai)
+- **What was done:**
+  1. Created `@stackdoctor/ai` package in `packages/ai`:
+     - Provider interface `AiProvider` with `complete(request)` accepting `AiRequest` and returning `AiResponse`.
+     - Deterministic `MockProvider` for testing (request recorder, scriptable responses, cancellation handling).
+     - Configuration schema `AiConfigSchema` using Zod (`enabled: false` default, `maxInputBytes: 16000`, `maxOutputTokens: 2048`, `timeoutMs: 30000`).
+     - Safe-by-default execution: When `config.enabled` is false, `explainWithAi` immediately returns typed `{ status: "ai_disabled", message: ... }` with 0 network calls and 0 provider calls.
+  2. Input Sanitization (`buildAiInput` in `src/sanitizer.ts`):
+     - Field allowlist: Only `ruleId`, `title`, `severity`, `confidence`, `category`, `evidence` (`id`, `kind`, `observed`), `possibleCauses`, and `environment` (`osFamily`, `runtimeVersions`) are permitted.
+     - Strips machine identifiers, user home paths, usernames, hostnames, and absolute project paths.
+     - Re-runs core secret redaction (`redactText`) on every string field.
+     - Enforces byte capping (`maxInputBytes`), truncating evidence strings and setting `isTruncated: true` marker while preserving valid JSON structure.
+  3. Prompt Construction (`buildExplanationPrompt` in `src/prompt.ts`):
+     - Strict system prompt enforcing: untrusted data boundary, factual grounding, evidence citation (`evidenceIds`), hypotheses vs facts separation, secret protection, safe/non-destructive operations, and strict JSON output.
+     - Data tag encapsulation (`<diagnostic_data>`) with delimiter breakout neutralization (`escapePromptDelimiters`), converting adversarial closing tags into `[DELIMITER_ESCAPED]`.
+  4. Output Schema (`AiExplanationSchema` in `src/schema.ts`):
+     - Strict Zod schema separating confirmed facts (must cite >=1 evidence id) from probabilistic hypotheses (must specify `whatWouldConfirmIt`), root cause ranking, checklist, extra checks, and suggested operation IDs.
+  5. Test Suite (`packages/ai/test/ai.test.ts`):
+     - 9 comprehensive unit tests covering disabled behavior, allowlist filtering, canary/path redaction, delimiter breakout defense, byte truncation, MockProvider end-to-end execution, markdown fence tolerance, schema rejection on uncited facts, and prompt snapshot.
+- **Files created/changed:**
+  - `packages/ai/package.json`
+  - `packages/ai/tsconfig.json`
+  - `packages/ai/src/types.ts`
+  - `packages/ai/src/mock-provider.ts`
+  - `packages/ai/src/config.ts`
+  - `packages/ai/src/schema.ts`
+  - `packages/ai/src/sanitizer.ts`
+  - `packages/ai/src/prompt.ts`
+  - `packages/ai/src/index.ts`
+  - `packages/ai/test/ai.test.ts`
+  - `packages/ai/test/__snapshots__/ai.test.ts.snap`
+  - `tsconfig.json`
+  - `vitest.config.ts`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (328/328 tests across 49 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
+  - Disabled by default and makes no calls when disabled: Verified
+  - Only allowlisted, redacted fields reach the prompt: Verified
+  - Evidence text cannot break out of data block: Verified
+  - Output schema separates confirmed facts from hypotheses: Verified
+- **Problems / errors:** Handled ESLint slash-escape warnings in regex sanitizer by utilizing RegExp constructor.
+- **Decisions made:** AI is OFF by default; zero network or provider calls occur when disabled; prompt delimiters are strictly neutralized to prevent prompt injection breakouts.
+- **Next step:** Phase 5, Run 5B: Output validation, grounding checks, command allowlist (`packages/ai`).
+- **Status:** Done
+
+
 
 
 

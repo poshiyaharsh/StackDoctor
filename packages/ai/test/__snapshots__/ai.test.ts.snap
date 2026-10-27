@@ -1,0 +1,36 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`@stackdoctor/ai - Foundation and Sanitization > matches prompt snapshot for structured explanation instructions 1`] = `
+"<diagnostic_data>
+{
+  "findings": [
+    {
+      "ruleId": "ENV_SAMPLE",
+      "title": "Sample finding",
+      "severity": "warning",
+      "confidence": "medium",
+      "category": "environment",
+      "evidence": [
+        {
+          "id": "ev-sample-1",
+          "kind": "env",
+          "observed": "DEBUG=true"
+        }
+      ],
+      "possibleCauses": [
+        "Debug mode left on"
+      ]
+    }
+  ],
+  "environment": {
+    "osFamily": "linux",
+    "runtimeVersions": [
+      "Node.js v20.0.0"
+    ]
+  },
+  "isTruncated": false
+}
+</diagnostic_data>
+
+Analyze the diagnostic data above and produce the structured JSON explanation following the strict schema."
+`;

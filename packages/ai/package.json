@@ -1,0 +1,23 @@
+{
+  "name": "@stackdoctor/ai",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@stackdoctor/config": "*",
+    "@stackdoctor/core": "*",
+    "@stackdoctor/schemas": "*",
+    "zod": "^3.24.1"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  }
+}
