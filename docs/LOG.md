@@ -814,6 +814,59 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 5, Run 5B: Output validation, grounding checks, command allowlist (`packages/ai`).
 - **Status:** Done
 
+---
+
+### [2026-10-27] Phase 5, Run 5B: Output Validation, Grounding Checks, and Command Allowlist
+- **Prompt used:** PHASE5.md > Run 5B: Output validation, grounding checks, command allowlist (packages/ai)
+- **What was done:**
+  1. Output Parser (`src/parser.ts`):
+     - Implemented `parseAiOutput(text)` extracting JSON from markdown code fences or raw text.
+     - Validates strictly against `AiExplanationSchema`. Any invalid JSON or schema violation returns typed failure (`{ success: false, error }`), never producing partial trust.
+  2. Grounding Validator (`src/grounding.ts`):
+     - Implemented `validateGrounding(output, aiInput)`.
+     - Validates that every evidence ID in `confirmedFacts[].evidenceIds` and `rootCauseRanking[].supportingEvidenceIds` exists in `aiInput`. Unknown IDs cause items to be rejected/downgraded and reasons logged.
+     - Enforces factual grounding heuristics on `confirmedFacts`:
+       - Version numbers, ports, file paths, and identifiers must appear in the cited evidence. Unsubstantiated versions cause facts to be downgraded to hypotheses.
+       - "Not installed" claims cited purely to connection failure/socket errors (e.g. `ECONNREFUSED 127.0.0.1:27017`) without package/file missing evidence are downgraded to hypotheses.
+     - Secret-like string scanner rejects outputs containing canary tokens (`CANARY_SECRET_...`), token prefixes (`sk-...`, `stk_...`), or unredacted secrets.
+     - Threshold evaluation: Outputs where >50% or all facts fail grounding are marked `status: "rejected"`.
+  3. Command Safety Scanner (`src/command-safety.ts`):
+     - Implemented `sanitizeCommands(output, allowlistedOperations)`.
+     - Scans for dangerous commands (`sudo`, `rm`, `rmdir`, `chmod`, `chown`, `kill`, `pkill`, `taskkill`, `reg`, `netsh`, `iptables`, `format`, `mkfs`, `curl | sh`, `wget | sh`, `powershell -enc`), code blocks, and prompt lines (`$`, `>`).
+     - Strips dangerous command text from displayed fields and quarantines them under `unverifiedSuggestions` labeled as `"unverified suggestion (not executable)"`.
+     - Drops any `suggestedOperationIds` not present in `DEFAULT_ALLOWLISTED_OPERATIONS`.
+  4. Deterministic Fallback (`src/fallback.ts`):
+     - Implemented `buildFallbackExplanation(reportOrFindings)` generating complete, structured `AiExplanation` directly from diagnostic findings and recommendations.
+     - Returned automatically whenever AI is disabled, fails parsing, or is rejected by grounding checks.
+  5. Updated `explainWithAi` in `src/index.ts`:
+     - Seamlessly runs parsing, grounding validation, command safety sanitization, and fallback fallback generation.
+  6. Comprehensive Unit Tests (`packages/ai/test/grounding.test.ts`):
+     - 8 comprehensive tests covering code fence extraction, invalid JSON/schema rejection, invented evidence ID rejection, fabricated version number downgrade, connection-refused "not installed" claim downgrade, secret canary rejection, dangerous command stripping, deterministic fallback generation, and automatic fallback integration.
+- **Files created/changed:**
+  - `packages/ai/src/parser.ts`
+  - `packages/ai/src/grounding.ts`
+  - `packages/ai/src/command-safety.ts`
+  - `packages/ai/src/fallback.ts`
+  - `packages/ai/src/index.ts`
+  - `packages/ai/test/grounding.test.ts`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (336/336 tests across 50 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
+  - Ungrounded facts are downgraded or removed: Verified
+  - "Not installed" claims from refused connections are caught and downgraded: Verified
+  - Dangerous command text never reaches display fields: Verified
+  - Rejected output falls back to deterministic explanation: Verified
+- **Problems / errors:** Addressed severity enum comparison in fallback generator and aligned parser error message casing.
+- **Decisions made:** Strict rejection on schema violations and secrets; facts with ungrounded versions or install claims are demoted to hypotheses with confirmation instructions; dangerous commands are isolated as unverified non-executable suggestions.
+- **Next step:** Phase 5, Run 5C: Providers (Anthropic, OpenAI-compatible) and CLI `ai-explain` with consent preview (`packages/ai`, `apps/cli`).
+- **Status:** Done
+
+
 
 
 

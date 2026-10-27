@@ -16,7 +16,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | Run | Focus | Status | Commit | Date |
 |---|---|---|---|---|
 | 5A | AI package: provider interface, input sanitization, prompt construction | Done | 920f90c | 2026-10-27 |
-| 5B | Output validation, grounding checks, command allowlist | Not started | - | - |
+| 5B | Output validation, grounding checks, command allowlist | Done | pending | 2026-10-27 |
 | 5C | Providers + CLI `ai-explain` with consent preview | Not started | - | - |
 | 5D | API explanation endpoint + web UI | Not started | - | - |
 | 5E | User-approved remediation (allowlisted operations only) | Not started | - | - |
@@ -147,16 +147,35 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Ungrounded "facts" are downgraded or removed
-- [ ] "Not installed" claims from a refused connection are caught
-- [ ] Dangerous command text never reaches display fields
-- [ ] Rejected output falls back to the deterministic explanation
+- [x] Ungrounded "facts" are downgraded or removed
+- [x] "Not installed" claims from a refused connection are caught
+- [x] Dangerous command text never reaches display fields
+- [x] Rejected output falls back to the deterministic explanation
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/ai/src/parser.ts`
+  - `packages/ai/src/grounding.ts`
+  - `packages/ai/src/command-safety.ts`
+  - `packages/ai/src/fallback.ts`
+  - `packages/ai/src/index.ts`
+  - `packages/ai/test/grounding.test.ts`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
 - Command results:
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (336/336 tests across 50 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
 - Problems:
+  - Addressed TypeScript severity enum comparison in fallback generator (`"high"` instead of `"error"`).
+  - Aligned parser schema error message casing across test suites.
 - Decisions:
+  - Parse failures and schema violations immediately reject without partial trust.
+  - Grounding checks downgrade ungrounded facts into hypotheses while logging exact reasons and removed statements.
+  - Dangerous commands (`sudo`, `rm -rf`, `curl | sh`, inline code backticks) are stripped from displayed fields and quarantined in `unverifiedSuggestions`.
+  - Fallback is deterministically built from findings and returned automatically whenever AI is disabled, invalid, or rejected.
 
 ---
 

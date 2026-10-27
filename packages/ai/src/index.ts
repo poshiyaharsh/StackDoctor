@@ -1,14 +1,17 @@
-import type { Report, Finding } from "@stackdoctor/schemas";
+import type { Report, Finding, Severity, Confidence } from "@stackdoctor/schemas";
 import type {
   AiProvider,
-  AiResult,
   AiInput,
   AiInputEnvironment
 } from "./types.js";
 import type { AiConfig } from "./config.js";
 import { buildAiInput, type BuildAiInputOptions } from "./sanitizer.js";
 import { buildExplanationPrompt } from "./prompt.js";
-import { AiExplanationSchema, type AiExplanation } from "./schema.js";
+import type { AiExplanation } from "./schema.js";
+import { parseAiOutput } from "./parser.js";
+import { validateGrounding, type GroundingStatus } from "./grounding.js";
+import { sanitizeCommands, DEFAULT_ALLOWLISTED_OPERATIONS } from "./command-safety.js";
+import { buildFallbackExplanation } from "./fallback.js";
 
 export * from "./types.js";
 export * from "./mock-provider.js";
@@ -16,14 +19,55 @@ export * from "./config.js";
 export * from "./schema.js";
 export * from "./sanitizer.js";
 export * from "./prompt.js";
+export * from "./parser.js";
+export * from "./grounding.js";
+export * from "./command-safety.js";
+export * from "./fallback.js";
 
 export interface ExplainWithAiOptions {
   provider: AiProvider;
   config: AiConfig;
   input: Report | Finding[] | AiInput | { findings: Finding[]; environment?: Partial<AiInputEnvironment> };
   sanitizerOptions?: BuildAiInputOptions;
+  allowlistedOperations?: string[];
   signal?: AbortSignal;
 }
+
+export type ExplainWithAiResult =
+  | {
+      status: "ai_disabled";
+      message: string;
+      explanation: AiExplanation;
+      isFallback: true;
+    }
+  | {
+      status: "ok" | "partially_trusted" | "success";
+      groundingStatus: GroundingStatus;
+      explanation: AiExplanation;
+      data: AiExplanation;
+      raw: string;
+      removed: string[];
+      reasons: string[];
+      unverifiedSuggestions: string[];
+      isFallback: false;
+    }
+  | {
+      status: "rejected";
+      groundingStatus: "rejected";
+      explanation: AiExplanation;
+      error: string;
+      reasons: string[];
+      removed: string[];
+      isFallback: true;
+      raw?: string;
+    }
+  | {
+      status: "error";
+      explanation: AiExplanation;
+      error: string;
+      reasons: string[];
+      isFallback: true;
+    };
 
 function isAiInput(val: unknown): val is AiInput {
   return (
@@ -36,33 +80,51 @@ function isAiInput(val: unknown): val is AiInput {
 }
 
 /**
- * Strips markdown code block wrappers (e.g. ```json ... ```) if present.
- */
-function cleanJsonOutput(text: string): string {
-  const trimmed = text.trim();
-  const codeBlockMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  if (codeBlockMatch) {
-    return codeBlockMatch[1].trim();
-  }
-  return trimmed;
-}
-
-/**
- * Executes AI diagnostic explanation on findings or reports.
+ * Executes AI diagnostic explanation on findings or reports with full
+ * grounding validation, command safety checks, and deterministic fallback.
  *
  * Safe-by-default: If config.enabled is false, immediately returns an 'ai_disabled' result
- * without making any network calls or contacting any provider.
+ * with a deterministic fallback explanation without contacting any provider.
  */
 export async function explainWithAi(
   options: ExplainWithAiOptions
-): Promise<AiResult<AiExplanation>> {
-  const { provider, config, input, sanitizerOptions, signal } = options;
+): Promise<ExplainWithAiResult> {
+  const { provider, config, input, sanitizerOptions, allowlistedOperations = DEFAULT_ALLOWLISTED_OPERATIONS, signal } = options;
+
+  const fallback = buildFallbackExplanation(
+    isAiInput(input)
+      ? {
+          findings: input.findings.map((f) => ({
+            ruleId: f.ruleId,
+            title: f.title,
+            category: f.category,
+            severity: f.severity as Severity,
+            confidence: f.confidence as Confidence,
+            status: "failed",
+            evidence: f.evidence.map((e) => ({
+              id: e.id,
+              kind: e.kind,
+              description: "",
+              observed: e.observed,
+              source: "diagnostic_input",
+              collectedAt: new Date().toISOString()
+            })),
+            possibleCauses: f.possibleCauses,
+            recommendations: [],
+            verificationStatus: "unverified",
+            docs: []
+          }))
+        }
+      : input
+  );
 
   if (!config.enabled) {
     return {
       status: "ai_disabled",
       message:
-        "AI explanations are disabled by default. Configure and enable AI in settings to use this feature."
+        "AI explanations are disabled by default. Configure and enable AI in settings to use this feature.",
+      explanation: fallback,
+      isFallback: true
     };
   }
 
@@ -81,40 +143,61 @@ export async function explainWithAi(
     });
 
     const response = await provider.complete(request);
-    const cleanedText = cleanJsonOutput(response.text);
 
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(cleanedText);
-    } catch (parseErr) {
-      const errMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+    // 1. Parse and schema-validate
+    const parsed = parseAiOutput(response.text);
+    if (!parsed.success) {
       return {
         status: "error",
-        error: `Failed to parse AI response as JSON: ${errMsg}`
+        error: parsed.error,
+        reasons: [parsed.error],
+        explanation: fallback,
+        isFallback: true
       };
     }
 
-    const validation = AiExplanationSchema.safeParse(parsedJson);
-    if (!validation.success) {
-      const issues = validation.error.issues
-        .map((iss) => `[${iss.path.join(".")}] ${iss.message}`)
-        .join("; ");
+    // 2. Grounding validation
+    const grounding = validateGrounding(parsed.data, aiInput);
+    if (grounding.status === "rejected" || !grounding.output) {
       return {
-        status: "error",
-        error: `AI response failed schema validation: ${issues}`
+        status: "rejected",
+        groundingStatus: "rejected",
+        error: grounding.reasons.join("; ") || "AI explanation rejected by grounding checks",
+        reasons: grounding.reasons,
+        removed: grounding.removed,
+        explanation: fallback,
+        isFallback: true,
+        raw: response.text
       };
     }
+
+    // 3. Command safety sanitization
+    const commandResult = sanitizeCommands(grounding.output, allowlistedOperations);
+
+    const allRemoved = [
+      ...grounding.removed,
+      ...commandResult.droppedOperationIds.map((id) => `Dropped unallowlisted operation ID: ${id}`)
+    ];
 
     return {
       status: "success",
-      data: validation.data,
-      raw: response.text
+      groundingStatus: grounding.status,
+      explanation: commandResult.sanitizedOutput,
+      data: commandResult.sanitizedOutput,
+      raw: response.text,
+      removed: allRemoved,
+      reasons: grounding.reasons,
+      unverifiedSuggestions: commandResult.unverifiedSuggestions,
+      isFallback: false
     };
-  } catch (err) {
+  } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     return {
       status: "error",
-      error: errMsg
+      error: errMsg,
+      reasons: [errMsg],
+      explanation: fallback,
+      isFallback: true
     };
   }
 }
