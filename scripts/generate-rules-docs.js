@@ -103,9 +103,17 @@ if (isCheckMode) {
     console.error("[FAIL] docs/diagnostics.md does not exist. Run 'npm run docs:rules' to generate.");
     process.exit(1);
   }
-  const existing = fs.readFileSync(docsPath, "utf-8");
-  if (existing.trim() !== md.trim()) {
+  const existing = fs.readFileSync(docsPath, "utf-8").replace(/\r\n/g, "\n").trim();
+  const generated = md.replace(/\r\n/g, "\n").trim();
+  if (existing !== generated) {
     console.error("[FAIL] docs/diagnostics.md is out of date with the rule registry. Run 'npm run docs:rules'.");
+    console.error(`Lengths: existing=${existing.length}, generated=${generated.length}`);
+    for (let i = 0; i < Math.min(existing.length, generated.length); i++) {
+      if (existing[i] !== generated[i]) {
+        console.error(`Diff at char ${i}:\nExisting : ${JSON.stringify(existing.slice(i, i + 40))}\nGenerated: ${JSON.stringify(generated.slice(i, i + 40))}`);
+        break;
+      }
+    }
     process.exit(1);
   }
   console.log("[PASS] docs/diagnostics.md is up to date with the canonical rule registry.");

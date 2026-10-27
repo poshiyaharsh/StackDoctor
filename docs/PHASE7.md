@@ -17,7 +17,7 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | Run | Focus | Gate | Status | Commit | Date |
 |---|---|---|---|---|---|
 | 7A | Feedback system, triage routine, labels | none | Done | see git log | 2026-10-27 |
-| 7B | Patch-release loop (v0.1.x) and regression-fixture workflow | none | Not started | - | - |
+| 7B | Patch-release loop (v0.1.x) and regression-fixture workflow | none | Done | see git log | 2026-10-27 |
 | 7C | Eval expansion from real feedback, per-rule precision/recall | needs real feedback | Not started | - | - |
 | 7D | PostgreSQL support | demand gate | Not started | - | - |
 | 7E | Next ecosystem or rule pack (chosen by feedback) | demand gate | Not started | - | - |
@@ -134,15 +134,36 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] `new-regression` generator works and is tested
-- [ ] Eval includes regression fixtures automatically
-- [ ] `verify:release` runs the full chain with one command
-- [ ] Versioning and patch-release policies documented
+- [x] `new-regression` generator works and is tested
+- [x] Eval includes regression fixtures automatically
+- [x] `verify:release` runs the full chain with one command
+- [x] Versioning and patch-release policies documented
 
 **Run log (Antigravity fills):**
 - Files:
+  - Created: `docs/fix-workflow.md`, `scripts/new-regression.js`, `packages/core/test/new-regression.test.ts`, `scripts/verify-release.js`, `docs/patch-release.md`, `docs/versioning.md`
+  - Modified: `scripts/eval.js`, `package.json`, `README.md`, `packages/rules/test/generator.test.ts`, `apps/api/test/stats-and-account.test.ts`, `scripts/generate-rules-docs.js`, `docs/diagnostics.md`, `docs/PHASE7.md`, `docs/LOG.md`
 - Command results:
+  - `npm run verify:release`: PASSED (all 13 quality gates passed in 45.6s)
+  - `npm run new-regression`: Tested via `packages/core/test/new-regression.test.ts` (3/3 unit tests passed)
+  - `npm run eval`: Dynamically includes all `examples/regressions/*/expected.json` fixtures with per-rule stats (100.0% accuracy, 0.0% false positives)
+  - `npm run test:docs`: PASSED (55 Markdown files audited, 0 broken links, 3 CLI snippets verified)
+  - `npm run check:secrets`: PASSED (0 secrets detected)
+  - `npm run check:licenses`: PASSED (100% compliant)
+  - `npm run check:pack`: PASSED (145.9 KB tarball, 23 files)
+  - `npm run test:install`: PASSED (fresh install verified)
+  - `npm run build`: PASSED (exit code 0)
+  - `npm run lint`: PASSED (0 errors)
+  - `npm run typecheck`: PASSED (exit code 0)
+  - `npm test`: PASSED (60 test suites, 427/427 tests passed)
 - Decisions:
+  - Documented strict 8-step bug and regression fix loop in `docs/fix-workflow.md`.
+  - Built regression fixture generator `scripts/new-regression.js` (`npm run new-regression`) with unit tests.
+  - Enhanced `scripts/eval.js` to automatically scan `examples/regressions/` and report per-rule metrics.
+  - Built single-command release verification chain `scripts/verify-release.js` (`npm run verify:release`).
+  - Documented semantic versioning and schema deprecation policy in `docs/versioning.md`.
+  - Documented patch release workflow in `docs/patch-release.md`.
+  - Replaced destructive `git checkout docs/diagnostics.md` in `generator.test.ts` with in-memory backup and restore to avoid reverting documentation.
 
 ---
 

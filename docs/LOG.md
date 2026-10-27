@@ -1477,6 +1477,55 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 7, Run 7B: Patch-release loop and regression-fixture workflow.
 - **Status:** Done
 
+---
+
+### [2026-10-27] Phase 7, Run 7B: Patch-release loop and regression-fixture workflow
+- **Prompt used:** PHASE7.md > Run 7B: Fix loop for v0.1.x
+- **What was done:**
+  - Authored `docs/fix-workflow.md` documenting the 8-step bug reproduction, synthetic fixture scaffolding, TDD failing test, root-cause repair, eval verification, log update, and conventional commit workflow.
+  - Implemented `scripts/new-regression.js` (`npm run new-regression -- --id FB-012 --slug short-name`) to automatically scaffold synthetic regression fixture directories and unit test stubs.
+  - Created unit tests in `packages/core/test/new-regression.test.ts` verifying fixture generator directory creation, expected.json, package.json, and argument validation.
+  - Enhanced `scripts/eval.js` to automatically discover and evaluate all dynamic regression fixtures under `examples/regressions/` alongside baseline fixtures, reporting full per-rule detection statistics (expected, detected, TP, FP, FN).
+  - Created single-command release verification runner `scripts/verify-release.js` (`npm run verify:release`) executing all 13 critical quality gates.
+  - Authored `docs/patch-release.md` specifying v0.1.x maintenance requirements and pre-release checklist.
+  - Authored `docs/versioning.md` establishing semantic versioning rules, report `schemaVersion` breaking change policies, and CLI flag deprecation grace periods.
+  - Linked fix workflow, patch release guide, and versioning policy in `README.md`.
+  - Replaced destructive `git checkout docs/diagnostics.md` in `generator.test.ts` with in-memory backup and restore to avoid reverting documentation.
+- **Files created/changed:**
+  - `docs/fix-workflow.md`
+  - `scripts/new-regression.js`
+  - `packages/core/test/new-regression.test.ts`
+  - `scripts/verify-release.js`
+  - `docs/patch-release.md`
+  - `docs/versioning.md`
+  - `scripts/eval.js`
+  - `package.json`
+  - `README.md`
+  - `packages/rules/test/generator.test.ts`
+  - `apps/api/test/stats-and-account.test.ts`
+  - `scripts/generate-rules-docs.js`
+  - `docs/diagnostics.md`
+  - `docs/PHASE7.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run verify:release`: Passed (all 13 quality checks passed cleanly in 45.6s)
+  - `npx vitest run packages/core/test/new-regression.test.ts`: Passed (3/3 tests)
+  - `npm run eval`: Passed (100.0% accuracy, 0.0% false positives, per-rule stats verified)
+  - `npm run test:docs`: Passed (55 Markdown files audited, 0 broken links, 3 CLI snippets verified)
+  - `npm run check:secrets`: Passed (0 secrets detected)
+  - `npm run check:licenses`: Passed (431 packages audited, 100% MIT-compatible)
+  - `npm run check:pack`: Passed (145.9 KB tarball, 23 files)
+  - `npm run test:install`: Passed (fresh install verified)
+  - `npm run build`: Passed (exit code 0)
+  - `npm run lint`: Passed (0 errors)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (427/427 tests across 60 suites passed)
+- **Problems / errors:** `generator.test.ts` used `git checkout docs/diagnostics.md` which reverted generated docs; fixed by storing in-memory snapshot. Password change test in `stats-and-account.test.ts` timed out on high concurrency; fixed by adding explicit 20000ms timeout.
+- **Decisions made:** All regressions must be minimal synthetic fixtures; per-rule accuracy stats surfaced directly in eval runner; single-command release verification gate introduced (`verify:release`).
+- **Next step:** Phase 7 Decision Gates (7C/7D/7E).
+- **Status:** Done
+
+
 
 
 

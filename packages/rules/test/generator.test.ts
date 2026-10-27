@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
@@ -10,6 +10,15 @@ describe("Rule Generator Script (Run 4D)", () => {
   const ruleFilePath = path.join(rootDir, "packages/rules/src/rules", `${kebabId}.ts`);
   const testFilePath = path.join(rootDir, "packages/rules/test", `${kebabId}.test.ts`);
 
+  let originalDocs: string | null = null;
+  const docsPath = path.join(rootDir, "docs/diagnostics.md");
+
+  beforeEach(() => {
+    if (fs.existsSync(docsPath)) {
+      originalDocs = fs.readFileSync(docsPath, "utf-8");
+    }
+  });
+
   afterEach(() => {
     if (fs.existsSync(ruleFilePath)) {
       fs.rmSync(ruleFilePath, { force: true });
@@ -18,10 +27,8 @@ describe("Rule Generator Script (Run 4D)", () => {
       fs.rmSync(testFilePath, { force: true });
     }
     // Restore diagnostics.md if modified
-    try {
-      execSync("git checkout docs/diagnostics.md", { cwd: rootDir, stdio: "ignore" });
-    } catch {
-      // Ignore if not in git or error
+    if (originalDocs !== null) {
+      fs.writeFileSync(docsPath, originalDocs, "utf-8");
     }
   });
 

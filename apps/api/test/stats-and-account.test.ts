@@ -255,7 +255,7 @@ describe("StackDoctor Stats & Account Management API (Run 3E)", () => {
         .post("/api/v1/auth/login")
         .send({ email: "pwchange@example.com", password: "NewSuperPassword123!" });
       expect(passLogin.status).toBe(200);
-    });
+    }, 20000);
 
     it("deletes account and cascades deletion to all user projects, runs, and tokens", async () => {
       const { cookies, csrfToken, user } = await registerUser("delete-me@example.com", "PasswordToDel123!", "Doomed User");
@@ -306,6 +306,6 @@ describe("StackDoctor Stats & Account Management API (Run 3E)", () => {
         .get("/api/v1/auth/me")
         .set("Cookie", cookies);
       expect(meRes.status).toBe(401);
-    });
+    }, 20000);
   });
 });

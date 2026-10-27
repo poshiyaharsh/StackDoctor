@@ -1,487 +1,727 @@
-# Diagnostics
+# StackDoctor Diagnostic Rule Catalog
 
-This document catalog describes each diagnostic rule implemented in StackDoctor, including the observed evidence, hypotheses, and remediation steps.
+This catalog is **automatically generated** from the canonical rule registry in `packages/rules`.
+To update or verify this document, run:
+```bash
+npm run docs:rules
+```
 
----
-
-## Diagnostic Rules Catalog
-
-### 1. `NODE_DEPS_NOT_INSTALLED`
-
-- **Title**: Node.js dependencies not installed
-- **Category**: `dependencies`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `Node.js`
-- **Description**: Triggered when a `package.json` file is present in the project root or subproject, but the `node_modules` directory does not exist.
-- **Preconditions**: `package.json` exists in project root.
-- **Observed Evidence (Facts)**:
-  - File presence: `package.json` was located.
-  - Directory absence: `node_modules` is not present.
-- **Possible Causes (Hypotheses)**:
-  - The repository was recently cloned or checked out without running dependency installation.
-  - The `node_modules` directory was manually cleaned or deleted.
-- **Remediation**:
-  - Command: `npm install` (or `pnpm install`, `yarn install`, `bun install` matching detected lockfile).
-  - Risks: Downloads packages from external registries; requires user approval.
-  - Undo: `rm -rf node_modules`
-- **Verification**: Verify that `node_modules` directory exists after running the command.
-- **References**: [npm install documentation](https://docs.npmjs.com/cli/v10/commands/npm-install)
+Total Built-in Rules: **20**
 
 ---
 
-### 2. `ENV_EXAMPLE_PRESENT_NO_ENV`
+## Rule Summary Table
 
-- **Title**: Environment template present but .env file is missing
+| Rule ID | Category | Severity | Confidence | Technologies | Description |
+|---|---|---|---|---|---|
+| [`COMPOSE_SERVICE_NOT_FOUND`](#compose-service-not-found) | `configuration` | **high** | `confirmed` | Docker, Docker Compose | An application configuration or environment URL references a service name that does not exist in the project's docker-compose.yml services. |
+| [`DB_CONNECTION_TIMEOUT`](#db-connection-timeout) | `database` | **high** | `confirmed` | MongoDB, MySQL | TCP connection to the database endpoint timed out before establishing a socket connection. |
+| [`DB_HOST_NOT_RESOLVED`](#db-host-not-resolved) | `database` | **high** | `confirmed` | MongoDB, MySQL | The database hostname configured in project settings could not be resolved to an IP address (ENOTFOUND). |
+| [`DJANGO_MIGRATIONS_PENDING`](#django-migrations-pending) | `database` | **medium** | `confirmed` | Django | Django project has unapplied schema changes that have not yet been applied to the database. |
+| [`DJANGO_SETTINGS_NOT_FOUND`](#django-settings-not-found) | `configuration` | **high** | `confirmed` | Django | The DJANGO_SETTINGS_MODULE specified in manage.py does not correspond to an existing Python settings file. |
+| [`ENV_EXAMPLE_PRESENT_NO_ENV`](#env-example-present-no-env) | `configuration` | **medium** | `confirmed` | * | .env.example exists declaring required environment variables, but no .env file exists. |
+| [`ENV_VAR_NAMES_MISSING`](#env-var-names-missing) | `configuration` | **high** | `confirmed` | * | .env file exists, but one or more variable names documented in .env.example are missing. |
+| [`LOCKFILE_MISSING`](#lockfile-missing) | `dependencies` | **low** | `confirmed` | Node.js | package.json is present in the project root, but no lockfile (package-lock.json, pnpm-lock.yaml, yarn.lock) was found. |
+| [`MONGO_AUTH_FAILED`](#mongo-auth-failed) | `database` | **high** | `confirmed` | MongoDB | Network connection to MongoDB succeeded, but user authentication failed (invalid username, password, or authSource). |
+| [`MONGO_CONNECTION_REFUSED`](#mongo-connection-refused) | `database` | **high** | `confirmed` | MongoDB | TCP connection to the configured MongoDB endpoint was actively refused (ECONNREFUSED). |
+| [`MYSQL_AUTH_FAILED`](#mysql-auth-failed) | `database` | **high** | `confirmed` | MySQL | Network connection to MySQL succeeded, but user authentication was rejected (Access denied for user). |
+| [`MYSQL_CONNECTION_REFUSED`](#mysql-connection-refused) | `database` | **high** | `confirmed` | MySQL | TCP connection to the configured MySQL endpoint was actively refused (ECONNREFUSED). |
+| [`NODE_DEPS_NOT_INSTALLED`](#node-deps-not-installed) | `dependencies` | **high** | `confirmed` | Node.js | package.json exists in the project root, but the node_modules folder is missing. |
+| [`NODE_VERSION_MISMATCH`](#node-version-mismatch) | `runtime` | **high** | `confirmed` | Node.js | The active Node.js runtime version does not satisfy the version range explicitly declared by the project. |
+| [`PORT_IN_USE`](#port-in-use) | `network` | **high** | `confirmed` | * | A network port required by the application is already bound by another process or listener on this machine. |
+| [`PORT_INVALID`](#port-invalid) | `configuration` | **high** | `confirmed` | * | A network port specified in project configuration or scripts is not a valid TCP port number (must be an integer between 1 and 65535). |
+| [`PYTHON_PACKAGE_VERSION_MISMATCH`](#python-package-version-mismatch) | `dependencies` | **high** | `confirmed` | Python, Django | An installed Python package version does not satisfy the parseable version constraint declared in requirements.txt or pyproject.toml. |
+| [`PYTHON_PACKAGES_MISSING`](#python-packages-missing) | `dependencies` | **high** | `confirmed` | Python, Django | One or more packages declared in requirements.txt or pyproject.toml are not installed in the active Python environment. |
+| [`PYTHON_VENV_MISSING`](#python-venv-missing) | `environment` | **medium** | `confirmed` | Python, Django | Python project detected, but no virtual environment is active in the environment and no local venv directory exists. |
+| [`RUNTIME_DECLARATIONS_CONFLICT`](#runtime-declarations-conflict) | `configuration` | **medium** | `confirmed` | Node.js | The project contains mutually conflicting runtime version specifications across configuration files (e.g. .nvmrc conflicts with package.json engines.node). |
+
+---
+
+## Detailed Rule Reference
+
+<a id="compose-service-not-found"></a>
+### 1. `COMPOSE_SERVICE_NOT_FOUND`
+
+**Title**: Application references Docker Compose service not defined in compose file
+
 - **Category**: `configuration`
-- **Severity**: `medium`
+- **Default Severity**: `high`
 - **Confidence**: `confirmed`
-- **Technologies**: `*` (All technologies)
-- **Description**: Triggered when an environment variable template file (such as `.env.example` or `.env.sample`) exists, but no corresponding `.env` file exists.
-- **Preconditions**: `.env.example` exists.
-- **Observed Evidence (Facts)**:
-  - File presence: `.env.example` exists.
-  - File absence: `.env` does not exist.
-  - Variable names: List of variable names declared in `.env.example` (variable values are never read or stored).
-- **Possible Causes (Hypotheses)**:
-  - The repository was cloned but the environment template has not yet been copied to `.env`.
-  - Local configuration was not initialized for this environment.
-- **Remediation**:
-  - Command: `cp .env.example .env`
-  - Risks: Created file requires manual inspection to supply valid local secrets.
-  - Undo: `rm -f .env`
-- **Verification**: Verify that `.env` file exists in project root.
-- **References**: [The Twelve-Factor App: Config](https://12factor.net/config)
+- **Target Technologies**: `Docker`, `Docker Compose`
+- **Evidence Types**: `file_presence`
+
+#### Description
+An application configuration or environment URL references a service name that does not exist in the project's docker-compose.yml services.
+
+#### Diagnostic Checks
+- Parse docker-compose.yml services definition
+- Inspect environment hostnames and URLs referenced in project configuration
+
+#### Remediation Guidance
+- **Problem**: Application cannot resolve or connect to the referenced Docker container hostname.
+  - **Relevance**: DNS lookup for the missing container hostname fails, leading to ECONNREFUSED or ENOTFOUND errors.
+  - **Action**: `Define the missing service in docker-compose.yml or update configuration to reference an existing service.`
+  - **Expected Result**: All referenced hostnames correspond to defined Compose services.
+  - **Risks**: Update compose configuration; requires restarting compose containers.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that all referenced container hostnames are defined under services in docker-compose.yml.
+
+#### Documentation References
+- [https://docs.docker.com/compose/compose-file/](https://docs.docker.com/compose/compose-file/)
 
 ---
 
-### 3. `NODE_VERSION_MISMATCH`
+<a id="db-connection-timeout"></a>
+### 2. `DB_CONNECTION_TIMEOUT`
 
-- **Title**: Installed Node.js version does not satisfy project requirement
-- **Category**: `runtime`
-- **Severity**: `high`
+**Title**: Database connection timed out
+
+- **Category**: `database`
+- **Default Severity**: `high`
 - **Confidence**: `confirmed`
-- **Technologies**: `Node.js`
-- **Description**: Triggered when the active Node.js runtime version does not satisfy the version range explicitly declared in `package.json` (`engines.node`), `.nvmrc`, or `.node-version`.
-- **Preconditions**: Project explicitly declares a Node version requirement and active Node runtime version is available.
-- **Observed Evidence (Facts)**:
-  - Active version: Clean semantic version from `node -v`.
-  - Declared range: Target version range and source file location.
-- **Possible Causes (Hypotheses)**:
-  - Active Node.js runtime version does not satisfy declared requirement.
-  - Version manager (nvm, fnm, or volta) has a different default version selected.
-- **Remediation**:
-  - Command: `nvm install "<range>" && nvm use "<range>"`
-  - Risks: Installs or switches the active Node version for this terminal session.
-  - Undo: `nvm use system`
-- **Verification**: Run `node -v` to confirm active version satisfies the declared range.
-- **References**: [Node.js Documentation](https://nodejs.org/)
+- **Target Technologies**: `MongoDB`, `MySQL`
+- **Evidence Types**: `network_probe`
+
+#### Description
+TCP connection to the database endpoint timed out before establishing a socket connection.
+
+#### Diagnostic Checks
+- Check network connectivity and routing to target host
+- Check cloud database IP access list / security group rules (e.g. MongoDB Atlas, AWS RDS)
+- Verify firewall rules permitting outbound connection on target port
+
+#### Remediation Guidance
+- **Problem**: Network connection to database host timed out.
+  - **Relevance**: Application hangs or crashes after driver connection timeout expires.
+  - **Action**: `Add your current IP address to the cloud database IP access list, or check firewall routing.`
+  - **Expected Result**: TCP connection establishes within the timeout window.
+  - **Risks**: Network and security group configuration.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that TCP connection completes before timeout.
+
+#### Documentation References
+- [https://dev.mysql.com/doc/refman/8.0/en/error-lost-connection.html](https://dev.mysql.com/doc/refman/8.0/en/error-lost-connection.html)
 
 ---
 
-### 4. `LOCKFILE_MISSING`
+<a id="db-host-not-resolved"></a>
+### 3. `DB_HOST_NOT_RESOLVED`
 
-- **Title**: Package lockfile missing
-- **Category**: `dependencies`
-- **Severity**: `low`
+**Title**: Database hostname failed DNS resolution
+
+- **Category**: `database`
+- **Default Severity**: `high`
 - **Confidence**: `confirmed`
-- **Technologies**: `Node.js`
-- **Description**: Triggered when `package.json` is present in the project root, but no lockfile (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`) exists.
-- **Preconditions**: `package.json` exists in project root.
-- **Observed Evidence (Facts)**:
-  - File presence: `package.json` exists in project root.
-  - File absence: No supported lockfile found in project root.
-- **Possible Causes (Hypotheses)**:
-  - Project was initialized or modified without generating a lockfile.
-  - The lockfile was excluded by `.gitignore` or not checked into source control.
-- **Remediation**:
-  - Command: `npm install --package-lock-only`
-  - Risks: Pins resolved dependency versions; recommended for version control.
-  - Undo: `rm -f package-lock.json`
-- **Verification**: Confirm that a lockfile exists in project root.
-- **References**: [npm package-lock.json documentation](https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json)
+- **Target Technologies**: `MongoDB`, `MySQL`
+- **Evidence Types**: `dns_resolution`
+
+#### Description
+The database hostname configured in project settings could not be resolved to an IP address (ENOTFOUND).
+
+#### Diagnostic Checks
+- Verify spelling of hostname in database URL or environment variable
+- Check system DNS settings and internet connection
+- If hostname is a Docker service name, verify containers are running on the same Docker network
+
+#### Remediation Guidance
+- **Problem**: DNS resolution failed for database host.
+  - **Relevance**: Client cannot establish network sockets without a resolvable IP address.
+  - **Action**: `Correct the database hostname in your configuration or verify local DNS resolution.`
+  - **Expected Result**: Hostname resolves to a valid IP address.
+  - **Risks**: Configuration update.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify hostname resolves via DNS lookup.
+
+#### Documentation References
+- [https://nodejs.org/api/dns.html#error-codes](https://nodejs.org/api/dns.html#error-codes)
 
 ---
 
-### 5. `PYTHON_VENV_MISSING`
+<a id="django-migrations-pending"></a>
+### 4. `DJANGO_MIGRATIONS_PENDING`
 
-- **Title**: Python virtual environment missing
-- **Category**: `environment`
-- **Severity**: `medium`
+**Title**: Unapplied database schema changes detected
+
+- **Category**: `database`
+- **Default Severity**: `medium`
 - **Confidence**: `confirmed`
-- **Technologies**: `Python`, `Django`
-- **Description**: Triggered when a Python project is detected, but no virtual environment is active in the environment (`VIRTUAL_ENV` not set) and no local venv directory (`.venv`, `venv`) exists.
-- **Preconditions**: Python or Django technology detected.
-- **Observed Evidence (Facts)**:
-  - File absence: Neither active `VIRTUAL_ENV` nor local `.venv`/`venv` folder found.
-- **Possible Causes (Hypotheses)**:
-  - A Python virtual environment has not yet been created for this project.
-  - A virtual environment exists elsewhere but has not been activated in this shell session.
-- **Remediation**:
-  - Command: `python -m venv .venv`
-  - Risks: Creates a local `.venv` directory; harmless to existing code.
-  - Undo: `rm -rf .venv`
-- **Verification**: Confirm that `.venv` directory exists or `VIRTUAL_ENV` is active.
-- **References**: [Python venv documentation](https://docs.python.org/3/library/venv.html)
+- **Target Technologies**: `Django`
+- **Evidence Types**: `command_output`
+
+#### Description
+Django project has unapplied schema changes that have not yet been applied to the database.
+
+#### Diagnostic Checks
+- Run python manage.py showmigrations --plan (requires --allow-project-code)
+- Inspect database schema state
+
+#### Remediation Guidance
+- **Problem**: Database schema is out of sync with application model definitions.
+  - **Relevance**: Missing database columns or tables cause database query exceptions at runtime.
+  - **Action**: `Apply pending schema changes using Django management tooling.`
+  - **Expected Result**: Database schema is synchronized with application model definitions.
+  - **Risks**: Modifies database schema; create a database backup prior to applying changes.
+  - **Verification**: `stackdoctor scan --allow-project-code`
+
+#### Verification Principle
+Confirm showmigrations --plan reports no unapplied changes.
+
+#### Documentation References
+- [https://docs.djangoproject.com/en/stable/topics/migrations/](https://docs.djangoproject.com/en/stable/topics/migrations/)
 
 ---
 
-### 6. `PORT_IN_USE`
+<a id="django-settings-not-found"></a>
+### 5. `DJANGO_SETTINGS_NOT_FOUND`
 
-- **Title**: Required network port is already in use
-- **Category**: `network`
-- **Severity**: `high`
-- **Confidence**: `confirmed` (when owning process is identified) / `likely` (when owning process could not be determined)
-- **Technologies**: `*` (All technologies)
-- **Description**: Triggered when a required network port declared by the project is already bound by another process or listener on this machine.
-- **Preconditions**: At least one declared port test confirms an active listener on the target port.
-- **Observed Evidence (Facts)**:
-  - Network probe: TCP connection to host:port succeeded (actively listening).
-  - Owning process: Process PID and name if identified via OS tools (`netstat`, `ss`, `lsof`). States clearly whether evidence is conclusive (process identified) or not conclusive.
-- **Possible Causes (Hypotheses)**:
-  - Another instance of the application or a different development server is already running.
-  - A background system service or Docker container is bound to the port.
-- **Remediation**:
-  - Command: Terminate the occupying process or specify an alternate `PORT` in your environment.
-  - Risks: Terminating another process may interrupt background services; StackDoctor never auto-terminates processes.
-  - Undo: Restart the terminated service or reset PORT configuration.
-- **Verification**: Verify that the port is free using TCP probe or netstat.
-- **References**: [Node.js EADDRINUSE Documentation](https://nodejs.org/api/errors.html#eaddrinuse)
+**Title**: Django settings module file not found
+
+- **Category**: `configuration`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Django`
+- **Evidence Types**: `file_presence`
+
+#### Description
+The DJANGO_SETTINGS_MODULE specified in manage.py does not correspond to an existing Python settings file.
+
+#### Diagnostic Checks
+- Read DJANGO_SETTINGS_MODULE declaration in manage.py
+- Verify target settings.py file exists at expected path
+
+#### Remediation Guidance
+- **Problem**: Django startup fails with ModuleNotFoundError when attempting to import settings.
+  - **Relevance**: Django cannot boot without a valid settings module.
+  - **Action**: `Create the missing settings file or correct the DJANGO_SETTINGS_MODULE path in manage.py.`
+  - **Expected Result**: The settings file exists and can be imported by Django.
+  - **Risks**: File creation or configuration change.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify settings file exists at specified path.
+
+#### Documentation References
+- [https://docs.djangoproject.com/en/stable/topics/settings/](https://docs.djangoproject.com/en/stable/topics/settings/)
 
 ---
 
+<a id="env-example-present-no-env"></a>
+### 6. `ENV_EXAMPLE_PRESENT_NO_ENV`
+
+**Title**: Environment template present but .env file is missing
+
+- **Category**: `configuration`
+- **Default Severity**: `medium`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `*`
+- **Evidence Types**: `file_presence`
+
+#### Description
+.env.example exists declaring required environment variables, but no .env file exists.
+
+#### Diagnostic Checks
+- Check for presence of .env.example or template file
+- Confirm whether .env file is missing from project root
+
+#### Remediation Guidance
+- **Problem**: Application environment configuration file .env is missing.
+  - **Relevance**: Application runtime will likely fail when attempting to read declared environment variables.
+  - **Action**: `cp .env.example .env`
+  - **Expected Result**: .env file will be created based on template variable declarations.
+  - **Risks**: Requires manual configuration of appropriate values for this local environment.
+  - **Verification**: `test -f .env`
+
+#### Verification Principle
+Confirm that .env file exists in project root.
+
+#### Documentation References
+- [https://12factor.net/config](https://12factor.net/config)
+
+---
+
+<a id="env-var-names-missing"></a>
 ### 7. `ENV_VAR_NAMES_MISSING`
 
-- **Title**: Required environment variable names missing from .env
+**Title**: Required environment variable names missing from .env
+
 - **Category**: `configuration`
-- **Severity**: `high`
+- **Default Severity**: `high`
 - **Confidence**: `confirmed`
-- **Technologies**: `*` (All technologies)
-- **Description**: Triggered when `.env` is present in the project root, but one or more variable names documented in `.env.example` are missing from `.env`.
-- **Preconditions**: Both `.env.example` and `.env` exist.
-- **Observed Evidence (Facts)**:
-  - Variable names: List of variable names missing from `.env`. (Secret values are never read, stored, or logged).
-- **Possible Causes (Hypotheses)**:
-  - New configuration keys were added to `.env.example` without updating local `.env`.
-  - `.env` was copied from a template before recent features were added.
-- **Remediation**:
-  - Command: Add missing keys to `.env` with appropriate local values.
-  - Risks: Adding keys to `.env` modifies local configuration; never commit `.env` to source control.
-  - Undo: Remove added keys from `.env`.
-- **Verification**: Re-run scan to confirm all declared keys are present.
-- **References**: [The Twelve-Factor App: Config](https://12factor.net/config)
+- **Target Technologies**: `*`
+- **Evidence Types**: `file_presence`
+
+#### Description
+.env file exists, but one or more variable names documented in .env.example are missing.
+
+#### Diagnostic Checks
+- Read variable names declared in .env.example
+- Read variable names present in .env (names only, discarding all values)
+
+#### Remediation Guidance
+- **Problem**: Missing environment variables can cause runtime ReferenceErrors or unhandled undefined values.
+  - **Relevance**: Applications rely on defined environment variables for database URLs, ports, and configuration keys.
+  - **Action**: `Add missing variable names to .env with valid local values.`
+  - **Expected Result**: .env contains all configuration keys defined in .env.example.
+  - **Risks**: Modifies .env file with new keys; harmless if values are appropriate.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Check .env to ensure all expected variable names are present.
+
+#### Documentation References
+- [https://12factor.net/config](https://12factor.net/config)
 
 ---
 
-### 8. `PORT_INVALID`
+<a id="lockfile-missing"></a>
+### 8. `LOCKFILE_MISSING`
 
-- **Title**: Declared network port is invalid or out of range
-- **Category**: `configuration`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `*` (All technologies)
-- **Description**: Triggered when a network port specified in project configuration or scripts is not a valid TCP port number (must be an integer between 1 and 65535).
-- **Preconditions**: At least one statically declared port fails numeric range validation.
-- **Observed Evidence (Facts)**:
-  - Configuration source: The file and script or setting where the invalid value was detected.
-  - Raw value: The invalid string or out-of-range number detected.
-- **Possible Causes (Hypotheses)**:
-  - A typo or non-numeric placeholder was entered in configuration.
-  - An environment variable was assigned an out-of-range port number (e.g. greater than 65535 or negative).
-- **Remediation**:
-  - Command: Update configuration to specify a valid TCP port number between 1 and 65535.
-  - Risks: Modifies configuration; ensure selected port does not conflict with existing services.
-  - Undo: Revert configuration change.
-- **Verification**: Verify that all declared port numbers are integers in 1-65535.
-- **References**: [Port Numbers](https://en.wikipedia.org/wiki/Port_(computer_networking))
+**Title**: Package lockfile missing
 
----
-
-### 9. `RUNTIME_DECLARATIONS_CONFLICT`
-
-- **Title**: Conflicting runtime version declarations between project files
-- **Category**: `configuration`
-- **Severity**: `medium`
-- **Confidence**: `confirmed`
-- **Technologies**: `Node.js`
-- **Description**: Triggered when the project contains mutually conflicting runtime version specifications across configuration files (e.g. `.nvmrc` conflicts with `package.json` `engines.node`).
-- **Preconditions**: Both `.nvmrc` and `engines.node` are declared and their version ranges do not intersect.
-- **Observed Evidence (Facts)**:
-  - Version strings: Version declared in `.nvmrc` and semver range declared in `engines.node`.
-- **Possible Causes (Hypotheses)**:
-  - `.nvmrc` was updated without updating `engines.node` in `package.json` (or vice versa).
-  - A version bump was partially completed across repository files.
-- **Remediation**:
-  - Command: Align `.nvmrc` and `package.json` `engines.node` to target the same compatible Node.js version range.
-  - Risks: Modifies version declaration files; harmless to source code.
-  - Undo: Revert configuration files.
-- **Verification**: Verify that `.nvmrc` satisfies the range specified in `package.json` `engines.node`.
-- **References**: [npm package.json engines](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#engines)
-
----
-
-### 10. `COMPOSE_SERVICE_NOT_FOUND`
-
-- **Title**: Application references Docker Compose service not defined in compose file
-- **Category**: `configuration`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `Docker`, `Docker Compose`
-- **Description**: Triggered when an application configuration or environment URL references a service name that does not exist in the project's `docker-compose.yml` services.
-- **Preconditions**: Compose file exists and at least one referenced service name is missing from `services:`.
-- **Observed Evidence (Facts)**:
-  - Referenced service: Name and source of the referenced service.
-  - Defined services: List of all valid service names declared under `services:` in compose file.
-- **Possible Causes (Hypotheses)**:
-  - The service was renamed or removed from `docker-compose.yml`.
-  - The application configuration has a typo in the service hostname.
-- **Remediation**:
-  - Command: Add the service definition to `docker-compose.yml` or update application configuration to reference an existing service.
-  - Risks: Modifies compose file or configuration.
-  - Undo: Revert compose file or configuration changes.
-- **Verification**: Confirm that all referenced hostnames match defined compose services.
-- **References**: [Compose File Specification](https://docs.docker.com/compose/compose-file/)
-
----
-
-### 11. `MONGO_CONNECTION_REFUSED`
-
-- **Title**: MongoDB connection refused on target endpoint
-- **Category**: `database`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `MongoDB`
-- **Description**: Triggered when a TCP connection to the configured MongoDB host and port is actively refused (ECONNREFUSED).
-- **Preconditions**: Staged diagnostic confirms TCP connection to MongoDB endpoint was refused.
-- **Observed Evidence (Facts)**:
-  - Network probe: Connection refused (ECONNREFUSED) on `host:port`.
-- **Possible Causes (Hypotheses)**:
-  - MongoDB service or daemon (`mongod`) is not currently running.
-  - The configured host or port is incorrect.
-  - MongoDB is running inside a Docker container that is stopped or has not forwarded the port.
-  - Local firewall or network configuration is blocking connection.
-- **Remediation**:
-  - Command: Start MongoDB locally (`mongod`), or run `docker compose up -d` if using containers.
-  - Risks: Starts database service.
-  - Undo: Stop started database service.
-- **Verification**: Re-run scan to confirm TCP connection succeeds.
-- **References**: [MongoDB Connection Troubleshooting](https://www.mongodb.com/docs/manual/administration/monitoring/)
-
----
-
-### 12. `MONGO_AUTH_FAILED`
-
-- **Title**: MongoDB authentication failed
-- **Category**: `database`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `MongoDB`
-- **Description**: Triggered when a network connection to MongoDB succeeds, but authentication is rejected by the database.
-- **Preconditions**: Opt-in authenticated check fails with an authentication error.
-- **Observed Evidence (Facts)**:
-  - Authentication check: Authentication was rejected by MongoDB on `host:port`. (Secret values were not stored or logged).
-- **Possible Causes (Hypotheses)**:
-  - Username or password specified in connection URL is incorrect.
-  - The user was created on a different authentication database (`authSource`).
-  - The user lacks permissions or roles for the requested database.
-- **Remediation**:
-  - Command: Update database credentials in your environment variable to match an authorized MongoDB user.
-  - Risks: Credential update in local environment only.
-  - Undo: Revert environment variable.
-- **Verification**: Re-run scan with `--db-url-env`.
-- **References**: [MongoDB User Security](https://www.mongodb.com/docs/manual/core/security-users/)
-
----
-
-### 13. `MYSQL_CONNECTION_REFUSED`
-
-- **Title**: MySQL connection refused on target endpoint
-- **Category**: `database`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `MySQL`
-- **Description**: Triggered when a TCP connection to the configured MySQL host and port is actively refused (ECONNREFUSED).
-- **Preconditions**: Staged diagnostic confirms TCP connection to MySQL endpoint was refused.
-- **Observed Evidence (Facts)**:
-  - Network probe: Connection refused (ECONNREFUSED) on `host:port`.
-- **Possible Causes (Hypotheses)**:
-  - MySQL service (`mysqld`) is not currently running.
-  - The configured host or port is incorrect.
-  - MySQL is running inside a Docker container that is stopped or has not mapped the port.
-  - Local firewall or network configuration is blocking connection.
-- **Remediation**:
-  - Command: Start MySQL service locally, or run `docker compose up -d` if using containers.
-  - Risks: Starts database service.
-  - Undo: Stop started database service.
-- **Verification**: Re-run scan to confirm TCP connection succeeds.
-- **References**: [MySQL Cannot Connect Documentation](https://dev.mysql.com/doc/refman/8.0/en/can-not-connect-to-server.html)
-
----
-
-### 14. `MYSQL_AUTH_FAILED`
-
-- **Title**: MySQL authentication failed
-- **Category**: `database`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `MySQL`
-- **Description**: Triggered when a network connection to MySQL succeeds, but user authentication is rejected (Access denied).
-- **Preconditions**: Opt-in authenticated check fails with access denied error.
-- **Observed Evidence (Facts)**:
-  - Authentication check: Access denied by MySQL on `host:port`. (Secret values were not stored or logged).
-- **Possible Causes (Hypotheses)**:
-  - Username or password specified in connection URL is incorrect.
-  - The user account is restricted to a different client host.
-  - The user account does not have GRANT privileges on the requested database.
-- **Remediation**:
-  - Command: Update database credentials in your environment variable to match an authorized MySQL user.
-  - Risks: Credential update in local environment only.
-  - Undo: Revert environment variable.
-- **Verification**: Re-run scan with `--db-url-env`.
-- **References**: [MySQL Access Denied Troubleshooting](https://dev.mysql.com/doc/refman/8.0/en/access-denied.html)
-
----
-
-### 15. `DB_HOST_NOT_RESOLVED`
-
-- **Title**: Database hostname failed DNS resolution
-- **Category**: `database`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `MongoDB`, `MySQL`
-- **Description**: Triggered when the database hostname configured in project settings cannot be resolved via DNS lookup.
-- **Preconditions**: Stage 1 DNS resolution returns `ENOTFOUND` or other lookup failure.
-- **Observed Evidence (Facts)**:
-  - DNS lookup: Hostname could not be resolved to an IP address.
-- **Possible Causes (Hypotheses)**:
-  - The hostname has a typo in project configuration or environment variables.
-  - The hostname is a container service name but command was run from host outside container network.
-  - Local DNS server or network connectivity is down.
-- **Remediation**:
-  - Command: Update configuration to specify a valid, resolvable hostname or IP address.
-  - Risks: Configuration update.
-  - Undo: Revert configuration change.
-- **Verification**: Confirm hostname resolves via DNS lookup.
-- **References**: [Domain Name System](https://en.wikipedia.org/wiki/Domain_Name_System)
-
----
-
-### 16. `DB_CONNECTION_TIMEOUT`
-
-- **Title**: Database connection timed out
-- **Category**: `database`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `MongoDB`, `MySQL`
-- **Description**: Triggered when a TCP connection to the database endpoint times out before establishing a connection.
-- **Preconditions**: Stage 2 TCP socket probe times out.
-- **Observed Evidence (Facts)**:
-  - Network probe: Connection attempt timed out without receiving a TCP response.
-- **Possible Causes (Hypotheses)**:
-  - A cloud database firewall or IP whitelist (e.g. MongoDB Atlas Network Access) is blocking client IP.
-  - A local or corporate firewall is dropping outbound packets to target port.
-  - The database server is offline or experiencing network disruption.
-- **Remediation**:
-  - Command: Whitelist client IP in database cloud management console or inspect network routing.
-  - Risks: Security group rules update.
-  - Undo: Revert security group rules.
-- **Verification**: Verify that connection establishes before timeout expires.
-- **References**: [Connection Timeout](https://en.wikipedia.org/wiki/Connection_timeout)
-
----
-
-### 17. `PYTHON_PACKAGES_MISSING`
-
-- **Title**: Declared Python dependencies are not installed
 - **Category**: `dependencies`
-- **Severity**: `high`
+- **Default Severity**: `low`
 - **Confidence**: `confirmed`
-- **Technologies**: `Python`, `Django`
-- **Description**: Triggered when one or more packages declared in `requirements.txt` or `pyproject.toml` are not installed in the active Python environment.
-- **Preconditions**: Package declared in dependency file is absent from `python -m pip list`.
-- **Observed Evidence (Facts)**:
-  - Missing packages: List of declared packages absent from installed environment.
-- **Possible Causes (Hypotheses)**:
-  - Dependencies have not yet been installed in the active virtual environment.
-  - A different virtual environment or Python interpreter is currently active in the shell.
-  - Packages were recently added to requirements without running installation.
-- **Remediation**:
-  - Command: `pip install -r requirements.txt`
-  - Risks: Downloads packages into active virtual environment.
-  - Undo: `pip uninstall <package>`
-- **Verification**: Re-run scan to confirm all declared packages are present.
-- **References**: [pip install documentation](https://pip.pypa.io/en/stable/cli/pip_install/)
+- **Target Technologies**: `Node.js`
+- **Evidence Types**: `file_presence`
+
+#### Description
+package.json is present in the project root, but no lockfile (package-lock.json, pnpm-lock.yaml, yarn.lock) was found.
+
+#### Diagnostic Checks
+- Check for presence of package.json
+- Scan project root for package-lock.json, pnpm-lock.yaml, yarn.lock, or bun.lockb
+
+#### Remediation Guidance
+- **Problem**: No lockfile is present to pin dependency versions.
+  - **Relevance**: Builds and installations can become non-deterministic when dependency versions drift.
+  - **Action**: `npm install --package-lock-only`
+  - **Expected Result**: Generates package-lock.json without modifying code.
+  - **Risks**: Pins resolved dependency versions; recommended for version control.
+  - **Verification**: `test -f package-lock.json`
+
+#### Verification Principle
+Confirm that a lockfile exists in the project root.
+
+#### Documentation References
+- [https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json](https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json)
 
 ---
 
-### 18. `PYTHON_PACKAGE_VERSION_MISMATCH`
+<a id="mongo-auth-failed"></a>
+### 9. `MONGO_AUTH_FAILED`
 
-- **Title**: Installed Python package version does not satisfy requirement
-- **Category**: `dependencies`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `Python`, `Django`
-- **Description**: Triggered when an installed Python package version fails to satisfy a parseable version constraint declared in `requirements.txt` or `pyproject.toml`.
-- **Preconditions**: Installed package version does not satisfy declared specifier.
-- **Observed Evidence (Facts)**:
-  - Version comparison: Installed package version vs required specifier.
-- **Possible Causes (Hypotheses)**:
-  - Package was installed with an older or newer version than required.
-  - Requirements file was updated after packages were installed.
-- **Remediation**:
-  - Command: `pip install --upgrade -r requirements.txt`
-  - Risks: Upgrades or downgrades packages in active virtual environment.
-  - Undo: Reinstall previous version via pip.
-- **Verification**: Re-run scan to verify installed package satisfies requirements.
-- **References**: [PEP 440 Version Identification](https://peps.python.org/pep-0440/)
+**Title**: MongoDB authentication failed
 
----
-
-### 19. `DJANGO_SETTINGS_NOT_FOUND`
-
-- **Title**: Django settings module file not found
-- **Category**: `configuration`
-- **Severity**: `high`
-- **Confidence**: `confirmed`
-- **Technologies**: `Django`
-- **Description**: Triggered when `DJANGO_SETTINGS_MODULE` configured in `manage.py` points to a file path that does not exist on disk.
-- **Preconditions**: `manage.py` exists and specifies a settings module that cannot be located.
-- **Observed Evidence (Facts)**:
-  - Configuration setting: `DJANGO_SETTINGS_MODULE` string in `manage.py`.
-  - Expected file path: Expected file path where the module was looked up.
-- **Possible Causes (Hypotheses)**:
-  - The settings file was moved or renamed without updating `manage.py`.
-  - The project directory layout differs from standard Django layout.
-  - A typo in `DJANGO_SETTINGS_MODULE`.
-- **Remediation**:
-  - Command: Create the missing settings file or correct the `DJANGO_SETTINGS_MODULE` path in `manage.py`.
-  - Risks: Configuration change.
-  - Undo: Revert `manage.py`.
-- **Verification**: Confirm settings file exists on disk.
-- **References**: [Django Settings Documentation](https://docs.djangoproject.com/en/stable/topics/settings/)
-
----
-
-### 20. `DJANGO_MIGRATIONS_PENDING`
-
-- **Title**: Unapplied database schema changes detected
 - **Category**: `database`
-- **Severity**: `medium`
+- **Default Severity**: `high`
 - **Confidence**: `confirmed`
-- **Technologies**: `Django`
-- **Description**: Triggered when unapplied schema changes exist for the Django application (inspected safely via read-only `showmigrations --plan`, requires explicit `--allow-project-code` flag).
-- **Preconditions**: `showmigrations --plan` reports unapplied changes (detected only with `--allow-project-code`).
-- **Observed Evidence (Facts)**:
-  - Plan output: List of unapplied schema operations reported by `showmigrations`.
-- **Possible Causes (Hypotheses)**:
-  - New schema definitions were created or pulled from version control without updating the local database.
-  - A fresh database was initialized but pending schema operations were not applied.
-- **Remediation**:
-  - Command: Apply pending schema operations using Django management tooling.
-  - Risks: Alters database schema.
-  - Undo: Revert schema changes.
-- **Verification**: Re-run scan with `--allow-project-code` to confirm no unapplied changes remain.
-- **References**: [Django Migrations Documentation](https://docs.djangoproject.com/en/stable/topics/migrations/)
+- **Target Technologies**: `MongoDB`
+- **Evidence Types**: `command_output`
 
+#### Description
+Network connection to MongoDB succeeded, but user authentication failed (invalid username, password, or authSource).
 
+#### Diagnostic Checks
+- Verify the database username and password in your environment variable
+- Verify the authentication database (authSource, default is 'admin')
+- Verify user permissions on target database
+
+#### Remediation Guidance
+- **Problem**: MongoDB rejected the provided credentials.
+  - **Relevance**: Application cannot access collections or execute queries without successful authentication.
+  - **Action**: `Verify and update the database username, password, and authSource in your environment variable.`
+  - **Expected Result**: MongoDB accepts authentication and authorizes access.
+  - **Risks**: Update credentials in local environment variable; never commit secrets to git.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify MongoDB authentication succeeds.
+
+#### Documentation References
+- [https://www.mongodb.com/docs/manual/core/security-users/](https://www.mongodb.com/docs/manual/core/security-users/)
+
+---
+
+<a id="mongo-connection-refused"></a>
+### 10. `MONGO_CONNECTION_REFUSED`
+
+**Title**: MongoDB connection refused on target endpoint
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `MongoDB`
+- **Evidence Types**: `network_probe`
+
+#### Description
+TCP connection to the configured MongoDB endpoint was actively refused (ECONNREFUSED).
+
+#### Diagnostic Checks
+- Check if MongoDB server or daemon is currently running
+- Verify target hostname and port in database configuration
+- If using Docker, verify MongoDB container status with `docker compose ps`
+
+#### Remediation Guidance
+- **Problem**: MongoDB service is not listening on the configured address and port.
+  - **Relevance**: Application crashes on startup when unable to establish connection to MongoDB.
+  - **Action**: `Start MongoDB daemon (`mongod`) or start the database container (`docker compose up -d <service>`).`
+  - **Expected Result**: MongoDB starts listening on target port and accepts TCP connections.
+  - **Risks**: Starts database process or container; harmless to project code.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that TCP connection to MongoDB endpoint succeeds.
+
+#### Documentation References
+- [https://www.mongodb.com/docs/manual/administration/monitoring/](https://www.mongodb.com/docs/manual/administration/monitoring/)
+
+---
+
+<a id="mysql-auth-failed"></a>
+### 11. `MYSQL_AUTH_FAILED`
+
+**Title**: MySQL authentication failed
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `MySQL`
+- **Evidence Types**: `command_output`
+
+#### Description
+Network connection to MySQL succeeded, but user authentication was rejected (Access denied for user).
+
+#### Diagnostic Checks
+- Verify the database username and password in your environment variable
+- Verify host access privileges (e.g. 'user'@'localhost' vs 'user'@'%')
+- Verify default database permissions for the user
+
+#### Remediation Guidance
+- **Problem**: MySQL server rejected the provided credentials.
+  - **Relevance**: Application cannot execute queries or initialize schemas without successful authentication.
+  - **Action**: `Update the database credentials in your environment variable with a valid username and password.`
+  - **Expected Result**: MySQL accepts authentication and authorizes access.
+  - **Risks**: Update credentials in local environment variable; never commit secrets to git.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify MySQL authentication succeeds.
+
+#### Documentation References
+- [https://dev.mysql.com/doc/refman/8.0/en/access-denied.html](https://dev.mysql.com/doc/refman/8.0/en/access-denied.html)
+
+---
+
+<a id="mysql-connection-refused"></a>
+### 12. `MYSQL_CONNECTION_REFUSED`
+
+**Title**: MySQL connection refused on target endpoint
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `MySQL`
+- **Evidence Types**: `network_probe`
+
+#### Description
+TCP connection to the configured MySQL endpoint was actively refused (ECONNREFUSED).
+
+#### Diagnostic Checks
+- Check if MySQL service or daemon is currently running
+- Verify target hostname and port in database configuration
+- If using Docker, check container status with `docker compose ps`
+
+#### Remediation Guidance
+- **Problem**: MySQL service is not listening on the configured address and port.
+  - **Relevance**: Application crashes on startup when unable to establish connection to MySQL.
+  - **Action**: `Start MySQL service or start the database container (`docker compose up -d <service>`).`
+  - **Expected Result**: MySQL starts listening on target port and accepts TCP connections.
+  - **Risks**: Starts database process or container; harmless to project code.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that TCP connection to MySQL endpoint succeeds.
+
+#### Documentation References
+- [https://dev.mysql.com/doc/refman/8.0/en/can-not-connect-to-server.html](https://dev.mysql.com/doc/refman/8.0/en/can-not-connect-to-server.html)
+
+---
+
+<a id="node-deps-not-installed"></a>
+### 13. `NODE_DEPS_NOT_INSTALLED`
+
+**Title**: Node.js dependencies not installed
+
+- **Category**: `dependencies`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Node.js`
+- **Evidence Types**: `file_presence`
+
+#### Description
+package.json exists in the project root, but the node_modules folder is missing.
+
+#### Diagnostic Checks
+- Verify presence of package.json and absence of node_modules
+- Identify available lockfile to select the declared package manager
+
+#### Remediation Guidance
+- **Problem**: Node.js application dependencies are not present locally.
+  - **Relevance**: Application runtime and build scripts fail immediately without installed packages.
+  - **Action**: `npm install`
+  - **Expected Result**: Dependencies will be downloaded and linked into node_modules.
+  - **Risks**: Network download and build scripts; suggest only with user confirmation.
+  - **Verification**: `test -d node_modules`
+
+#### Verification Principle
+Verify that node_modules directory exists after installation.
+
+#### Documentation References
+- [https://docs.npmjs.com/cli/v10/commands/npm-install](https://docs.npmjs.com/cli/v10/commands/npm-install)
+
+---
+
+<a id="node-version-mismatch"></a>
+### 14. `NODE_VERSION_MISMATCH`
+
+**Title**: Installed Node.js version does not satisfy project requirement
+
+- **Category**: `runtime`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Node.js`
+- **Evidence Types**: `version_check`
+
+#### Description
+The active Node.js runtime version does not satisfy the version range explicitly declared by the project.
+
+#### Diagnostic Checks
+- Read declared Node version requirement from package.json engines or .nvmrc
+- Inspect installed Node.js version from node -v
+
+#### Remediation Guidance
+- **Problem**: Active Node.js runtime version does not satisfy the declared requirement.
+  - **Relevance**: Incompatible runtime versions can lead to unsupported syntax, API mismatches, and native dependency build errors.
+  - **Action**: `nvm use`
+  - **Expected Result**: Active Node.js environment switches to a compatible version.
+  - **Risks**: Changes active node version in this terminal session; harmless to code.
+  - **Verification**: `node -v`
+
+#### Verification Principle
+Run `node -v` to confirm active version satisfies the declared range.
+
+#### Documentation References
+- [https://nodejs.org/](https://nodejs.org/)
+
+---
+
+<a id="port-in-use"></a>
+### 15. `PORT_IN_USE`
+
+**Title**: Required network port is already in use
+
+- **Category**: `network`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `*`
+- **Evidence Types**: `network_probe`
+
+#### Description
+A network port required by the application is already bound by another process or listener on this machine.
+
+#### Diagnostic Checks
+- Run TCP connection probe against required host and port
+- Identify listening process PID using OS netstat/ss/lsof tools
+
+#### Remediation Guidance
+- **Problem**: Port collision prevents application server from binding its listening socket.
+  - **Relevance**: Starting the service on a busy port results in EADDRINUSE crash.
+  - **Action**: `Stop the conflicting application or configure an alternate PORT in your environment.`
+  - **Expected Result**: The port becomes free or the application starts on an alternate available port.
+  - **Risks**: Stopping another process may terminate background services.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that the port is free using TCP probe or netstat.
+
+#### Documentation References
+- [https://nodejs.org/api/errors.html#eaddrinuse](https://nodejs.org/api/errors.html#eaddrinuse)
+
+---
+
+<a id="port-invalid"></a>
+### 16. `PORT_INVALID`
+
+**Title**: Declared network port is invalid or out of range
+
+- **Category**: `configuration`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `*`
+- **Evidence Types**: `config_value`
+
+#### Description
+A network port specified in project configuration or scripts is not a valid TCP port number (must be an integer between 1 and 65535).
+
+#### Diagnostic Checks
+- Scan package.json scripts for port arguments
+- Scan vite.config and .env.example for PORT values
+
+#### Remediation Guidance
+- **Problem**: Invalid port number configuration prevents the server from binding or causes startup crashes.
+  - **Relevance**: Operating systems reject socket binding for ports outside 1-65535.
+  - **Action**: `Update the configuration to specify a valid TCP port number between 1 and 65535 (e.g. 3000, 8080).`
+  - **Expected Result**: Port value is an integer within the 1-65535 range.
+  - **Risks**: Modifies configuration; verify the new port does not conflict with existing services.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that all declared port numbers are valid integers in the 1-65535 range.
+
+#### Documentation References
+- [https://nodejs.org/api/net.html#serverlistenport-host-backlog-callback](https://nodejs.org/api/net.html#serverlistenport-host-backlog-callback)
+
+---
+
+<a id="python-package-version-mismatch"></a>
+### 17. `PYTHON_PACKAGE_VERSION_MISMATCH`
+
+**Title**: Installed Python package version does not satisfy requirement
+
+- **Category**: `dependencies`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Python`, `Django`
+- **Evidence Types**: `version_check`
+
+#### Description
+An installed Python package version does not satisfy the parseable version constraint declared in requirements.txt or pyproject.toml.
+
+#### Diagnostic Checks
+- Check declared package version specifiers in requirements.txt
+- Inspect installed versions from pip list
+
+#### Remediation Guidance
+- **Problem**: Installed package version is incompatible with project code expectations.
+  - **Relevance**: Version mismatches lead to API incompatibilities or missing functions.
+  - **Action**: `pip install --upgrade -r requirements.txt`
+  - **Expected Result**: Package versions in the virtual environment satisfy declared constraints.
+  - **Risks**: Upgrades or downgrades packages in active virtual environment.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that installed package versions satisfy declared requirements.
+
+#### Documentation References
+- [https://peps.python.org/pep-0440/](https://peps.python.org/pep-0440/)
+
+---
+
+<a id="python-packages-missing"></a>
+### 18. `PYTHON_PACKAGES_MISSING`
+
+**Title**: Declared Python dependencies are not installed
+
+- **Category**: `dependencies`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Python`, `Django`
+- **Evidence Types**: `command_output`
+
+#### Description
+One or more packages declared in requirements.txt or pyproject.toml are not installed in the active Python environment.
+
+#### Diagnostic Checks
+- Scan requirements.txt and pyproject.toml for declared packages
+- Inspect installed packages via python -m pip list
+
+#### Remediation Guidance
+- **Problem**: Missing Python dependencies will cause ModuleNotFoundError or ImportError on startup.
+  - **Relevance**: Application runtime depends on third-party libraries declared in dependency manifests.
+  - **Action**: `pip install -r requirements.txt`
+  - **Expected Result**: All declared packages are installed in the active virtual environment.
+  - **Risks**: Installs packages into current Python environment; ensure a virtualenv is active.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify all declared packages are present in pip list.
+
+#### Documentation References
+- [https://pip.pypa.io/en/stable/cli/pip_install/](https://pip.pypa.io/en/stable/cli/pip_install/)
+
+---
+
+<a id="python-venv-missing"></a>
+### 19. `PYTHON_VENV_MISSING`
+
+**Title**: Python virtual environment missing
+
+- **Category**: `environment`
+- **Default Severity**: `medium`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Python`, `Django`
+- **Evidence Types**: `file_presence`
+
+#### Description
+Python project detected, but no virtual environment is active in the environment and no local venv directory exists.
+
+#### Diagnostic Checks
+- Check VIRTUAL_ENV environment variable
+- Scan project root for .venv or venv directories
+
+#### Remediation Guidance
+- **Problem**: No isolated virtual environment is available for project dependencies.
+  - **Relevance**: Installing or running Python packages outside a virtual environment can corrupt system Python or cause package version conflicts.
+  - **Action**: `python -m venv .venv`
+  - **Expected Result**: A clean, isolated virtual environment folder (.venv) is initialized.
+  - **Risks**: Creates a local .venv directory; harmless to existing code.
+  - **Verification**: `test -d .venv`
+
+#### Verification Principle
+Confirm that .venv directory exists or VIRTUAL_ENV is active.
+
+#### Documentation References
+- [https://docs.python.org/3/library/venv.html](https://docs.python.org/3/library/venv.html)
+
+---
+
+<a id="runtime-declarations-conflict"></a>
+### 20. `RUNTIME_DECLARATIONS_CONFLICT`
+
+**Title**: Conflicting runtime version declarations between project files
+
+- **Category**: `configuration`
+- **Default Severity**: `medium`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Node.js`
+- **Evidence Types**: `version_check`
+
+#### Description
+The project contains mutually conflicting runtime version specifications across configuration files (e.g. .nvmrc conflicts with package.json engines.node).
+
+#### Diagnostic Checks
+- Read declared engines.node from package.json
+- Read version string from .nvmrc and .node-version
+
+#### Remediation Guidance
+- **Problem**: Different developers and CI environments may run different and incompatible Node.js versions.
+  - **Relevance**: Inconsistent version declarations lead to 'works on my machine' bugs and build failures.
+  - **Action**: `Align .nvmrc and package.json engines.node to target the same compatible Node.js version range.`
+  - **Expected Result**: .nvmrc and engines.node specify compatible Node versions.
+  - **Risks**: Update version declaration files; harmless to code.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that .nvmrc satisfies the range specified in package.json engines.node.
+
+#### Documentation References
+- [https://docs.npmjs.com/cli/v10/configuring-npm/package-json#engines](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#engines)
+
+---
 

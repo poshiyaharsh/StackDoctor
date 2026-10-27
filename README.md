@@ -196,6 +196,9 @@ StackDoctor includes 20 production-tested diagnostic rules across modern web sta
 - **[Roadmap](ROADMAP.md)**: Planned exploratory milestones (PostgreSQL, pnpm/bun workspaces, fix automation).
 - **[Good First Issues](docs/good-first-issues.md)**: Curated tasks for new contributors.
 - **[Contributing Guide](CONTRIBUTING.md)**: Development setup, rule authoring lifecycle, and guidelines.
+- **[Bug Fix & Regression Workflow](docs/fix-workflow.md)**: Standard 8-step bug reproduction, synthetic fixture, and fix loop.
+- **[Patch Release Guide](docs/patch-release.md)**: Maintenance checklist and procedure for v0.1.x patch releases.
+- **[Versioning Policy](docs/versioning.md)**: Semantic versioning, report schema versioning, and flag deprecation rules.
 - **[Feedback Log](FEEDBACK.md)**: Real community feedback, false positive tracking, and field triage log.
 - **[Triage Routine](docs/triage.md)**: Issue triage process, priorities, and response goals.
 - **[False Positive Policy](docs/false-positive-policy.md)**: Zero false-positive commitment and reproduction procedure.
