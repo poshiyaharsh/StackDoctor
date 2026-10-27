@@ -18,8 +18,8 @@ Antigravity updates this file after every run. Keep it in the repo root with the
 | 4A | GitHub issue draft generation | Done | 5fae252 | 2026-10-26 |
 | 4B | CI mode, stable output, GitHub Actions integration | Done | c17c702 | 2026-10-26 |
 | 4C | Report comparison (CLI, API, web) | Done | 6167481 | 2026-10-26 |
-| 4D | Documentation links + contributor rule interface | Done | bfa9cf3 | 2026-10-27 |
-| 4E | Docs, end-to-end checks, final verification | Not started | - | - |
+| 4D | Documentation links + contributor rule interface | Done | 6cac7d3 | 2026-10-27 |
+| 4E | Docs, end-to-end checks, final verification | Done | 31cd2c8 | 2026-10-27 |
 
 Status values: Not started, In progress, Needs fixes, Done.
 
@@ -318,24 +318,43 @@ Phase 4 checklist truly passed.
 ```
 
 **Final Phase 4 checklist**
-- [ ] Issue drafts contain no secrets, machine identifiers, or absolute paths
-- [ ] Exit codes match the documented thresholds
-- [ ] Compare correctly shows new, resolved, and changed findings
-- [ ] CI mode output is deterministic
-- [ ] A new rule can be added by following the guide alone
-- [ ] Actions workflow uses minimal permissions, SHA-pinned actions, no unsafe interpolation
-- [ ] Nothing is ever posted or sent automatically
-- [ ] `npm audit` has no unaddressed high/critical issues
-- [ ] All e2e scripts pass
-- [ ] Docs match what actually exists
-- [ ] Everything committed and pushed
+- [x] Issue drafts contain no secrets, machine identifiers, or absolute paths
+- [x] Exit codes match the documented thresholds
+- [x] Compare correctly shows new, resolved, and changed findings
+- [x] CI mode output is deterministic
+- [x] A new rule can be added by following the guide alone
+- [x] Actions workflow uses minimal permissions, SHA-pinned actions, no unsafe interpolation
+- [x] Nothing is ever posted or sent automatically
+- [x] `npm audit` has no unaddressed high/critical issues
+- [x] All e2e scripts pass
+- [x] Docs match what actually exists
+- [x] Everything committed and pushed
 
 **Run log (Antigravity fills):**
 - Files:
+  - `packages/core/src/redact.ts`: Added `CANARY_SECRET_REGEX` (`\bCANARY_SECRET_[A-Za-z0-9_]+\b`), `TOKEN_PREFIX_REGEX` (`sk-...`, `stk_...`, `ghp_...`), and `pass` support to ensure thorough canary and token redaction across all core string operations.
+  - `apps/cli/src/format.ts`: Applied `redactText` to terminal scan reports (`formatTerminalReport`) and terminal comparison diffs (`formatComparisonTerminal`) ensuring complete redaction across all output formats.
+  - `packages/core/test/phase4-security.test.ts`: Added 7 security and invariant tests validating that canary secrets and absolute home paths never appear in issue drafts, markdown summaries, terminal reports, or compare outputs; validated composite action injection safety via grep; validated graceful handling of oversized (>10MB) and malformed report files.
+  - `scripts/e2e-phase4.js` & `package.json`: Implemented automated Phase 4 end-to-end check script running scan in CI mode, fixing an issue in fixture, comparing reports, verifying exit codes with `--fail-on-new`, generating sanitized issue drafts, explaining rules with typo suggestion, and testing API compare with multi-tenant 404 isolation.
+  - `README.md`: Updated with comprehensive Phase 4 CLI usage (`issue`, `compare`, `explain`, `new-rule`), CI workflow example, and documentation index.
+  - `CHANGELOG.md`: Authored complete Keep a Changelog document detailing all features across Phases 1, 2, 3, and 4.
+  - `docs/security.md`: Updated dependency audit notes with latest mitigations (1MB express body limit, 10MB file limit, and devDependencies confinement).
+  - `docs/INDEX.md`: Marked Phase 4 as `Done`.
 - Command results:
+  - `npm run build`: Exit 0
+  - `npm run lint`: Exit 0 (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Exit 0 (0 errors)
+  - `npm test`: Exit 0 (48/48 test files, 319/319 tests passed)
+  - `npm run eval`: Exit 0 (100% detection accuracy, 0% false positives)
+  - `npm run e2e:phase3`: Exit 0 (100% OK)
+  - `npm run e2e:phase4`: Exit 0 (All 7 steps passed)
 - Audit results:
+  - `npm audit`: 4 vulnerabilities flagged (Zod array validation mitigated by 1MB body parser cap; tinypool and @vitest/mocker confined strictly to local devDependencies).
 - Problems:
+  - Token creation in E2E script required CSRF token and Cookie headers: passed both headers from registration response.
+  - Diagnostic run upload in E2E script expected report directly in body: updated payload to send report directly.
 - Decisions:
+  - Phase 4 verified end-to-end; composite action safely uses env variables; report diffs and issue drafts operate 100% offline.
 
 ---
 

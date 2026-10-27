@@ -199,7 +199,7 @@ export function formatTerminalReport(report: Report, options: FormatOptions = {}
     c.dim(`StackDoctor CLI v${report.toolVersion} | Schema v${report.schemaVersion}`)
   );
 
-  return lines.join("\n");
+  return redactText(lines.join("\n"));
 }
 
 export interface MarkdownFormatOptions {
@@ -425,7 +425,7 @@ export function formatComparisonTerminal(
     lines.push("");
   }
 
-  return lines.join("\n");
+  return redactText(lines.join("\n"));
 }
 
 export function formatComparisonMarkdown(comparison: ReportComparison): string {

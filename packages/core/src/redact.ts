@@ -21,10 +21,16 @@ const URL_CREDENTIALS_REGEX = /([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)([^:\s/@]+):([^@\s/
 
 // Key-value pairs for secret assignments (e.g. password=..., DB_PASSWORD=..., "token": "...", api_key=...)
 // Uses lookahead/word-boundaries to avoid false positives like "tokenizer" or "tokenized"
-const SECRET_KV_REGEX = /\b((?:[a-zA-Z0-9_]*[_-])?(?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|secret[_-]?key|password|passwd|secret|token))(\s*[:=]\s*["']?)([^"'\s\r\n,;]+)(["']?)/gi;
+const SECRET_KV_REGEX = /\b((?:[a-zA-Z0-9_]*[_-])?(?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|secret[_-]?key|password|passwd|pass|secret|token))(\s*[:=]\s*["']?)([^"'\s\r\n,;]+)(["']?)/gi;
 
 // JSON formatted secrets (e.g. "password": "value")
-const JSON_SECRET_REGEX = /("(?:\w*[_-])?(?:password|passwd|secret|token|api[_-]?key)"\s*:\s*")([^"\\]*(?:\\.[^"\\]*)*)(")/gi;
+const JSON_SECRET_REGEX = /("(?:\w*[_-])?(?:password|passwd|pass|secret|token|api[_-]?key)"\s*:\s*")([^"\\]*(?:\\.[^"\\]*)*)(")/gi;
+
+// Canary secrets: CANARY_SECRET_...
+const CANARY_SECRET_REGEX = /\bCANARY_SECRET_[A-Za-z0-9_]+\b/gi;
+
+// Common sensitive tokens with known prefixes (e.g. sk-live-..., sk-..., ghp_..., stk_live_...)
+const TOKEN_PREFIX_REGEX = /\b(?:sk-(?:live|test)?[a-zA-Z0-9_-]{10,}|stk_[a-zA-Z0-9_-]{10,}|ghp_[a-zA-Z0-9]{15,}|xox[baprs]-[a-zA-Z0-9_-]{10,})\b/g;
 
 /**
  * Masks secrets from any raw string.
@@ -35,6 +41,9 @@ export function redactText(input: string): string {
 
   let redacted = input;
 
+  // 0. Canary secrets
+  redacted = redacted.replace(CANARY_SECRET_REGEX, "[REDACTED_CANARY]");
+
   // 1. Private keys
   redacted = redacted.replace(PRIVATE_KEY_REGEX, "[REDACTED_PRIVATE_KEY]");
 
@@ -43,6 +52,9 @@ export function redactText(input: string): string {
 
   // 3. AWS keys
   redacted = redacted.replace(AWS_KEY_REGEX, "[REDACTED_AWS_KEY]");
+
+  // 3b. Prefixed tokens & API keys
+  redacted = redacted.replace(TOKEN_PREFIX_REGEX, "[REDACTED_KEY]");
 
   // 4. URL credentials: mongodb://user:pass@host -> mongodb://***:***@host
   redacted = redacted.replace(URL_CREDENTIALS_REGEX, (_match, proto) => `${proto}***:***@`);

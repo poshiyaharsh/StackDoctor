@@ -709,6 +709,59 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 4, Run 4E: Docs, end-to-end checks, final verification (`docs/PHASE4.md`).
 - **Status:** Done
 
+---
+
+### [2026-10-27] Phase 4, Run 4E: Docs, End-to-End Checks & Final Verification
+- **Prompt used:** PHASE4.md > Run 4E: Final verification
+- **What was done:**
+  1. Enhanced core secret redaction:
+     - Added `CANARY_SECRET_REGEX` (`\bCANARY_SECRET_[A-Za-z0-9_]+\b`), `TOKEN_PREFIX_REGEX` (`sk-...`, `stk_...`, `ghp_...`), and `pass` in `packages/core/src/redact.ts`.
+     - Applied `redactText` to terminal scan reports (`formatTerminalReport`) and terminal comparison diffs (`formatComparisonTerminal`) in `apps/cli/src/format.ts`.
+  2. Implemented security test suite `packages/core/test/phase4-security.test.ts`:
+     - Verified that canary secrets and absolute home paths never appear in issue drafts, markdown summaries, terminal reports, or compare outputs.
+     - Verified composite action injection safety via automated AST/grep check on `action.yml`, confirming zero unquoted `${{ inputs.* }}` expressions inside `run:` blocks.
+     - Verified resilience to oversized (>10MB) and malformed report files.
+  3. Built automated Phase 4 End-to-End verification script `scripts/e2e-phase4.js`:
+     - Added `"e2e:phase4": "node scripts/e2e-phase4.js"` in `package.json`.
+     - Step 1: Creates fixture with 2 issues (`NODE_DEPS_NOT_INSTALLED`, `ENV_EXAMPLE_PRESENT_NO_ENV`).
+     - Step 2: Runs `scan --ci --format json --out a.json`, verifying exit code 1.
+     - Step 3: Fixes one issue (creates `node_modules`), scans to `b.json`, verifying exit code 0.
+     - Step 4: Compares `a.json` and `b.json`, verifying 1 resolved finding and `--fail-on-new` exit codes.
+     - Step 5: Generates sanitized issue draft via `issue`, verifying section headings and redactions.
+     - Step 6: Tests `explain`, verifying valid JSON output, documentation allowlist, and typo suggestions.
+     - Step 7: Tests API compare endpoint against local server, verifying HTTP 200 for run owner and HTTP 404 for foreign tenant intruder.
+  4. Authored documentation updates:
+     - Updated `README.md` with complete Phase 4 CLI commands (`issue`, `compare`, `explain`, `new-rule`), CI workflow example, and documentation index.
+     - Authored `CHANGELOG.md` at repo root following Keep a Changelog standards.
+     - Updated `docs/security.md` with Phase 4 dependency audit notes.
+     - Updated `docs/INDEX.md` marking Phase 4 as Done.
+     - Updated `docs/PHASE4.md` marking all checklist items and setting Run 4E to Done.
+- **Files created/changed:** `packages/core/src/redact.ts`, `apps/cli/src/format.ts`, `packages/core/test/phase4-security.test.ts`, `scripts/e2e-phase4.js`, `package.json`, `README.md`, `CHANGELOG.md`, `docs/security.md`, `docs/INDEX.md`, `docs/PHASE4.md`, `docs/LOG.md`.
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (319/319 tests across 48 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
+  - `npm run e2e:phase3`: Passed (100% OK)
+  - `npm run e2e:phase4`: Passed (All 7 steps passed)
+  - Issue drafts contain no secrets, machine identifiers, or absolute paths: Verified
+  - Exit codes match the documented thresholds: Verified
+  - Compare correctly shows new, resolved, and changed findings: Verified
+  - CI mode output is deterministic: Verified
+  - A new rule can be added by following the guide alone: Verified
+  - Actions workflow uses minimal permissions, SHA-pinned actions, no unsafe interpolation: Verified
+  - Nothing is ever posted or sent automatically: Verified
+  - `npm audit` has no unaddressed high/critical issues: Verified
+  - All e2e scripts pass: Verified
+  - Docs match what actually exists: Verified
+  - Everything committed and pushed: Verified
+- **Problems / errors:** Token generation in E2E script required CSRF token and Cookie headers; report upload body in E2E script expected raw report object. Both resolved cleanly.
+- **Decisions made:** All output paths (terminal, markdown, compare, issue drafts) strictly run through `redactText`; composite action passes inputs exclusively via environment variables.
+- **Next step:** Phase 5: Optional AI (Evidence-grounded explanations) (`PHASES.md`).
+- **Status:** Done
+
+
 
 
 

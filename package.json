@@ -16,6 +16,7 @@
     "eval": "node scripts/eval.js",
     "new-rule": "node scripts/new-rule.js",
     "e2e:phase3": "node scripts/e2e-phase3.js",
+    "e2e:phase4": "node scripts/e2e-phase4.js",
     "dev:api": "npm --workspace=@stackdoctor/api run dev",
     "dev:web": "npm --workspace=@stackdoctor/web run dev",
     "dev": "npm run dev:api"

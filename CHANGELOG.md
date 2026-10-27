@@ -1,0 +1,83 @@
+# Changelog
+
+All notable changes to StackDoctor will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [0.1.0] - 2026-10-27
+
+### Added
+
+#### Phase 1: Foundation & Diagnostic Core
+- **Monorepo Architecture**: Setup TypeScript npm workspaces for `@stackdoctor/schemas`, `@stackdoctor/rules`, `@stackdoctor/adapters`, `@stackdoctor/core`, `@stackdoctor/cli`, `@stackdoctor/api`, and `@stackdoctor/web`.
+- **Diagnostic Schemas**: Zod-validated schemas for `Report`, `Finding`, `Evidence`, `Recommendation`, `Check`, and `RuleMetadata`.
+- **Command Runner Adapter**: Sandboxed command runner with command allowlisting, argument arrays, buffer caps, timeouts, and canary secret redaction.
+- **Terminal Formatter**: Clean, ANSI-styled terminal output with light/dark contrast and `--no-color` support.
+- **Offline Guarantee**: `stackdoctor scan` guaranteed to operate 100% locally with zero remote calls.
+
+#### Phase 2: Diagnostic Engine & Rules Catalog
+- **Engine Execution Engine**: Multi-technology project scanner and diagnostic runner in `@stackdoctor/core`.
+- **Network & Database Adapters**: Port prober and read-only database connectivity checkers (MongoDB, MySQL, PostgreSQL, Docker Compose).
+- **20 Built-In Diagnostic Rules**:
+  - `NODE_DEPS_NOT_INSTALLED`: Detects missing `node_modules` when `package.json` is present.
+  - `ENV_EXAMPLE_PRESENT_NO_ENV`: Identifies missing `.env` when `.env.example` exists.
+  - `NODE_VERSION_MISMATCH`: Verifies active Node.js engine satisfies project requirement.
+  - `LOCKFILE_MISSING`: Detects unpinned dependencies without a package lockfile.
+  - `PYTHON_VENV_MISSING`: Flags missing active or local virtual environment.
+  - `PORT_IN_USE`: Probes target port and detects port conflict before server startup.
+  - `ENV_VAR_NAMES_MISSING`: Compares declared template variable keys with active environment.
+  - `PORT_INVALID`: Catches non-numeric or out-of-range port configurations (1-65535).
+  - `RUNTIME_DECLARATIONS_CONFLICT`: Detects version discrepancy between `package.json` and `.nvmrc`.
+  - `COMPOSE_SERVICE_NOT_FOUND`: Flags application references to missing compose services.
+  - `MONGO_CONNECTION_REFUSED`: Identifies connection refusal on target MongoDB host/port.
+  - `MONGO_AUTH_FAILED`: Detects authentication rejection on target MongoDB server.
+  - `MYSQL_CONNECTION_REFUSED`: Identifies connection refusal on target MySQL host/port.
+  - `MYSQL_AUTH_FAILED`: Detects authentication rejection on target MySQL server.
+  - `DB_HOST_NOT_RESOLVED`: Flags unresolvable database hostnames via DNS lookup.
+  - `DB_CONNECTION_TIMEOUT`: Catches connection timeouts on target database ports.
+  - `PYTHON_PACKAGES_MISSING`: Detects missing packages from `requirements.txt` or `pyproject.toml`.
+  - `PYTHON_PACKAGE_VERSION_MISMATCH`: Detects installed package version conflicts.
+  - `DJANGO_SETTINGS_NOT_FOUND`: Validates Django settings module configuration in `manage.py`.
+  - `DJANGO_MIGRATIONS_PENDING`: Safe read-only check detecting unapplied database migrations.
+- **Benchmark Evaluation**: `npm run eval` test harness achieving 100% detection accuracy and 0% false positives.
+
+#### Phase 3: Web Platform & Team Collaboration
+- **Express API Platform (`apps/api`)**:
+  - Secure session-based authentication with bcrypt password hashing and CSRF protection.
+  - Cryptographically generated API tokens (`stk_live_...`) with SHA-256 storage.
+  - Report upload endpoint `POST /api/v1/diagnostic-runs` with canary secret detection and sanitization.
+  - Owner-scoped resource queries with complete anti-enumeration returning 404 for foreign tenant resources.
+  - Automatic and manual data retention cleanup.
+- **React 19 Web Application (`apps/web`)**:
+  - Pure vanilla CSS design system with light and dark themes.
+  - Interactive Dashboard, Projects, Report Detail, Finding Detail, and Settings pages.
+  - Distinct visual presentation separating observed facts (`OBSERVED EVIDENCE`) from hypotheses (`POSSIBLE CAUSES`).
+  - Zero `dangerouslySetInnerHTML` usage with strict Content-Security-Policy.
+- **Docker Compose Setup**: Local MongoDB service bound strictly to `127.0.0.1:27017`.
+
+#### Phase 4: Integrations & Contributor Rule Interface
+- **GitHub Issue Draft Generation**:
+  - `stackdoctor issue [reportFile | path]`: Generates structured, sanitized markdown issue drafts.
+  - Automatic masking of usernames (`<user>`), hostnames (`<host>`), home directories (`~`), and IPs (`[REDACTED_IP]`).
+  - Strict 60,000 character length cap respecting GitHub issue limits.
+  - "Copy Issue Draft" button on Web Report page sharing isomorphic core logic.
+- **CI Mode & GitHub Actions**:
+  - `stackdoctor scan --ci --fail-on <severity> --format <text|json|markdown>`.
+  - Deterministic finding ordering (severity descending, then rule ID ascending).
+  - Stable exit code contract: `0` = OK, `1` = findings at/above threshold, `2` = tool error, `3` = invalid usage.
+  - Reusable composite action `action.yml` using minimal `contents: read` permissions and SHA-pinned dependencies.
+- **Report Comparison (Diff Engine)**:
+  - Isomorphic `compareReports(base, head)` finding identity `${ruleId}::${subjectKey}`.
+  - Detects `newFindings`, `resolvedFindings`, `unchangedFindings`, and `changedFindings`.
+  - CLI `stackdoctor compare <base.json> <head.json>` with `--fail-on-new <severity>`.
+  - API endpoint `GET /api/v1/diagnostic-runs/compare?base=<id>&head=<id>` with multi-tenant isolation.
+  - Web Compare page with interactive project and run dropdown selectors.
+- **Documentation Links & Rule Interface**:
+  - HTTPS domain allowlist validation (`ALLOWED_DOC_DOMAINS`) enforced in schema and registry.
+  - CLI `stackdoctor explain <ruleId>` with formatted output, JSON export, and Levenshtein typo suggestions.
+  - Automated rule generator: `npm run new-rule -- --id <RULE_ID> --tech <tech>`.
+  - Automated rule linter `packages/rules/test/rule-lint.test.ts` verifying all rules and failing on bad fixtures.
+  - Contributor documentation `docs/contributing.md` and GitHub issue / pull request templates.

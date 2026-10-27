@@ -110,7 +110,7 @@ The StackDoctor API (`apps/api`) and Web Platform (`apps/web`) operate under str
 
 ## 10. Dependency Security Audit Notes
 
-As of Run 3F, an audit of dependencies was conducted via `npm audit`:
-- **Zod (`<3.24.2`)**: An advisory exists regarding oversized constrained array validation. In StackDoctor, this risk is mitigated at the network layer because `apps/api` enforces a strict 1MB body limit (`express.json({ limit: "1mb" })`) before data reaches Zod parsing.
-- **Vitest & Tinypool (`vitest < 3.2.0`)**: Developer-only test runner dependencies in devDependencies. They are never bundled into production releases or deployed on production servers.
+As of Phase 4 (Run 4E), an audit of dependencies was conducted via `npm audit`:
+- **Zod (`<4.6.6`)**: An advisory exists regarding oversized constrained array validation (GHSA-mrhx-c7xc-m3w5). In StackDoctor, this risk is mitigated at the network layer because `apps/api` enforces a strict 1MB body limit (`express.json({ limit: "1mb" })`) and CLI enforces a 10MB file limit before data reaches Zod parsing.
+- **Vitest & Tinypool (`vitest <= 4.1.10`)**: Developer-only test runner dependencies in devDependencies (`@vitest/mocker`, `tinypool`). They are never bundled into production releases or deployed on production servers, and only run trusted repository test suites locally.
 
