@@ -228,11 +228,11 @@ Windows/Linux/macOS), npm publish configuration for the CLI, dependency audit.
 ```
 
 **Verification checklist**
-- [ ] Fresh install works on each supported OS from the docs alone
-- [ ] CI is green on all three OSes
-- [ ] No secrets in repo history or sample reports
-- [ ] Every built-in rule has tests and docs
-- [ ] Version 0.1 Definition of Done (spec section 17) fully met
+- [x] Fresh install works on each supported OS from the docs alone
+- [x] CI is green on all three OSes
+- [x] No secrets in repo history or sample reports
+- [x] Every built-in rule has tests and docs
+- [x] Version 0.1 Definition of Done (spec section 17) fully met
 
 ---
 

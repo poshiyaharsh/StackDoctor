@@ -367,21 +367,43 @@ truly passed.
 ```
 
 **Final Phase 6 checklist (v0.1.0 release readiness)**
-- [ ] Clean-clone verification passes end to end
-- [ ] CI is green on Windows, Linux, and macOS
-- [ ] Every item of the v0.1 Definition of Done is verified with evidence
-- [ ] Success criteria recorded with real numbers
-- [ ] No secrets in tree or history
-- [ ] `npm publish --dry-run` clean; nothing published yet
-- [ ] Docs, README, and landing page match actual behavior
-- [ ] Release notes, changelog, roadmap, and known limitations written
-- [ ] Everything committed and pushed
+- [x] Clean-clone verification passes end to end
+- [x] CI is green on Windows, Linux, and macOS
+- [x] Every item of the v0.1 Definition of Done is verified with evidence
+- [x] Success criteria recorded with real numbers
+- [x] No secrets in tree or history
+- [x] `npm publish --dry-run` clean; nothing published yet
+- [x] Docs, README, and landing page match actual behavior
+- [x] Release notes, changelog, roadmap, and known limitations written
+- [x] Everything committed and pushed
 
 **Run log (Antigravity fills):**
 - Files:
+  - Created: `RELEASE_NOTES_0.1.0.md`, `docs/release-checklist.md`, `docs/release-steps.md`
+  - Modified: `docs/INDEX.md`, `docs/PHASES.md`, `docs/PHASE6.md`, `docs/LOG.md`
 - Command results:
+  - `npm run check:secrets`: PASSED (0 secrets detected across git history and working tree)
+  - `npm run check:licenses`: PASSED (431 packages audited, 100% MIT-compatible)
+  - `npm run check:pack`: PASSED (145.9 KB compressed, 23 files)
+  - `npm run test:install`: PASSED (isolated prefix installation and binary execution)
+  - `npm run docs:rules -- --check`: PASSED (docs/diagnostics.md in sync with canonical 20 rules)
+  - `npm run test:docs`: PASSED (48 Markdown files audited, 0 broken links, 3 CLI snippets verified)
+  - `npm run build`: PASSED (`tsc -b && node scripts/build-cli.js`)
+  - `npm run lint`: PASSED (0 errors)
+  - `npm run typecheck`: PASSED (0 errors)
+  - `npm test`: PASSED (58 test suites, 421/421 tests passed)
+  - `npx vitest run packages/rules/test/rule-lint.test.ts`: PASSED (9/9 tests)
+  - `node scripts/validate-workflows.js`: PASSED (all 4 GitHub Actions workflows valid)
+  - `git tag -l`: Verified empty (0 release tags pushed)
 - Eval numbers:
+  - Diagnostic Accuracy (`npm run eval`): **100.0% Detection Accuracy** (11/11 true positives, target >= 80%), **0.0% False Positive Rate** (0 false positives on healthy projects, target < 10%).
+  - AI Safety (`npm run eval:ai`): **100.0% Safety** (18/18 safety evaluations passed across Hallucination, Overclaim, Prompt Injection, and Unsafe Recommendations).
 - Decisions:
+  - Successfully audited all 9 items of the Definition of Done in `docs/release-checklist.md` with concrete evidence.
+  - Formatted release notes in `RELEASE_NOTES_0.1.0.md` and detailed maintainer execution steps in `docs/release-steps.md`.
+  - Marked Phase 6 as `Done` in `docs/INDEX.md` and `docs/PHASES.md`. StackDoctor v0.1.0 is release-ready.
+
+---
 
 ---
 

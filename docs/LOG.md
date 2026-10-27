@@ -1393,6 +1393,46 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 6, Run 6F: Final verification for v0.1.0 (Definition of Done audit).
 - **Status:** Done
 
+---
+
+### [2026-10-27] Phase 6, Run 6F: Final verification for v0.1.0 (Definition of Done audit)
+- **Prompt used:** PHASE6.md > Run 6F: Final verification for v0.1.0
+- **What was done:**
+  - Audited all 9 items of the Definition of Done for v0.1.0 in `docs/release-checklist.md` with concrete verification evidence.
+  - Prepared `RELEASE_NOTES_0.1.0.md` with release highlights, platform matrix, quick start, known limitations, and security notes.
+  - Prepared `docs/release-steps.md` with complete step-by-step instructions for the maintainer to publish packages and draft releases.
+  - Verified package tarball in dry-run mode (145.9 KB compressed, 23 files, zero forbidden files).
+  - Confirmed zero published packages and zero git release tags exist.
+  - Marked Phase 6 as `Done` in `docs/INDEX.md` and `docs/PHASES.md`. StackDoctor v0.1.0 is release-ready.
+- **Files created/changed:**
+  - `RELEASE_NOTES_0.1.0.md`
+  - `docs/release-checklist.md`
+  - `docs/release-steps.md`
+  - `docs/INDEX.md`
+  - `docs/PHASES.md`
+  - `docs/PHASE6.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run check:secrets`: Passed (0 secrets detected)
+  - `npm run check:licenses`: Passed (431 packages audited, 100% MIT-compatible)
+  - `npm run check:pack`: Passed (145.9 KB tarball, 23 files)
+  - `npm run test:install`: Passed (clean temp prefix fresh install verified)
+  - `npm run docs:rules -- --check`: Passed (rules reference synchronized)
+  - `npm run test:docs`: Passed (48 Markdown files audited, 0 broken links, 3 CLI snippets verified)
+  - `npm run build`: Passed (exit code 0)
+  - `npm run lint`: Passed (0 errors)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (421/421 tests across 58 suites passed)
+  - `npx vitest run packages/rules/test/rule-lint.test.ts`: Passed (9/9 tests passed)
+  - `npm run eval`: Passed (100.0% detection accuracy, 0.0% false positives)
+  - `npm run eval:ai`: Passed (18/18 safety evals passed with 100% score)
+  - `git tag -l`: Verified empty (0 release tags)
+- **Problems / errors:** None.
+- **Decisions made:** Audited against all DoD criteria; release workflow was not executed; maintainer instructions documented in `docs/release-steps.md`.
+- **Next step:** v0.1.0 Launch / Maintainer tag push when ready.
+- **Status:** Done
+
+
 
 
 
