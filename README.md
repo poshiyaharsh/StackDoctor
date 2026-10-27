@@ -115,7 +115,7 @@ No global installation required. Run directly in your project root using `npx`:
 cd /path/to/your/project
 
 # 2. Run diagnostic scan (100% offline)
-npx stackdoctor scan
+npx @harshposhiya/stackdoctor scan
 
 # 3. Read the report and follow recommended remediation steps
 ```
@@ -123,7 +123,7 @@ npx stackdoctor scan
 ### Or Install Globally
 
 ```bash
-npm install -g stackdoctor
+npm install -g @harshposhiya/stackdoctor
 stackdoctor scan
 ```
 

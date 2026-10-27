@@ -58,7 +58,7 @@ git push origin v0.1.0
 3. Review and approve the deployment.
 4. The workflow will:
    - Build the distribution bundle.
-   - Publish `stackdoctor@0.1.0` to npm with cryptographic provenance signing.
+   - Publish `@harshposhiya/stackdoctor@0.1.0` to npm with cryptographic provenance signing.
    - Create a draft release on GitHub with release notes from `RELEASE_NOTES_0.1.0.md`.
 
 ---
@@ -70,5 +70,5 @@ git push origin v0.1.0
 3. Click **Publish release**.
 4. Verify package installation:
    ```bash
-   npx stackdoctor@latest --version
+   npx @harshposhiya/stackdoctor@latest --version
    ```

@@ -10,10 +10,10 @@ You can run StackDoctor immediately using `npx`:
 
 ```bash
 # Run a diagnostic scan in current directory
-npx stackdoctor scan .
+npx @harshposhiya/stackdoctor scan .
 
 # Run diagnostic scan with JSON output
-npx stackdoctor scan . --json
+npx @harshposhiya/stackdoctor scan . --json
 ```
 
 ---
@@ -23,7 +23,7 @@ npx stackdoctor scan . --json
 For daily local usage across multiple projects, install StackDoctor globally:
 
 ```bash
-npm install -g stackdoctor
+npm install -g @harshposhiya/stackdoctor
 ```
 
 Verify installation:

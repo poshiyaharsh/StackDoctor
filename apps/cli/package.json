@@ -1,5 +1,5 @@
 {
-  "name": "stackdoctor",
+  "name": "@harshposhiya/stackdoctor",
   "version": "0.1.0",
   "description": "Find the cause. Fix the environment. Ship the code. Open-source developer environment diagnostics and remediation engine.",
   "keywords": [

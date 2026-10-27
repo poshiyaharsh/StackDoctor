@@ -2,7 +2,7 @@
 
 **Release Date:** October 27, 2026  
 **License:** MIT  
-**Package:** `stackdoctor@0.1.0` (npm)
+**Package:** `@harshposhiya/stackdoctor@0.1.0` (npm)
 
 ---
 
@@ -35,12 +35,12 @@ StackDoctor v0.1.0 is the initial public release of the **self-healing diagnosti
 
 ### Run Instantly with `npx` (No Global Install Required)
 ```bash
-npx stackdoctor scan
+npx @harshposhiya/stackdoctor scan
 ```
 
 ### Install Globally
 ```bash
-npm install -g stackdoctor
+npm install -g @harshposhiya/stackdoctor
 stackdoctor scan
 ```
 

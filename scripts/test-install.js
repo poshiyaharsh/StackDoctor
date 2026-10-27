@@ -42,6 +42,9 @@ try {
       binExecutable = path.join(tempPrefixDir, "stackdoctor.cmd");
     }
     if (!fs.existsSync(binExecutable)) {
+      binExecutable = path.join(tempPrefixDir, "node_modules", "@harshposhiya", "stackdoctor", "dist", "bin.js");
+    }
+    if (!fs.existsSync(binExecutable)) {
       binExecutable = path.join(tempPrefixDir, "node_modules", "stackdoctor", "dist", "bin.js");
     }
   } else {
