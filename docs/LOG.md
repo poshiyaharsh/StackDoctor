@@ -1192,7 +1192,7 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 
 - **Run:** Phase 6, Run 6B
 - **Focus:** CLI bundling, tarball package inspection (`check:pack`), fresh-install testing in isolated temporary prefix (`test:install`), single source of truth version verification, and npm publish dry-run validation.
-- **Commit:** PENDING
+- **Commit:** 5148895
 - **What was built:**
   1. CLI Distribution Bundler (`scripts/build-cli.js`):
      - Uses `esbuild` with an internal resolver plugin to inline `@stackdoctor/*` workspace packages into `apps/cli/dist/`.
