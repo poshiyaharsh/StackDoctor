@@ -36,3 +36,5 @@ export function createDefaultAiConfig(): AiConfig {
     responseSizeCapBytes: 250_000
   };
 }
+
+export const DEFAULT_AI_CONFIG: AiConfig = createDefaultAiConfig();

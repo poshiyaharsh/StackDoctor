@@ -288,17 +288,55 @@ Run build, tests, lint, typecheck. Then follow the POST-RUN PROTOCOL in PHASE1.m
 ```
 
 **Checklist**
-- [ ] Endpoint is owner-scoped and uses only stored sanitized reports
-- [ ] User API keys are encrypted at rest and never returned
-- [ ] AI output is rendered as inert text and labeled AI-generated
-- [ ] Quotas and rate limits work; explanations are deleted with their run and account
-- [ ] Everything still works with AI disabled
+- [x] Endpoint is owner-scoped and uses only stored sanitized reports
+- [x] User API keys are encrypted at rest and never returned
+- [x] AI output is rendered as inert text and labeled AI-generated
+- [x] Quotas and rate limits work; explanations are deleted with their run and account
+- [x] Everything still works with AI disabled
 
 **Run log (Antigravity fills):**
 - Files:
+  - `apps/api/package.json`
+  - `apps/api/tsconfig.json`
+  - `apps/api/src/config.ts`
+  - `apps/api/src/app.ts`
+  - `apps/api/src/lib/ai-crypto.ts`
+  - `apps/api/src/models/user.ts`
+  - `apps/api/src/models/explanation.ts`
+  - `apps/api/src/routes/auth.ts`
+  - `apps/api/src/routes/diagnostic-runs.ts`
+  - `apps/api/src/services/explanation-service.ts`
+  - `apps/api/src/services/retention.ts`
+  - `apps/api/test/ai-crypto.test.ts`
+  - `apps/api/test/config.test.ts`
+  - `apps/api/test/explanation.test.ts`
+  - `packages/ai/src/config.ts`
+  - `packages/ai/src/providers/anthropic.ts`
+  - `packages/ai/src/providers/openai-compatible.ts`
+  - `packages/ai/src/providers/factory.ts`
+  - `apps/web/src/lib/api.ts`
+  - `apps/web/src/pages/ReportDetailPage.tsx`
+  - `apps/web/src/pages/SettingsPage.tsx`
+  - `apps/web/test/app-pages.test.tsx`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
 - Command results:
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (363/363 tests across 54 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
 - Problems:
+  - Mongoose `Document.model` method collided with a schema field named `model`. Resolved by naming the MongoDB property `aiModel` while mapping `model` in `toSafeObject()`.
+  - Added optional direct `apiKey` injection to `AnthropicProvider` and `OpenAiCompatibleProvider` in `packages/ai` to support user decrypted BYOK without process-level env pollution.
+  - Resolved JSX Badge variant type in `ReportDetailPage.tsx` to align with strict `BadgeVariant` definitions.
 - Decisions:
+  - User BYOK keys are encrypted at rest using AES-256-GCM with a server master key and a unique random 12-byte IV per record. Keys are write-only and never returned in API responses or logs.
+  - The explanation endpoint (`POST /api/v1/diagnostic-runs/:runId/explanation`) is owner-scoped, returning 404 for other tenants, and strictly reads sanitized findings from the database without trusting any user request body.
+  - Explanations are cached per `(runId, reportHash, aiModel)`. Run deletion and account deletion cascade to wipe associated explanations; retention service prunes expired explanations.
+  - Strict rate limits (10/min user, 20/min IP), daily quotas (50/day user), and concurrency caps (2 concurrent jobs) protect AI resources.
+  - Web UI renders all AI output strictly as plain text (no HTML or markdown parsing), immunizing against XSS payloads.
+
 
 ---
 

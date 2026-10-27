@@ -5,6 +5,7 @@ export interface AnthropicProviderOptions {
   model?: string;
   baseUrl?: string;
   apiKeyEnvVar?: string;
+  apiKey?: string;
   maxRetries?: number;
   responseSizeCapBytes?: number;
 }
@@ -14,6 +15,7 @@ export class AnthropicProvider implements AiProvider {
   private readonly model: string;
   private readonly baseUrl: string;
   private readonly apiKeyEnvVar: string;
+  private readonly directApiKey?: string;
   private readonly maxRetries: number;
   private readonly responseSizeCapBytes: number;
 
@@ -21,12 +23,13 @@ export class AnthropicProvider implements AiProvider {
     this.model = options.model || "claude-3-5-sonnet-20241022";
     this.baseUrl = options.baseUrl || "https://api.anthropic.com/v1/messages";
     this.apiKeyEnvVar = options.apiKeyEnvVar || "ANTHROPIC_API_KEY";
+    this.directApiKey = options.apiKey;
     this.maxRetries = options.maxRetries ?? 2;
     this.responseSizeCapBytes = options.responseSizeCapBytes ?? 250_000;
   }
 
   async complete(request: AiRequest): Promise<AiResponse> {
-    const apiKey = process.env[this.apiKeyEnvVar];
+    const apiKey = this.directApiKey || process.env[this.apiKeyEnvVar];
     if (!apiKey) {
       throw new Error(
         `AI API key not found in environment variable '${this.apiKeyEnvVar}'. Please set it in your environment before running AI operations.`

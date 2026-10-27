@@ -6,6 +6,7 @@ export interface OpenAiCompatibleProviderOptions {
   model?: string;
   baseUrl?: string;
   apiKeyEnvVar?: string;
+  apiKey?: string;
   maxRetries?: number;
   responseSizeCapBytes?: number;
 }
@@ -15,6 +16,7 @@ export class OpenAiCompatibleProvider implements AiProvider {
   private readonly model: string;
   private readonly baseUrl: string;
   private readonly apiKeyEnvVar: string;
+  private readonly directApiKey?: string;
   private readonly maxRetries: number;
   private readonly responseSizeCapBytes: number;
 
@@ -23,6 +25,7 @@ export class OpenAiCompatibleProvider implements AiProvider {
     this.model = options.model || "gpt-4o";
     this.baseUrl = options.baseUrl || "https://api.openai.com/v1/chat/completions";
     this.apiKeyEnvVar = options.apiKeyEnvVar || "OPENAI_API_KEY";
+    this.directApiKey = options.apiKey;
     this.maxRetries = options.maxRetries ?? 2;
     this.responseSizeCapBytes = options.responseSizeCapBytes ?? 250_000;
   }
@@ -34,7 +37,7 @@ export class OpenAiCompatibleProvider implements AiProvider {
       parsedUrl.hostname === "127.0.0.1" ||
       parsedUrl.hostname === "::1";
 
-    const apiKey = process.env[this.apiKeyEnvVar];
+    const apiKey = this.directApiKey || process.env[this.apiKeyEnvVar];
     if (!apiKey && !isLocalhost) {
       throw new Error(
         `AI API key not found in environment variable '${this.apiKeyEnvVar}'. Please set it in your environment before running AI operations.`

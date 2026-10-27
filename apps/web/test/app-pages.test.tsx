@@ -398,6 +398,86 @@ describe("StackDoctor Web Application Pages (Run 3E)", () => {
         expect(screen.getByText("Compare Target Page")).toBeInTheDocument();
       });
     });
+
+    it("renders 'Explain with AI' button and renders AI explanations with inert XSS protection", async () => {
+      const mockRun: DiagnosticRunItem = {
+        id: "run_ai_test_123",
+        projectId: "proj_999",
+        toolVersion: "0.1.0",
+        operatingSystem: "linux",
+        status: "failed",
+        findings: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      vi.spyOn(api.runs, "get").mockResolvedValue({ run: mockRun });
+      vi.spyOn(api.runs, "list").mockResolvedValue({ total: 1, runs: [mockRun] });
+      vi.spyOn(api.ai, "getExplanation").mockRejectedValue(new Error("Not cached"));
+      vi.spyOn(api.ai, "explain").mockResolvedValue({
+        ai: true,
+        status: "success",
+        cached: false,
+        explanation: {
+          summary: "XSS Test Summary <script>alert('xss')</script>",
+          confirmedFacts: [
+            {
+              statement: "Confirmed Fact with <img src=x onerror=alert(1)>",
+              evidenceIds: ["ev-xss-1"]
+            }
+          ],
+          hypotheses: [
+            {
+              statement: "Hypothesis with <svg onload=alert(2)>",
+              whatWouldConfirmIt: "Check logs"
+            }
+          ],
+          rootCauseRanking: [
+            {
+              cause: "Root cause <iframe src='javascript:alert(3)'>",
+              likelihood: "high",
+              reasoning: "Reasoning plain text",
+              supportingEvidenceIds: ["ev-xss-1"]
+            }
+          ],
+          checklist: ["Remediation step with <b onmouseover=alert(4)>action</b>"]
+        },
+        removed: ["Removed statement <script>"],
+        unverifiedSuggestions: ["Unallowlisted rm -rf /"]
+      });
+
+      renderWithProviders(
+        <Routes>
+          <Route path="/reports/:id" element={<ReportDetailPage />} />
+        </Routes>,
+        "/reports/run_ai_test_123"
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Explain with AI")).toBeInTheDocument();
+      });
+
+      const explainBtn = screen.getByText("Explain with AI");
+      fireEvent.click(explainBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText("AI Diagnostic Explanation")).toBeInTheDocument();
+        expect(screen.getByText("AI-GENERATED")).toBeInTheDocument();
+      });
+
+      // Verify sections are rendered
+      expect(screen.getByText(/Confirmed Facts \(Tied to Evidence\)/i)).toBeInTheDocument();
+      expect(screen.getByText(/Probabilistic Hypotheses \(Unverified\)/i)).toBeInTheDocument();
+      expect(screen.getByText(/Ranked Root Causes/i)).toBeInTheDocument();
+      expect(screen.getByText(/Remediation Checklist/i)).toBeInTheDocument();
+
+      // Verify XSS payloads are strictly inert plain text strings (no script tags or injected img tags in DOM)
+      expect(screen.getByText(/XSS Test Summary <script>alert\('xss'\)<\/script>/)).toBeInTheDocument();
+      expect(screen.getByText(/Confirmed Fact with <img src=x onerror=alert\(1\)>/)).toBeInTheDocument();
+      expect(document.querySelector("script[src*='alert']")).toBeNull();
+      expect(document.querySelector("img[src='x']")).toBeNull();
+      expect(document.querySelector("iframe")).toBeNull();
+    });
   });
 
   describe("4. Finding Details Page", () => {
@@ -504,8 +584,14 @@ describe("StackDoctor Web Application Pages (Run 3E)", () => {
       expect(screen.queryByText(/This is the only time this token will ever be displayed/i)).toBeNull();
     });
 
-    it("renders disabled AI Explanations tab and data retention settings", async () => {
+    it("renders AI Explanations tab and data retention settings", async () => {
       vi.spyOn(api.tokens, "list").mockResolvedValue({ tokens: [] });
+      vi.spyOn(api.ai, "getSettings").mockResolvedValue({
+        enabled: false,
+        hasKey: false,
+        provider: "anthropic",
+        model: ""
+      });
 
       renderWithProviders(<SettingsPage />);
 
@@ -513,8 +599,10 @@ describe("StackDoctor Web Application Pages (Run 3E)", () => {
       const aiTab = screen.getByRole("tab", { name: /AI Explanations/i });
       fireEvent.click(aiTab);
 
-      expect(screen.getByText(/Strict Offline & Privacy Guarantee/i)).toBeInTheDocument();
-      expect(screen.getByText(/Coming Later/i)).toBeInTheDocument();
+      expect(screen.getByText(/Strict Privacy & Grounding Guarantees/i)).toBeInTheDocument();
+      expect(screen.getByText(/Enable AI Explanations/i)).toBeInTheDocument();
+      expect(screen.getByText(/Bring Your Own API Key \(BYOK\)/i)).toBeInTheDocument();
+      expect(screen.getByText(/Save AI Settings/i)).toBeInTheDocument();
 
       // Switch to Data Retention tab
       const retentionTab = screen.getByRole("tab", { name: /Data Retention/i });

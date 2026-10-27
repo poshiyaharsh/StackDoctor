@@ -4,16 +4,24 @@ import { MockProvider } from "../mock-provider.js";
 import { AnthropicProvider } from "./anthropic.js";
 import { OpenAiCompatibleProvider } from "./openai-compatible.js";
 
+export type CreateAiProviderOptions = Partial<AiConfig> & {
+  apiKey?: string;
+};
+
 /**
  * Creates the appropriate AiProvider implementation based on configuration.
  */
-export function createAiProvider(config: AiConfig, fallbackMock?: AiProvider): AiProvider {
+export function createAiProvider(
+  config: CreateAiProviderOptions,
+  fallbackMock?: AiProvider
+): AiProvider {
   switch (config.provider) {
     case "anthropic":
       return new AnthropicProvider({
         model: config.model,
         baseUrl: config.baseUrl,
         apiKeyEnvVar: config.apiKeyEnvVar,
+        apiKey: config.apiKey,
         maxRetries: config.maxRetries,
         responseSizeCapBytes: config.responseSizeCapBytes
       });
@@ -25,6 +33,7 @@ export function createAiProvider(config: AiConfig, fallbackMock?: AiProvider): A
         model: config.model,
         baseUrl: config.baseUrl,
         apiKeyEnvVar: config.apiKeyEnvVar,
+        apiKey: config.apiKey,
         maxRetries: config.maxRetries,
         responseSizeCapBytes: config.responseSizeCapBytes
       });

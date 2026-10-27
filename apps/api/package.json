@@ -11,6 +11,7 @@
     "dev": "tsc -b && node dist/server.js"
   },
   "dependencies": {
+    "@stackdoctor/ai": "*",
     "@stackdoctor/core": "*",
     "@stackdoctor/rules": "*",
     "@stackdoctor/schemas": "*",

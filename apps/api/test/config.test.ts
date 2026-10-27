@@ -12,6 +12,29 @@ describe("API Configuration (config.ts)", () => {
     expect(config.NODE_ENV).toBe("development");
     expect(config.MONGODB_URI).toBe("mongodb://127.0.0.1:27017/test_db");
     expect(config.COOKIE_SECURE).toBe(false);
+    expect(config.AI_ENABLED).toBe(false);
+    expect(config.AI_PROVIDER).toBe("anthropic");
+    expect(config.AI_ENCRYPTION_MASTER_KEY).toBe("stackdoctor-default-master-key-32b-min");
+  });
+
+  it("loads custom AI configuration", () => {
+    const config = loadConfig({
+      MONGODB_URI: "mongodb://127.0.0.1:27017/test_db",
+      SESSION_SECRET: "this_is_a_secure_session_secret_at_least_32_chars_long",
+      AI_ENABLED: "true",
+      AI_PROVIDER: "openai",
+      AI_MODEL: "gpt-4o",
+      AI_BASE_URL: "https://api.openai.com/v1",
+      AI_API_KEY: "sk-test-canary-key",
+      AI_ENCRYPTION_MASTER_KEY: "custom-master-encryption-key-for-test-32b"
+    });
+
+    expect(config.AI_ENABLED).toBe(true);
+    expect(config.AI_PROVIDER).toBe("openai");
+    expect(config.AI_MODEL).toBe("gpt-4o");
+    expect(config.AI_BASE_URL).toBe("https://api.openai.com/v1");
+    expect(config.AI_API_KEY).toBe("sk-test-canary-key");
+    expect(config.AI_ENCRYPTION_MASTER_KEY).toBe("custom-master-encryption-key-for-test-32b");
   });
 
   it("fails fast with error when MONGODB_URI is missing", () => {

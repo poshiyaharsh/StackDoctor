@@ -1,11 +1,21 @@
 import mongoose, { Document, Schema, Model } from "mongoose";
 import bcrypt from "bcryptjs";
 
+export interface IUserAiSettings {
+  enabled?: boolean;
+  provider?: "anthropic" | "openai" | "ollama";
+  model?: string;
+  encryptedKey?: string;
+  iv?: string;
+  tag?: string;
+}
+
 export interface IUser {
   email: string;
   passwordHash: string;
   displayName: string;
   retentionDays?: number;
+  aiSettings?: IUserAiSettings;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +27,12 @@ export interface IUserMethods {
     email: string;
     displayName: string;
     retentionDays: number;
+    aiSettings: {
+      enabled: boolean;
+      hasKey: boolean;
+      provider?: string;
+      model?: string;
+    };
     createdAt: string;
     updatedAt: string;
   };
@@ -49,6 +65,14 @@ const userSchema = new Schema<UserDocument>(
       default: 90,
       min: 0,
       max: 365
+    },
+    aiSettings: {
+      enabled: { type: Boolean, default: false },
+      provider: { type: String, enum: ["anthropic", "openai", "ollama"], default: "anthropic" },
+      model: { type: String },
+      encryptedKey: { type: String },
+      iv: { type: String },
+      tag: { type: String }
     }
   },
   {
@@ -72,6 +96,12 @@ userSchema.methods.toSafeObject = function () {
     email: this.email,
     displayName: this.displayName,
     retentionDays: this.retentionDays ?? 90,
+    aiSettings: {
+      enabled: Boolean(this.aiSettings?.enabled),
+      hasKey: Boolean(this.aiSettings?.encryptedKey),
+      provider: this.aiSettings?.provider || "anthropic",
+      model: this.aiSettings?.model
+    },
     createdAt: this.createdAt.toISOString(),
     updatedAt: this.updatedAt.toISOString()
   };

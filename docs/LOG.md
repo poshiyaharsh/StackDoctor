@@ -921,8 +921,72 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
   - Failure always falls back to deterministic explanation: Verified
 - **Problems / errors:** Linked `@stackdoctor/ai` in `apps/cli` via `npm install`; typed provider responses without any.
 - **Decisions made:** Remote connections enforce HTTPS; keys are loaded exclusively from environment variables; user consent preview is mandatory unless `--yes` is specified; `scan` is strictly offline.
-- **Next step:** Phase 5, Run 5D: API explanation endpoint and web UI (`apps/api`, `apps/web`).
+### [2026-10-27] Phase 5, Run 5D: API Explanation Endpoint & Web UI (apps/api, apps/web)
+- **Prompt used:** PHASE5.md > Run 5D: API explanation endpoint and web UI
+- **What was done:**
+  1. Server & Account AI Configuration & BYOK Security (`apps/api`):
+     - Added server-side environment variables `AI_ENABLED`, `AI_PROVIDER`, `AI_MODEL`, `AI_BASE_URL`, `AI_API_KEY`, and `AI_ENCRYPTION_MASTER_KEY` to `configSchema`.
+     - Built AES-256-GCM encryption/decryption utilities (`apps/api/src/lib/ai-crypto.ts`) to store Bring-Your-Own-Key (BYOK) securely at rest with a unique random 12-byte IV and authentication tag per record.
+     - Added write-only BYOK storage to `User` model (`apps/api/src/models/user.ts`), ensuring raw keys and encrypted values are never returned by any endpoint or projection (`toSafeObject()`).
+     - Added AI settings endpoints (`apps/api/src/routes/auth.ts`): `GET /api/v1/auth/ai-settings`, `PUT /api/v1/auth/ai-settings`, and `DELETE /api/v1/auth/ai-settings/key`.
+  2. Explanation Endpoint & Service (`apps/api/src/routes/diagnostic-runs.ts`, `apps/api/src/services/explanation-service.ts`):
+     - Implemented `POST /api/v1/diagnostic-runs/:runId/explanation` and `GET /api/v1/diagnostic-runs/:runId/explanation`.
+     - Multi-tenant owner-scoped authorization: requests for other users' runs return HTTP 404.
+     - Ignores any free-form text or evidence in the request body, strictly using stored sanitized report findings (`run.findings`) and environment.
+     - Result caching per `(runId, reportHash, aiModel)` in the `Explanation` collection (`apps/api/src/models/explanation.ts`).
+     - Enforced sliding-window rate limits (10/min per user, 20/min per IP), daily quotas (50/day per user), and max concurrent jobs (2 per user) with HTTP 429 responses.
+     - Cascading deletion: deleting a diagnostic run removes its explanations; account deletion removes all user explanations; retention cleanup prunes expired explanations.
+     - Deterministic fallback: when AI is disabled on both server and account, returns HTTP 200 with `{ ai: false, status: "fallback", explanation: ... }` and caches it.
+  3. Web UI Integration (`apps/web`):
+     - Extended `api.ai` in `apps/web/src/lib/api.ts` for managing AI settings, BYOK keys, and fetching/triggering explanations.
+     - Added interactive "Explain with AI" button and plain-text inert rendering on `ReportDetailPage.tsx` for confirmed facts citing evidence IDs, hypotheses, ranked root causes, checklist items, and quarantined command warnings.
+     - Added interactive AI tab on `SettingsPage.tsx` with toggle, provider selection, write-only BYOK entry, delete key option, and transparent data privacy disclosures.
+     - Immune to XSS: AI text fields render strictly as plain JSX text nodes without HTML or markdown-to-HTML rendering.
+  4. Test Suites:
+     - `apps/api/test/ai-crypto.test.ts` (6 tests): AES-256-GCM encryption roundtrip, unique IVs, tamper resistance, invalid master key length rejection.
+     - `apps/api/test/explanation.test.ts` (8 tests): Tenant isolation (404), BYOK write-only protection, body injection immunity, caching, rate limiting (429), and cascading deletions on run/account deletion.
+     - `apps/web/test/app-pages.test.tsx`: Verified interactive AI settings tab, "Explain with AI" generation, cached retrieval, and inert XSS payload neutralization.
+- **Files created/changed:**
+  - `apps/api/package.json`
+  - `apps/api/tsconfig.json`
+  - `apps/api/src/config.ts`
+  - `apps/api/src/app.ts`
+  - `apps/api/src/lib/ai-crypto.ts`
+  - `apps/api/src/models/user.ts`
+  - `apps/api/src/models/explanation.ts`
+  - `apps/api/src/routes/auth.ts`
+  - `apps/api/src/routes/diagnostic-runs.ts`
+  - `apps/api/src/services/explanation-service.ts`
+  - `apps/api/src/services/retention.ts`
+  - `apps/api/test/ai-crypto.test.ts`
+  - `apps/api/test/config.test.ts`
+  - `apps/api/test/explanation.test.ts`
+  - `packages/ai/src/config.ts`
+  - `packages/ai/src/providers/anthropic.ts`
+  - `packages/ai/src/providers/openai-compatible.ts`
+  - `packages/ai/src/providers/factory.ts`
+  - `apps/web/src/lib/api.ts`
+  - `apps/web/src/pages/ReportDetailPage.tsx`
+  - `apps/web/src/pages/SettingsPage.tsx`
+  - `apps/web/test/app-pages.test.tsx`
+  - `docs/PHASE5.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run build`: Passed (`tsc -b`, exit code 0)
+  - `npm run lint`: Passed (0 errors, 0 warnings across all workspaces)
+  - `npm run typecheck`: Passed (exit code 0)
+  - `npm test`: Passed (363/363 tests across 54 suites passed)
+  - `npm run eval`: Passed (100% detection accuracy, 0% false positives)
+  - Endpoint is owner-scoped and uses only stored sanitized reports: Verified
+  - User API keys are encrypted at rest and never returned: Verified
+  - AI output is rendered as inert text and labeled AI-generated: Verified
+  - Quotas and rate limits work; explanations are deleted with their run and account: Verified
+  - Everything still works with AI disabled: Verified
+- **Problems / errors:** Mongoose `Document.model` name collision resolved with `aiModel` property; added optional direct `apiKey` injection to `AnthropicProvider` and `OpenAiCompatibleProvider` to pass in-memory decrypted BYOK safely.
+- **Decisions made:** Keys are encrypted at rest with AES-256-GCM; AI output is rendered as plain text in the web UI without HTML parsing; endpoint strictly uses stored findings and rejects/ignores request body text; cascading deletes clean up cached explanations automatically.
+- **Next step:** Phase 5, Run 5E: User-approved remediation (allowlisted operations only).
 - **Status:** Done
+
 
 
 

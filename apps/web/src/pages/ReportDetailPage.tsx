@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { api, DiagnosticRunItem, FindingItem } from "../lib/api.js";
+import { api, DiagnosticRunItem, FindingItem, ExplanationResponse } from "../lib/api.js";
 import { Card, CardHeader, CardBody } from "../components/ui/Card.js";
 import { Badge } from "../components/ui/Badge.js";
 import { Button } from "../components/ui/Button.js";
@@ -21,6 +21,9 @@ export function ReportDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [prevRunId, setPrevRunId] = useState<string | null>(null);
+  const [explanation, setExplanation] = useState<ExplanationResponse | null>(null);
+  const [explaining, setExplaining] = useState(false);
+  const [explanationError, setExplanationError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -44,6 +47,14 @@ export function ReportDetailPage() {
             // Ignore list failure
           }
         }
+
+        // Check for cached AI explanation
+        try {
+          const cachedExp = await api.ai.getExplanation(id);
+          if (mounted) setExplanation(cachedExp);
+        } catch {
+          // No cached explanation yet
+        }
       } catch (err) {
         if (mounted) setError(err instanceof Error ? err.message : "Failed to load diagnostic report.");
       } finally {
@@ -55,6 +66,20 @@ export function ReportDetailPage() {
       mounted = false;
     };
   }, [id]);
+
+  const handleExplain = async () => {
+    if (!id) return;
+    try {
+      setExplaining(true);
+      setExplanationError(null);
+      const res = await api.ai.explain(id);
+      setExplanation(res);
+    } catch (err) {
+      setExplanationError(err instanceof Error ? err.message : "Failed to generate AI explanation.");
+    } finally {
+      setExplaining(false);
+    }
+  };
 
   const copyToClipboard = async (text: string, key: string) => {
     try {
@@ -175,6 +200,14 @@ export function ReportDetailPage() {
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <Button
+            variant="primary"
+            size="sm"
+            onClick={handleExplain}
+            disabled={explaining}
+          >
+            {explaining ? "Explaining with AI..." : explanation ? "Re-explain with AI" : "Explain with AI"}
+          </Button>
+          <Button
             variant="secondary"
             size="sm"
             onClick={() => {
@@ -258,6 +291,179 @@ export function ReportDetailPage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* AI Explanation Section */}
+      {explanationError && (
+        <div style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "rgba(239, 68, 68, 0.1)", border: "1px solid var(--color-danger)", borderRadius: "var(--radius-md)", color: "var(--color-danger)" }}>
+          <strong>Explanation Error:</strong> {explanationError}
+        </div>
+      )}
+
+      {explaining && (
+        <Card style={{ marginBottom: "2rem", border: "1px solid var(--color-primary)" }}>
+          <CardBody>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem" }}>
+              <div style={{ fontWeight: 600 }}>Analyzing diagnostic findings with AI...</div>
+              <span style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+                Validating grounding against observed evidence and generating plain-text checklist.
+              </span>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {explanation && !explaining && (
+        <Card style={{ marginBottom: "2rem", border: "1px solid var(--color-border)" }}>
+          <CardHeader>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <span style={{ fontSize: "1.25rem" }}>🤖</span>
+                <h2 style={{ fontSize: "1.25rem", fontWeight: 700 }}>
+                  {explanation.ai ? "AI Diagnostic Explanation" : "Diagnostic Explanation (Fallback)"}
+                </h2>
+                <Badge variant={explanation.ai ? "success" : "warning"}>
+                  {explanation.ai ? "AI-GENERATED" : "DETERMINISTIC FALLBACK"}
+                </Badge>
+                {explanation.cached && (
+                  <Badge variant="default">CACHED</Badge>
+                )}
+              </div>
+              <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontStyle: "italic" }}>
+                {explanation.ai
+                  ? "AI-generated explanation. Hypotheses are unverified. Verify before acting."
+                  : "AI disabled or unavailable. Generated deterministically from findings."}
+              </span>
+            </div>
+          </CardHeader>
+
+          <CardBody>
+            {/* Summary */}
+            {explanation.explanation?.summary && (
+              <div style={{ marginBottom: "1.5rem", padding: "0.75rem 1rem", backgroundColor: "var(--color-bg-secondary)", borderRadius: "var(--radius-md)", borderLeft: "4px solid var(--color-primary)" }}>
+                <p style={{ fontSize: "0.9375rem", lineHeight: 1.6 }}>{explanation.explanation.summary}</p>
+              </div>
+            )}
+
+            {/* 1. CONFIRMED FACTS */}
+            {explanation.explanation?.confirmedFacts && explanation.explanation.confirmedFacts.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
+                  ✓ Confirmed Facts (Tied to Evidence)
+                </h3>
+                <ul style={{ paddingLeft: "1.25rem", margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  {explanation.explanation.confirmedFacts.map((fact, i) => (
+                    <li key={i} style={{ fontSize: "0.875rem", lineHeight: 1.5 }}>
+                      <span>{fact.statement}</span>
+                      {fact.evidenceIds && fact.evidenceIds.length > 0 && (
+                        <span style={{ marginLeft: "0.5rem", fontSize: "0.75rem", color: "var(--color-primary)", fontFamily: "var(--font-mono)" }}>
+                          [{fact.evidenceIds.join(", ")}]
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 2. HYPOTHESES */}
+            {explanation.explanation?.hypotheses && explanation.explanation.hypotheses.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--color-warning)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
+                  ? Probabilistic Hypotheses (Unverified)
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {explanation.explanation.hypotheses.map((hypo, i) => (
+                    <div key={i} style={{ padding: "0.75rem", borderRadius: "var(--radius-md)", backgroundColor: "var(--color-bg-secondary)", border: "1px solid var(--color-border)" }}>
+                      <p style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.25rem" }}>{hypo.statement}</p>
+                      <p style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
+                        <strong>Verification:</strong> {hypo.whatWouldConfirmIt}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 3. RANKED ROOT CAUSES */}
+            {explanation.explanation?.rootCauseRanking && explanation.explanation.rootCauseRanking.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
+                  Ranked Root Causes
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {explanation.explanation.rootCauseRanking.map((cause, i) => (
+                    <div key={i} style={{ padding: "0.75rem", borderRadius: "var(--radius-md)", backgroundColor: "var(--color-bg-secondary)", border: "1px solid var(--color-border)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                        <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>#{i + 1} {cause.cause}</span>
+                        <Badge variant={cause.likelihood === "high" ? "danger" : cause.likelihood === "medium" ? "warning" : "default"}>
+                          {cause.likelihood.toUpperCase()} LIKELIHOOD
+                        </Badge>
+                      </div>
+                      <p style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>{cause.reasoning}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 4. REMEDIATION CHECKLIST */}
+            {explanation.explanation?.checklist && explanation.explanation.checklist.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
+                  Remediation Checklist
+                </h3>
+                <ul style={{ paddingLeft: "1.25rem", margin: 0, display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+                  {explanation.explanation.checklist.map((step, i) => (
+                    <li key={i} style={{ fontSize: "0.875rem" }}>{step}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 5. SUGGESTED EXTRA CHECKS */}
+            {explanation.explanation?.suggestedExtraChecks && explanation.explanation.suggestedExtraChecks.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h3 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
+                  Suggested Extra Checks
+                </h3>
+                <ul style={{ paddingLeft: "1.25rem", margin: 0, display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+                  {explanation.explanation.suggestedExtraChecks.map((check, i) => (
+                    <li key={i} style={{ fontSize: "0.875rem" }}>{check}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 6. REMOVED OR DOWNGRADED STATEMENTS */}
+            {explanation.removed && explanation.removed.length > 0 && (
+              <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", backgroundColor: "rgba(245, 158, 11, 0.1)", border: "1px solid var(--color-warning)", borderRadius: "var(--radius-md)" }}>
+                <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-warning)", marginBottom: "0.375rem" }}>
+                  ⚠ {explanation.removed.length} statement(s) downgraded or removed by grounding checks:
+                </p>
+                <ul style={{ paddingLeft: "1.25rem", margin: 0, fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
+                  {explanation.removed.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 7. UNVERIFIED COMMAND SUGGESTIONS */}
+            {explanation.unverifiedSuggestions && explanation.unverifiedSuggestions.length > 0 && (
+              <div style={{ marginTop: "0.75rem", padding: "0.75rem 1rem", backgroundColor: "rgba(239, 68, 68, 0.1)", border: "1px solid var(--color-danger)", borderRadius: "var(--radius-md)" }}>
+                <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-danger)", marginBottom: "0.375rem" }}>
+                  ⚠ Unallowlisted commands were stripped from display:
+                </p>
+                <ul style={{ paddingLeft: "1.25rem", margin: 0, fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
+                  {explanation.unverifiedSuggestions.map((cmd, i) => (
+                    <li key={i}>{cmd}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
 
       {/* Severity Filter Tabs */}
       <Tabs tabs={tabItems} activeTab={activeTab} onChange={setActiveTab} />

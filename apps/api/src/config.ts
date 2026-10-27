@@ -11,7 +11,19 @@ export const configSchema = z.object({
   COOKIE_SECURE: z
     .enum(["true", "false"])
     .transform((val) => val === "true")
-    .default("false")
+    .default("false"),
+  AI_ENABLED: z
+    .union([z.boolean(), z.enum(["true", "false"])])
+    .transform((val) => val === true || val === "true")
+    .default(false),
+  AI_PROVIDER: z.enum(["anthropic", "openai", "ollama"]).default("anthropic"),
+  AI_MODEL: z.string().optional(),
+  AI_BASE_URL: z.string().optional(),
+  AI_API_KEY: z.string().optional(),
+  AI_ENCRYPTION_MASTER_KEY: z
+    .string()
+    .min(32, "AI_ENCRYPTION_MASTER_KEY must be at least 32 characters long")
+    .default("stackdoctor-default-master-key-32b-min")
 });
 
 export type ApiConfig = z.infer<typeof configSchema>;

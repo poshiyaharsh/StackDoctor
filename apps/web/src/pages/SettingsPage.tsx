@@ -43,6 +43,68 @@ export function SettingsPage() {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // AI Settings state
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiProvider, setAiProvider] = useState<string>("anthropic");
+  const [aiModel, setAiModel] = useState<string>("");
+  const [aiApiKey, setAiApiKey] = useState<string>("");
+  const [aiHasKey, setAiHasKey] = useState(false);
+  const [, setAiLoading] = useState(false);
+  const [aiSaving, setAiSaving] = useState(false);
+  const [aiDeletingKey, setAiDeletingKey] = useState(false);
+
+  const loadAiSettings = async () => {
+    try {
+      setAiLoading(true);
+      const settings = await api.ai.getSettings();
+      setAiEnabled(settings.enabled);
+      setAiProvider(settings.provider || "anthropic");
+      setAiModel(settings.model || "");
+      setAiHasKey(settings.hasKey);
+    } catch {
+      // Ignore load error
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleSaveAiSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setAiSaving(true);
+      const res = await api.ai.updateSettings({
+        enabled: aiEnabled,
+        provider: aiProvider,
+        model: aiModel.trim() || undefined,
+        apiKey: aiApiKey.trim() || undefined
+      });
+      setAiEnabled(res.enabled);
+      setAiProvider(res.provider);
+      setAiModel(res.model || "");
+      setAiHasKey(res.hasKey);
+      setAiApiKey("");
+      showToast("AI settings updated successfully", "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to update AI settings", "error");
+    } finally {
+      setAiSaving(false);
+    }
+  };
+
+  const handleDeleteAiKey = async () => {
+    try {
+      setAiDeletingKey(true);
+      const res = await api.ai.deleteKey();
+      setAiHasKey(res.hasKey);
+      setAiApiKey("");
+      showToast("API key removed from database", "info");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to remove API key", "error");
+    } finally {
+      setAiDeletingKey(false);
+    }
+  };
+
   // Load tokens
   const loadTokens = async () => {
     try {
@@ -58,6 +120,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     loadTokens();
+    loadAiSettings();
   }, []);
 
   useEffect(() => {
@@ -423,36 +486,133 @@ export function SettingsPage() {
         </Card>
       )}
 
-      {/* 4. AI EXPLANATIONS (DISABLED) */}
+      {/* 4. AI EXPLANATIONS */}
       {activeTab === "ai" && (
         <Card>
           <CardHeader>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: 600 }}>AI Explanations</h2>
-              <span style={{ fontSize: "0.75rem", padding: "0.125rem 0.5rem", borderRadius: "9999px", backgroundColor: "var(--color-border)", color: "var(--color-text-muted)" }}>
-                Coming Later
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontSize: "1.25rem" }}>🤖</span>
+                <h2 style={{ fontSize: "1.1rem", fontWeight: 600 }}>AI Diagnostic Explanations</h2>
+              </div>
+              <span style={{ fontSize: "0.75rem", padding: "0.25rem 0.625rem", borderRadius: "9999px", backgroundColor: aiEnabled ? "rgba(16, 185, 129, 0.15)" : "var(--color-bg-secondary)", color: aiEnabled ? "var(--color-success)" : "var(--color-text-muted)", fontWeight: 600 }}>
+                {aiEnabled ? "ENABLED" : "DISABLED"}
               </span>
             </div>
           </CardHeader>
           <CardBody>
-            <div style={{ padding: "1.25rem", backgroundColor: "var(--color-bg-alt)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-border)", marginBottom: "1.5rem" }}>
-              <p style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "0.5rem" }}>
-                🔒 Strict Offline & Privacy Guarantee
+            {/* Privacy notice banner */}
+            <div style={{ padding: "1.25rem", backgroundColor: "var(--color-bg-secondary)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-border)", marginBottom: "1.5rem" }}>
+              <p style={{ fontSize: "0.9375rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+                🔒 Strict Privacy & Grounding Guarantees
               </p>
-              <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", lineHeight: 1.6 }}>
-                StackDoctor is built on 100% deterministic rules with zero reliance on cloud LLMs. We never send your code, repository URLs, or environment variables to external AI providers.
-              </p>
-              <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.5rem", lineHeight: 1.6 }}>
-                Future versions will support optional, self-hosted, local models (such as Ollama) with explicit opt-in confirmation.
-              </p>
+              <ul style={{ paddingLeft: "1.25rem", margin: 0, fontSize: "0.875rem", color: "var(--color-text-muted)", display: "flex", flexDirection: "column", gap: "0.375rem", lineHeight: 1.5 }}>
+                <li><strong>Only sanitized report data is sent:</strong> Extracted evidence items, rule IDs, and host OS. Source code, repositories, environment secrets, and personal tokens are never transmitted.</li>
+                <li><strong>Keys encrypted at rest:</strong> Your BYOK key is encrypted using AES-256-GCM with a unique IV and authentication tag. It is write-only and never logged or returned by any endpoint.</li>
+                <li><strong>Zero unsolicited calls:</strong> Explanations are strictly triggered on demand when you click "Explain with AI".</li>
+                <li><strong>Deterministic fallback:</strong> If AI is disabled or unconfigured, StackDoctor deterministically generates rule-based explanations without network calls.</li>
+              </ul>
             </div>
 
-            <div style={{ opacity: 0.5, pointerEvents: "none" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.875rem" }}>
-                <input type="checkbox" disabled checked={false} />
-                <span>Enable experimental local LLM explanations (Disabled)</span>
-              </label>
-            </div>
+            <form onSubmit={handleSaveAiSettings}>
+              {/* Enable / Disable Switch */}
+              <div style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "var(--color-bg-secondary)", borderRadius: "var(--radius-md)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <label htmlFor="ai-enabled-toggle" style={{ fontWeight: 600, fontSize: "0.9375rem", cursor: "pointer" }}>
+                    Enable AI Explanations
+                  </label>
+                  <p style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
+                    Allow generating contextual root cause analyses and remediation checklists.
+                  </p>
+                </div>
+                <input
+                  id="ai-enabled-toggle"
+                  type="checkbox"
+                  checked={aiEnabled}
+                  onChange={(e) => setAiEnabled(e.target.checked)}
+                  style={{ width: "1.25rem", height: "1.25rem", cursor: "pointer" }}
+                />
+              </div>
+
+              {/* Provider Selection */}
+              <div style={{ marginBottom: "1.25rem" }}>
+                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+                  AI Provider
+                </label>
+                <select
+                  value={aiProvider}
+                  onChange={(e) => setAiProvider(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.625rem 0.75rem",
+                    borderRadius: "var(--radius-md)",
+                    border: "1px solid var(--color-border)",
+                    backgroundColor: "var(--color-bg)",
+                    color: "var(--color-text)",
+                    fontSize: "0.875rem"
+                  }}
+                >
+                  <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
+                  <option value="openai">OpenAI (GPT-4o)</option>
+                  <option value="ollama">Ollama / Local OpenAI-Compatible Server</option>
+                </select>
+              </div>
+
+              {/* Model Override */}
+              <div style={{ marginBottom: "1.25rem" }}>
+                <Input
+                  label="Model Identifier (Optional)"
+                  placeholder={aiProvider === "anthropic" ? "claude-3-5-sonnet-20241022" : aiProvider === "openai" ? "gpt-4o" : "llama3:latest"}
+                  value={aiModel}
+                  onChange={(e) => setAiModel(e.target.value)}
+                  helperText="Leave empty to use provider defaults."
+                />
+              </div>
+
+              {/* BYOK API Key Input */}
+              <div style={{ marginBottom: "1.5rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                  <label style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+                    Bring Your Own API Key (BYOK)
+                  </label>
+                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: aiHasKey ? "var(--color-success)" : "var(--color-text-muted)" }}>
+                    {aiHasKey ? "● Key Configured (Encrypted at Rest)" : "○ No Key Stored"}
+                  </span>
+                </div>
+
+                <Input
+                  type="password"
+                  placeholder={aiHasKey ? "Enter new key to overwrite existing encrypted key" : "Paste API key (e.g. sk-ant-... or sk-proj-...)"}
+                  value={aiApiKey}
+                  onChange={(e) => setAiApiKey(e.target.value)}
+                  helperText="Write-only field. Your key is encrypted at rest using AES-256-GCM and never exposed to the browser."
+                />
+
+                {aiHasKey && (
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      loading={aiDeletingKey}
+                      onClick={handleDeleteAiKey}
+                    >
+                      Delete Stored API Key
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={aiSaving}
+                >
+                  Save AI Settings
+                </Button>
+              </div>
+            </form>
           </CardBody>
         </Card>
       )}

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { User } from "../models/user.js";
 import { DiagnosticRun } from "../models/diagnostic-run.js";
+import { Explanation } from "../models/explanation.js";
 
 /**
  * Deletes diagnostic runs older than the user's configured retention window.
@@ -22,6 +23,10 @@ export async function cleanupExpiredRuns(
       ownerId: new mongoose.Types.ObjectId(userId),
       createdAt: { $lt: cutoffDate }
     });
+    await Explanation.deleteMany({
+      ownerId: new mongoose.Types.ObjectId(userId),
+      createdAt: { $lt: cutoffDate }
+    });
     deletedRuns = result.deletedCount || 0;
   } else {
     // Monorepo/system maintenance across all users
@@ -30,6 +35,10 @@ export async function cleanupExpiredRuns(
       if (u.retentionDays && u.retentionDays > 0) {
         const cutoffDate = new Date(Date.now() - u.retentionDays * 24 * 60 * 60 * 1000);
         const res = await DiagnosticRun.deleteMany({
+          ownerId: u._id,
+          createdAt: { $lt: cutoffDate }
+        });
+        await Explanation.deleteMany({
           ownerId: u._id,
           createdAt: { $lt: cutoffDate }
         });

@@ -5,6 +5,14 @@ import { validateReport, type Report } from "@stackdoctor/schemas";
 import { compareReports } from "@stackdoctor/core";
 import { DiagnosticRun, type DiagnosticRunDocument } from "../models/diagnostic-run.js";
 import { Project } from "../models/project.js";
+import { User } from "../models/user.js";
+import { Explanation } from "../models/explanation.js";
+import { loadConfig, type ApiConfig } from "../config.js";
+import {
+  checkAndAcquireExplanationSlot,
+  releaseExplanationSlot,
+  getOrGenerateExplanation
+} from "../services/explanation-service.js";
 import { requireAuth, isValidObjectId } from "../middleware/auth.js";
 import {
   containsSurvivedSecrets,
@@ -420,9 +428,161 @@ diagnosticRunsRouter.delete(
         return;
       }
 
+      // Cascade delete cached explanations for this run
+      await Explanation.deleteMany({
+        runId: new mongoose.Types.ObjectId(runId),
+        ownerId
+      });
+
       res.status(200).json({
         success: true,
         message: "Diagnostic run deleted"
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * POST /api/v1/diagnostic-runs/:runId/explanation
+ * Generates an AI-backed or deterministic fallback diagnostic explanation.
+ * Strictly uses only stored sanitized report data from the database. Free-form body evidence is ignored.
+ */
+diagnosticRunsRouter.post(
+  "/:runId/explanation",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    let slotAcquired = false;
+    try {
+      const { runId } = req.params;
+      if (!isValidObjectId(runId)) {
+        res.status(400).json({
+          error: {
+            code: "InvalidId",
+            message: "Invalid diagnostic run ID format"
+          }
+        });
+        return;
+      }
+
+      const ownerId = new mongoose.Types.ObjectId(req.session.userId);
+      const run = await DiagnosticRun.findOne({
+        _id: new mongoose.Types.ObjectId(runId),
+        ownerId
+      });
+
+      if (!run) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "Diagnostic run not found"
+          }
+        });
+        return;
+      }
+
+      const userId = req.session.userId!;
+      const ip = (req.ip || req.socket.remoteAddress || "unknown").replace(/^::ffff:/, "");
+      const slot = checkAndAcquireExplanationSlot(userId, ip);
+      if (!slot.allowed) {
+        res.status(429).json({
+          error: {
+            code: "TooManyRequests",
+            message: slot.reason
+          },
+          retryAfter: slot.retryAfter
+        });
+        return;
+      }
+      slotAcquired = true;
+
+      const user = await User.findById(userId);
+      if (!user) {
+        res.status(401).json({
+          error: {
+            code: "Unauthorized",
+            message: "User session is invalid"
+          }
+        });
+        return;
+      }
+
+      const apiConfig = (req.app.locals.config as ApiConfig) || loadConfig();
+      const explanationResult = await getOrGenerateExplanation({
+        run,
+        user,
+        apiConfig
+      });
+
+      res.status(200).json(explanationResult);
+    } catch (err) {
+      next(err);
+    } finally {
+      if (slotAcquired && req.session?.userId) {
+        releaseExplanationSlot(req.session.userId);
+      }
+    }
+  }
+);
+
+/**
+ * GET /api/v1/diagnostic-runs/:runId/explanation
+ * Retrieves cached explanation for a diagnostic run, strictly scoped to owner.
+ */
+diagnosticRunsRouter.get(
+  "/:runId/explanation",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { runId } = req.params;
+      if (!isValidObjectId(runId)) {
+        res.status(400).json({
+          error: {
+            code: "InvalidId",
+            message: "Invalid diagnostic run ID format"
+          }
+        });
+        return;
+      }
+
+      const ownerId = new mongoose.Types.ObjectId(req.session.userId);
+      const run = await DiagnosticRun.findOne({
+        _id: new mongoose.Types.ObjectId(runId),
+        ownerId
+      });
+
+      if (!run) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "Diagnostic run not found"
+          }
+        });
+        return;
+      }
+
+      const explanation = await Explanation.findOne({
+        runId: new mongoose.Types.ObjectId(runId),
+        ownerId
+      }).sort({ createdAt: -1 });
+
+      if (!explanation) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "No explanation found for this diagnostic run"
+          }
+        });
+        return;
+      }
+
+      res.status(200).json({
+        ai: explanation.ai,
+        status: explanation.status,
+        explanation: explanation.explanation,
+        removed: explanation.removed || [],
+        reasons: explanation.reasons || [],
+        unverifiedSuggestions: explanation.unverifiedSuggestions || [],
+        cached: true
       });
     } catch (err) {
       next(err);

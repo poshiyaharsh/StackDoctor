@@ -323,5 +323,71 @@ export const api = {
     async get(id: string): Promise<{ rule: Record<string, unknown> }> {
       return apiFetch(`/api/v1/rules/${id}`);
     }
+  },
+
+  ai: {
+    async getSettings(): Promise<AiSettingsResponse> {
+      return apiFetch<AiSettingsResponse>("/api/v1/auth/ai-settings");
+    },
+    async updateSettings(body: {
+      enabled?: boolean;
+      apiKey?: string;
+      provider?: string;
+      model?: string;
+    }): Promise<AiSettingsResponse> {
+      return apiFetch<AiSettingsResponse>("/api/v1/auth/ai-settings", {
+        method: "PUT",
+        body: JSON.stringify(body)
+      });
+    },
+    async deleteKey(): Promise<{ success: boolean; message: string; hasKey: boolean }> {
+      return apiFetch<{ success: boolean; message: string; hasKey: boolean }>("/api/v1/auth/ai-settings/key", {
+        method: "DELETE"
+      });
+    },
+    async getExplanation(runId: string): Promise<ExplanationResponse> {
+      return apiFetch<ExplanationResponse>(`/api/v1/diagnostic-runs/${runId}/explanation`);
+    },
+    async explain(runId: string): Promise<ExplanationResponse> {
+      return apiFetch<ExplanationResponse>(`/api/v1/diagnostic-runs/${runId}/explanation`, {
+        method: "POST"
+      });
+    }
   }
 };
+
+export interface AiSettingsResponse {
+  enabled: boolean;
+  hasKey: boolean;
+  provider: string;
+  model: string;
+}
+
+export interface ExplanationResponse {
+  ai: boolean;
+  status: "success" | "fallback";
+  explanation: {
+    summary?: string;
+    rootCauseRanking?: Array<{
+      cause: string;
+      likelihood: "high" | "medium" | "low";
+      reasoning: string;
+      supportingEvidenceIds?: string[];
+    }>;
+    confirmedFacts?: Array<{
+      statement: string;
+      evidenceIds: string[];
+    }>;
+    hypotheses?: Array<{
+      statement: string;
+      whatWouldConfirmIt: string;
+    }>;
+    checklist?: string[];
+    suggestedExtraChecks?: string[];
+    suggestedOperationIds?: string[];
+  };
+  removed?: string[];
+  reasons?: string[];
+  unverifiedSuggestions?: string[];
+  cached?: boolean;
+}

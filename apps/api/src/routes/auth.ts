@@ -5,6 +5,9 @@ import { User, hashPassword } from "../models/user.js";
 import { Project } from "../models/project.js";
 import { DiagnosticRun } from "../models/diagnostic-run.js";
 import { ApiToken } from "../models/api-token.js";
+import { Explanation } from "../models/explanation.js";
+import { encryptApiKey } from "../lib/ai-crypto.js";
+import { loadConfig, type ApiConfig } from "../config.js";
 import { getOrCreateCsrfToken } from "../middleware/csrf.js";
 import { requireAuth } from "../middleware/auth.js";
 import { createRateLimiter } from "../middleware/rate-limiter.js";
@@ -40,6 +43,13 @@ const passwordChangeSchema = z.object({
 
 const accountDeleteSchema = z.object({
   password: z.string().min(1, "Password is required to confirm account deletion")
+});
+
+const aiSettingsUpdateSchema = z.object({
+  enabled: z.boolean().optional(),
+  apiKey: z.string().trim().min(1, "API key cannot be empty").max(256).optional(),
+  provider: z.enum(["anthropic", "openai", "ollama"]).optional(),
+  model: z.string().trim().max(128).optional()
 });
 
 // Rate limiters for auth endpoints
@@ -351,6 +361,148 @@ authRouter.patch(
 );
 
 /**
+ * GET /api/v1/auth/ai-settings
+ * Returns user's AI configuration (never exposes plaintext or encrypted API keys).
+ */
+authRouter.get(
+  "/ai-settings",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = await User.findById(req.session.userId);
+      if (!user) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "User not found"
+          }
+        });
+        return;
+      }
+
+      const settings = user.aiSettings;
+      res.status(200).json({
+        enabled: Boolean(settings?.enabled),
+        hasKey: Boolean(settings?.encryptedKey),
+        provider: settings?.provider || "anthropic",
+        model: settings?.model || ""
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * PUT /api/v1/auth/ai-settings
+ * Updates user's AI configuration. Encrypts BYOK API keys at rest using AES-256-GCM.
+ */
+authRouter.put(
+  "/ai-settings",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const parsed = aiSettingsUpdateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: "ValidationError",
+            message: "Invalid AI settings payload",
+            details: parsed.error.issues
+          }
+        });
+        return;
+      }
+
+      const user = await User.findById(req.session.userId);
+      if (!user) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "User not found"
+          }
+        });
+        return;
+      }
+
+      if (!user.aiSettings) {
+        user.aiSettings = {
+          enabled: false,
+          provider: "anthropic"
+        };
+      }
+
+      if (parsed.data.enabled !== undefined) {
+        user.aiSettings.enabled = parsed.data.enabled;
+      }
+      if (parsed.data.provider !== undefined) {
+        user.aiSettings.provider = parsed.data.provider;
+      }
+      if (parsed.data.model !== undefined) {
+        user.aiSettings.model = parsed.data.model;
+      }
+
+      if (parsed.data.apiKey) {
+        const config = (req.app.locals.config as ApiConfig) || loadConfig();
+        const encrypted = encryptApiKey(parsed.data.apiKey, config.AI_ENCRYPTION_MASTER_KEY);
+        user.aiSettings.encryptedKey = encrypted.ciphertext;
+        user.aiSettings.iv = encrypted.iv;
+        user.aiSettings.tag = encrypted.tag;
+      }
+
+      await user.save();
+
+      res.status(200).json({
+        enabled: Boolean(user.aiSettings.enabled),
+        hasKey: Boolean(user.aiSettings.encryptedKey),
+        provider: user.aiSettings.provider || "anthropic",
+        model: user.aiSettings.model || ""
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * DELETE /api/v1/auth/ai-settings/key
+ * Deletes user's BYOK encrypted API key at rest.
+ */
+authRouter.delete(
+  "/ai-settings/key",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = await User.findById(req.session.userId);
+      if (!user) {
+        res.status(404).json({
+          error: {
+            code: "NotFound",
+            message: "User not found"
+          }
+        });
+        return;
+      }
+
+      if (user.aiSettings) {
+        user.aiSettings.encryptedKey = undefined;
+        user.aiSettings.iv = undefined;
+        user.aiSettings.tag = undefined;
+        await user.save();
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "AI key deleted successfully",
+        hasKey: false
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
  * POST /api/v1/auth/retention-cleanup
  * Executes cleanup of diagnostic runs older than the configured retention days for this user.
  */
@@ -414,9 +566,10 @@ authRouter.delete(
 
       const userObjectId = new mongoose.Types.ObjectId(userId);
 
-      // Cascade delete all owner resources
+      // Cascade delete all owner resources including cached explanations
       await Promise.all([
         DiagnosticRun.deleteMany({ ownerId: userObjectId }),
+        Explanation.deleteMany({ ownerId: userObjectId }),
         Project.deleteMany({ ownerId: userObjectId }),
         ApiToken.deleteMany({ ownerId: userObjectId }),
         User.deleteOne({ _id: userObjectId })

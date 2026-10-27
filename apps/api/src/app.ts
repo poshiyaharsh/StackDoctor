@@ -19,6 +19,7 @@ import { statsRouter } from "./routes/stats.js";
 
 export function buildApp(config: ApiConfig): Express {
   const app = express();
+  app.locals.config = config;
 
   // 1. Basic security headers via helmet
   app.use(
