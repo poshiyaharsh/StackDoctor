@@ -1681,6 +1681,39 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 7, Run 7F (Team workspaces if demand met) or further ecosystem expansion (.NET/C#, Broader DBs) / v0.2.0 release preparation (Run 7G).
 - **Status:** Done
 
+---
+
+### [2026-10-29] Phase 7, Run 7E (Extension): .NET, C# & ASP.NET Core Ecosystem Support
+- **Prompt used:** Phase 7, Run 7E Extension: .NET & C# Ecosystem Support (`FB-DRAFT-003`)
+- **What was done:**
+  - Implemented static .NET SDK version parsing and TargetFramework moniker (TFM) evaluation in `@stackdoctor/adapters`.
+  - Implemented static .NET CLI runtime check via `dotnet --version`.
+  - Implemented static project inspection across `.csproj` files (`<TargetFramework>`, `<PackageReference>`).
+  - Implemented static NuGet restore verification (`obj/project.assets.json`).
+  - Implemented static ASP.NET Core launch port inspection (`Properties/launchSettings.json`, `applicationUrl`).
+  - Implemented static technology detection for `.NET`, `C#`, and `ASP.NET Core` in `@stackdoctor/core`.
+  - Added 4 new production diagnostic rules:
+    - `DOTNET_SDK_MISSING`: Detects when `.csproj` or `.sln` files are present but the `dotnet` CLI is not found on PATH.
+    - `DOTNET_TARGET_FRAMEWORK_MISMATCH`: Detects when project TargetFramework major version exceeds the installed .NET SDK version, preventing `NETSDK1045` failures.
+    - `NUGET_PACKAGES_NOT_RESTORED`: Statically flags when `.csproj` declares `<PackageReference>` but `obj/project.assets.json` does not exist, catching `NETSDK1004` errors before build.
+    - `ASPNETCORE_PORT_IN_USE`: Statically parses configured `applicationUrl` port from `launchSettings.json` and verifies socket availability before Kestrel starts.
+  - Added allowlisted doc domains for `microsoft.com`, `dotnet.microsoft.com`, and `nuget.org` in `@stackdoctor/schemas`.
+  - Added synthetic fixtures `examples/broken-dotnet-project/` and `examples/healthy-dotnet-project/` to benchmark harness in `scripts/eval.js`.
+  - Synchronized rule documentation in `docs/diagnostics.md` (36 rules catalog).
+- **Files created/changed:**
+  - Created: `packages/adapters/src/dotnet.ts`, `packages/adapters/test/dotnet.test.ts`, `packages/rules/src/rules/dotnet-sdk-missing.ts`, `packages/rules/src/rules/dotnet-target-framework-mismatch.ts`, `packages/rules/src/rules/nuget-packages-not-restored.ts`, `packages/rules/src/rules/aspnetcore-port-in-use.ts`, `packages/rules/test/dotnet-rules.test.ts`, `examples/broken-dotnet-project/`, `examples/healthy-dotnet-project/`
+  - Modified: `packages/schemas/src/rules.ts`, `packages/adapters/src/index.ts`, `packages/adapters/src/exec.ts`, `packages/core/src/scanner.ts`, `packages/rules/src/types.ts`, `packages/rules/src/index.ts`, `apps/cli/src/collector.ts`, `scripts/eval.js`, `docs/diagnostics.md`, `README.md`, `CHANGELOG.md`, `docs/PHASE7.md`, `docs/LOG.md`, `apps/cli/test/cli.test.ts`, `packages/rules/test/registry.test.ts`, `packages/rules/test/database-rules.test.ts`, `packages/rules/test/phase2-rules.test.ts`, `packages/rules/test/port-rules.test.ts`, `packages/rules/test/python-django-rules.test.ts`, `apps/api/test/resources.test.ts`, `apps/api/test/tokens.test.ts`, `packages/adapters/test/ports.test.ts`
+- **Verification:**
+  - `npm run verify:release`: Passed (100% SUCCESS across all 13 gates in 84.2s)
+  - `npm run eval`: Passed (100.0% Detection Accuracy, 0.0% False Positive Rate, 0.0% Miss Rate across 13 fixtures)
+  - `npm test`: Passed (70 test files, 489/489 tests passed)
+  - `npm run docs:rules -- --check`: Passed (36 rules documented)
+- **Decisions made:**
+  - Zero project execution guarantee: All .NET and ASP.NET Core diagnostics operate strictly on static file and runtime environment inspections with zero user code compilation or execution.
+  - Allowed `dotnet` executable only for `dotnet --version` runtime detection.
+- **Next step:** Phase 7, Run 7F (Team workspaces if demand met) or broader database support (MSSQL, SQLite) / v0.2.0 release preparation (Run 7G).
+- **Status:** Done
+
 
 
 

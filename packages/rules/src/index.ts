@@ -31,6 +31,10 @@ import { phpVersionMismatchRule } from "./rules/php-version-mismatch.js";
 import { phpRuntimeMissingRule } from "./rules/php-runtime-missing.js";
 import { composerDepsNotInstalledRule } from "./rules/composer-deps-not-installed.js";
 import { laravelAppKeyMissingRule } from "./rules/laravel-app-key-missing.js";
+import { dotnetSdkMissingRule } from "./rules/dotnet-sdk-missing.js";
+import { dotnetTargetFrameworkMismatchRule } from "./rules/dotnet-target-framework-mismatch.js";
+import { nugetPackagesNotRestoredRule } from "./rules/nuget-packages-not-restored.js";
+import { aspnetcorePortInUseRule } from "./rules/aspnetcore-port-in-use.js";
 
 export * from "./types.js";
 export * from "./registry.js";
@@ -66,6 +70,10 @@ export * from "./rules/php-version-mismatch.js";
 export * from "./rules/php-runtime-missing.js";
 export * from "./rules/composer-deps-not-installed.js";
 export * from "./rules/laravel-app-key-missing.js";
+export * from "./rules/dotnet-sdk-missing.js";
+export * from "./rules/dotnet-target-framework-mismatch.js";
+export * from "./rules/nuget-packages-not-restored.js";
+export * from "./rules/aspnetcore-port-in-use.js";
 
 export const RULES_PACKAGE = "@stackdoctor/rules";
 export const RULES_DEPENDENCY = "@stackdoctor/schemas";
@@ -107,5 +115,9 @@ export function createDefaultRuleRegistry(): RuleRegistry {
   registry.register(phpRuntimeMissingRule);
   registry.register(composerDepsNotInstalledRule);
   registry.register(laravelAppKeyMissingRule);
+  registry.register(dotnetSdkMissingRule);
+  registry.register(dotnetTargetFrameworkMismatchRule);
+  registry.register(nugetPackagesNotRestoredRule);
+  registry.register(aspnetcorePortInUseRule);
   return registry;
 }

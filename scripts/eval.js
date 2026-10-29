@@ -20,6 +20,8 @@ async function runEval() {
 
   const priorPhpEnv = process.env.STACKDOCTOR_PHP_VERSION;
   process.env.STACKDOCTOR_PHP_VERSION = "8.2.14";
+  const priorDotnetEnv = process.env.STACKDOCTOR_DOTNET_VERSION;
+  process.env.STACKDOCTOR_DOTNET_VERSION = "8.0.204";
 
   const baselineFixtures = [
     { name: "broken-node-project", path: path.join(fixturesDir, "broken-node-project"), sourceId: "Phase 1 Baseline" },
@@ -28,9 +30,11 @@ async function runEval() {
     { name: "broken-postgres-config", path: path.join(fixturesDir, "broken-postgres-config"), sourceId: "FB-009 / Run 7D Baseline" },
     { name: "broken-java-project", path: path.join(fixturesDir, "broken-java-project"), sourceId: "FB-006 / Run 7E Baseline" },
     { name: "broken-php-project", path: path.join(fixturesDir, "broken-php-project"), sourceId: "FB-DRAFT-002 / Run 7E Baseline" },
+    { name: "broken-dotnet-project", path: path.join(fixturesDir, "broken-dotnet-project"), sourceId: "FB-DRAFT-003 / Run 7E Baseline" },
     { name: "healthy-node-project", path: path.join(fixturesDir, "healthy-node-project"), sourceId: "Healthy Reference" },
     { name: "healthy-java-project", path: path.join(fixturesDir, "healthy-java-project"), sourceId: "Healthy Reference" },
-    { name: "healthy-php-project", path: path.join(fixturesDir, "healthy-php-project"), sourceId: "Healthy Reference" }
+    { name: "healthy-php-project", path: path.join(fixturesDir, "healthy-php-project"), sourceId: "Healthy Reference" },
+    { name: "healthy-dotnet-project", path: path.join(fixturesDir, "healthy-dotnet-project"), sourceId: "Healthy Reference" }
   ];
 
   // Discover dynamic regression fixtures under examples/regressions/
@@ -313,6 +317,12 @@ This document records historical diagnostic accuracy, false positive, and recall
     process.env.STACKDOCTOR_PHP_VERSION = priorPhpEnv;
   } else {
     delete process.env.STACKDOCTOR_PHP_VERSION;
+  }
+
+  if (priorDotnetEnv !== undefined) {
+    process.env.STACKDOCTOR_DOTNET_VERSION = priorDotnetEnv;
+  } else {
+    delete process.env.STACKDOCTOR_DOTNET_VERSION;
   }
 
   if (baselineRegression) {

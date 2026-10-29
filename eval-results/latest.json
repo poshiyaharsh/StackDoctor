@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-29T17:00:01.404Z",
+  "timestamp": "2026-10-29T17:26:04.484Z",
   "os": "win32",
   "arch": "x64",
   "nodeVersion": "v24.13.0",
-  "totalFixtures": 11,
+  "totalFixtures": 13,
   "metrics": {
-    "totalExpected": 15,
-    "totalDetected": 15,
-    "truePositives": 15,
+    "totalExpected": 16,
+    "totalDetected": 16,
+    "truePositives": 16,
     "falseNegatives": 0,
     "falsePositives": 0,
     "accuracy": 100,
@@ -88,6 +88,15 @@
       "recall": 100
     },
     "NODE_VERSION_MISMATCH": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "NUGET_PACKAGES_NOT_RESTORED": {
       "expected": 1,
       "detected": 1,
       "tp": 1,
@@ -213,6 +222,16 @@
       "passed": true
     },
     {
+      "name": "broken-dotnet-project",
+      "sourceId": "FB-DRAFT-003 / Run 7E Baseline",
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
       "name": "healthy-node-project",
       "sourceId": "Healthy Reference",
       "expected": 0,
@@ -234,6 +253,16 @@
     },
     {
       "name": "healthy-php-project",
+      "sourceId": "Healthy Reference",
+      "expected": 0,
+      "detected": 0,
+      "tp": 0,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "healthy-dotnet-project",
       "sourceId": "Healthy Reference",
       "expected": 0,
       "detected": 0,

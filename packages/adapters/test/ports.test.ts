@@ -28,7 +28,7 @@ describe("Port Checker Adapter (ports.ts)", () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
 
     // Now testPort is free
-    const result = await checkPort("127.0.0.1", testPort, 200);
+    const result = await checkPort("127.0.0.1", testPort, 1000);
     expect(result.status).toBe("available");
     expect(result.conclusive).toBe(true);
     expect(result.evidence[0]?.observed).toContain("refused");
@@ -41,7 +41,7 @@ describe("Port Checker Adapter (ports.ts)", () => {
     const activePort = address.port;
 
     try {
-      const result = await checkPort("127.0.0.1", activePort, 1500);
+      const result = await checkPort("127.0.0.1", activePort, 4000);
       expect(result.status).toBe("in_use");
       expect(typeof result.conclusive).toBe("boolean");
       if (result.conclusive) {

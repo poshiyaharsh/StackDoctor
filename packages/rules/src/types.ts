@@ -163,6 +163,21 @@ export interface RuleEvaluationContext {
     hasAppKey: boolean;
     keyIsMissingOrEmpty: boolean;
   };
+  dotnet?: {
+    installed: boolean;
+    version?: string | null;
+    majorVersion?: number;
+    projects: Array<{
+      projectFile: string;
+      projectName: string;
+      targetFramework?: string;
+      targetFrameworkMajor?: number;
+      packageReferences: string[];
+      missingAssetsJson: boolean;
+      launchPort?: number;
+      launchUrl?: string;
+    }>;
+  };
 }
 
 export interface Rule {

@@ -1,0 +1,11 @@
+{
+  "version": 3,
+  "targets": {
+    "net8.0": {
+      "Microsoft.EntityFrameworkCore/8.0.0": {
+        "type": "package"
+      }
+    }
+  }
+}
+

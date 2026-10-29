@@ -584,6 +584,61 @@ export async function scanProject(targetDir: string, options: ScanOptions = {}):
     });
   }
 
+  // 14. .NET, C# & ASP.NET Core detection
+  const hasCsproj = files.some((f) => f.name.endsWith(".csproj"));
+  const hasSln = files.some((f) => f.name.endsWith(".sln"));
+  const hasGlobalJson = files.some((f) => f.name === "global.json");
+  const hasCsFiles = files.some((f) => f.name.endsWith(".cs"));
+  const hasLaunchSettings = files.some((f) => f.name === "launchSettings.json");
+
+  if (hasCsproj || hasSln || hasGlobalJson) {
+    addTech(".NET", "confirmed", {
+      id: "ev-tech-dotnet",
+      kind: "file_presence",
+      description: ".NET project configuration detected",
+      observed: hasCsproj ? "Found .csproj project file" : hasSln ? "Found .sln solution file" : "Found global.json",
+      source: hasCsproj ? "project.csproj" : hasSln ? "solution.sln" : "global.json",
+      collectedAt: now
+    });
+  }
+
+  if (hasCsFiles || hasCsproj) {
+    addTech("C#", "confirmed", {
+      id: "ev-tech-csharp",
+      kind: "file_presence",
+      description: "C# source or project detected",
+      observed: hasCsproj ? "Found .csproj C# project file" : "Found .cs source files",
+      source: hasCsproj ? "project.csproj" : "Program.cs",
+      collectedAt: now
+    });
+  }
+
+  let hasAspNetCoreRef = false;
+  for (const f of files) {
+    if (f.name.endsWith(".csproj")) {
+      try {
+        const content = fs.readFileSync(f.absolutePath, "utf-8");
+        if (/Microsoft\.AspNetCore|Microsoft\.NET\.Sdk\.Web/i.test(content)) {
+          hasAspNetCoreRef = true;
+          break;
+        }
+      } catch {
+        // Ignore
+      }
+    }
+  }
+
+  if (hasAspNetCoreRef || hasLaunchSettings) {
+    addTech("ASP.NET Core", "confirmed", {
+      id: "ev-tech-aspnetcore",
+      kind: "file_presence",
+      description: "ASP.NET Core web application detected",
+      observed: hasAspNetCoreRef ? "Found ASP.NET Core package or Web SDK in .csproj" : "Found launchSettings.json",
+      source: hasAspNetCoreRef ? "project.csproj" : "Properties/launchSettings.json",
+      collectedAt: now
+    });
+  }
+
   // Convert technology map to array
   const technologies: TechnologyDetection[] = Array.from(techMap.entries()).map(([name, val]) => ({
     name,

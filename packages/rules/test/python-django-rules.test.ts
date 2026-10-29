@@ -155,11 +155,11 @@ describe("Phase 2 Run 2D Python & Django Rules", () => {
     });
   });
 
-  describe("Default Rule Registry has 32 rules", () => {
-    it("registers all 32 rules", () => {
+  describe("Default Rule Registry has 36 rules", () => {
+    it("registers all 36 rules", () => {
       const registry = createDefaultRuleRegistry();
       const rules = registry.list();
-      expect(rules.length).toBe(32);
+      expect(rules.length).toBe(36);
 
       const ids = rules.map((r) => r.id);
       expect(ids).toContain("PYTHON_PACKAGES_MISSING");

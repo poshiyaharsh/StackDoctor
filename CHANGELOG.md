@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **.NET, C# & ASP.NET Core Ecosystem Support (FB-DRAFT-003 / Run 7E Extension)**:
+  - Added .NET SDK runtime (`dotnet --version`), TargetFramework parsing (`net8.0`, `net9.0`, `netcoreapp3.1`, `netstandard2.0`), NuGet package references, project asset verification (`obj/project.assets.json`), and ASP.NET Core launch port inspection (`Properties/launchSettings.json`, `applicationUrl`) static inspection in `@stackdoctor/adapters`.
+  - Added static detection for `.NET`, `C#`, and `ASP.NET Core` projects in `@stackdoctor/core`.
+  - Added 4 new production-tested diagnostic rules (catalog expanded to 36 rules):
+    - `DOTNET_SDK_MISSING`: Detects when `.csproj` or `.sln` files are present but the `dotnet` CLI is not found on PATH.
+    - `DOTNET_TARGET_FRAMEWORK_MISMATCH`: Detects when project `<TargetFramework>` major version is higher than the active installed .NET SDK (e.g. targeting `net8.0` with .NET 7 SDK installed), preventing `NETSDK1045` build failures.
+    - `NUGET_PACKAGES_NOT_RESTORED`: Statically flags when `.csproj` declares `<PackageReference>` but `obj/project.assets.json` does not exist, catching `NETSDK1004` errors before build.
+    - `ASPNETCORE_PORT_IN_USE`: Statically parses configured `applicationUrl` port from `Properties/launchSettings.json` and verifies socket availability before Kestrel starts.
+  - Zero project execution guarantee: All .NET and ASP.NET Core diagnostics operate strictly on static file parsing and runtime environment inspections with zero project compilation or code execution.
+  - Added allowlisted doc domains for `microsoft.com`, `dotnet.microsoft.com`, and `nuget.org` in `@stackdoctor/schemas`.
+  - Added synthetic fixtures `examples/broken-dotnet-project/` and `examples/healthy-dotnet-project/` with full regression benchmarking in `npm run eval`.
 - **PHP, Composer & Laravel Ecosystem Support (FB-DRAFT-002 / Run 7E Extension)**:
   - Added PHP CLI runtime (`php -v`), project version constraints (`composer.json`, `.php-version`), Composer dependency status (`vendor/autoload.php`), and Laravel bootstrap configuration (`artisan`, `APP_KEY` in `.env`) static inspection in `@stackdoctor/adapters`.
   - Added static detection for PHP, Composer, and Laravel projects in `@stackdoctor/core`.

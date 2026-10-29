@@ -9,6 +9,7 @@ export * from "./python-deps.js";
 export * from "./django.js";
 export * from "./java.js";
 export * from "./php.js";
+export * from "./dotnet.js";
 export * from "./operations.js";
 
 export const ADAPTERS_PACKAGE = "@stackdoctor/adapters";

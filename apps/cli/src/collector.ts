@@ -24,7 +24,9 @@ import {
   detectPhpRuntime,
   detectPhpRequirement,
   inspectComposerDependencies,
-  inspectLaravelConfig
+  inspectLaravelConfig,
+  detectDotnetRuntime,
+  inspectDotnetProjects
 } from "@stackdoctor/adapters";
 import type { CliOptions } from "./index.js";
 
@@ -373,6 +375,48 @@ export async function collectEvaluationContext(
     laravelContext = await inspectLaravelConfig(dir);
   }
 
+  // 6e. .NET & ASP.NET Core Diagnostics
+  const isDotnet = scanResult.technologies.some(
+    (t) => t.name === ".NET" || t.name === "C#" || t.name === "ASP.NET Core"
+  );
+  let dotnetContext: RuleEvaluationContext["dotnet"];
+
+  if (isDotnet) {
+    const dotnetRuntime = await detectDotnetRuntime();
+    const dotnetProjects = await inspectDotnetProjects(dir);
+
+    dotnetContext = {
+      installed: dotnetRuntime.available,
+      version: dotnetRuntime.version,
+      majorVersion: dotnetRuntime.majorVersion,
+      projects: dotnetProjects
+    };
+
+    // If any project defines a launchPort, probe it and register in declaredPorts
+    for (const proj of dotnetProjects) {
+      if (proj.launchPort && !declaredPorts.some((dp) => dp.port === proj.launchPort)) {
+        declaredPorts.push({
+          port: proj.launchPort,
+          source: `${proj.projectFile} (launchSettings.json)`,
+          rawValue: String(proj.launchPort),
+          valid: true
+        });
+
+        const portCheck = await checkPort("127.0.0.1", proj.launchPort, 3000);
+        portChecks.push({
+          port: portCheck.port,
+          host: portCheck.host,
+          status: portCheck.status,
+          conclusive: portCheck.conclusive,
+          processInfo: portCheck.processInfo
+            ? { pid: portCheck.processInfo.pid, name: portCheck.processInfo.name }
+            : undefined,
+          error: portCheck.error
+        });
+      }
+    }
+  }
+
   // 7. Assemble full RuleEvaluationContext
   const evalCtx: RuleEvaluationContext = {
     dir,
@@ -436,7 +480,8 @@ export async function collectEvaluationContext(
     springBoot: springBootContext,
     php: phpContext,
     composer: composerContext,
-    laravel: laravelContext
+    laravel: laravelContext,
+    dotnet: dotnetContext
   };
 
   return evalCtx;

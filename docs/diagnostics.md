@@ -6,7 +6,7 @@ To update or verify this document, run:
 npm run docs:rules
 ```
 
-Total Built-in Rules: **32**
+Total Built-in Rules: **36**
 
 ---
 
@@ -14,12 +14,15 @@ Total Built-in Rules: **32**
 
 | Rule ID | Category | Severity | Confidence | Technologies | Description |
 |---|---|---|---|---|---|
+| [`ASPNETCORE_PORT_IN_USE`](#aspnetcore-port-in-use) | `network` | **high** | `confirmed` | .NET, ASP.NET Core | The port configured in Properties/launchSettings.json or appsettings.json is already occupied by another listening process. |
 | [`COMPOSE_SERVICE_NOT_FOUND`](#compose-service-not-found) | `configuration` | **high** | `confirmed` | Docker, Docker Compose | An application configuration or environment URL references a service name that does not exist in the project's docker-compose.yml services. |
 | [`COMPOSER_DEPS_NOT_INSTALLED`](#composer-deps-not-installed) | `dependencies` | **high** | `confirmed` | PHP, Composer | composer.json exists and declares dependencies, but the vendor directory or vendor/autoload.php is missing. |
 | [`DB_CONNECTION_TIMEOUT`](#db-connection-timeout) | `database` | **high** | `confirmed` | MongoDB, MySQL | TCP connection to the database endpoint timed out before establishing a socket connection. |
 | [`DB_HOST_NOT_RESOLVED`](#db-host-not-resolved) | `database` | **high** | `confirmed` | MongoDB, MySQL | The database hostname configured in project settings could not be resolved to an IP address (ENOTFOUND). |
 | [`DJANGO_MIGRATIONS_PENDING`](#django-migrations-pending) | `database` | **medium** | `confirmed` | Django | Django project has unapplied schema changes that have not yet been applied to the database. |
 | [`DJANGO_SETTINGS_NOT_FOUND`](#django-settings-not-found) | `configuration` | **high** | `confirmed` | Django | The DJANGO_SETTINGS_MODULE specified in manage.py does not correspond to an existing Python settings file. |
+| [`DOTNET_SDK_MISSING`](#dotnet-sdk-missing) | `runtime` | **high** | `confirmed` | .NET, C# | .NET project or solution files were detected, but the 'dotnet' CLI was not found on PATH. |
+| [`DOTNET_TARGET_FRAMEWORK_MISMATCH`](#dotnet-target-framework-mismatch) | `runtime` | **high** | `confirmed` | .NET, C# | The active .NET SDK version is lower than the <TargetFramework> major version declared in the project .csproj file. |
 | [`ENV_EXAMPLE_PRESENT_NO_ENV`](#env-example-present-no-env) | `configuration` | **medium** | `confirmed` | * | .env.example exists declaring required environment variables, but no .env file exists. |
 | [`ENV_VAR_NAMES_MISSING`](#env-var-names-missing) | `configuration` | **high** | `confirmed` | * | .env file exists, but one or more variable names documented in .env.example are missing. |
 | [`JAVA_RUNTIME_MISSING`](#java-runtime-missing) | `runtime` | **high** | `confirmed` | Java | A Java project build file was detected, but no Java executable (java) was found in the environment. |
@@ -32,6 +35,7 @@ Total Built-in Rules: **32**
 | [`MYSQL_CONNECTION_REFUSED`](#mysql-connection-refused) | `database` | **high** | `confirmed` | MySQL | TCP connection to the configured MySQL endpoint was actively refused (ECONNREFUSED). |
 | [`NODE_DEPS_NOT_INSTALLED`](#node-deps-not-installed) | `dependencies` | **high** | `confirmed` | Node.js | package.json exists in the project root, but the node_modules folder is missing. |
 | [`NODE_VERSION_MISMATCH`](#node-version-mismatch) | `runtime` | **high** | `confirmed` | Node.js | The active Node.js runtime version does not satisfy the version range explicitly declared by the project. |
+| [`NUGET_PACKAGES_NOT_RESTORED`](#nuget-packages-not-restored) | `dependencies` | **high** | `confirmed` | .NET, C# | .NET project declares package references in .csproj, but obj/project.assets.json is missing, causing NETSDK1004 build failures. |
 | [`PHP_RUNTIME_MISSING`](#php-runtime-missing) | `runtime` | **high** | `confirmed` | PHP, Composer | PHP project files or composer.json are present, but the 'php' binary cannot be located in PATH. |
 | [`PHP_VERSION_MISMATCH`](#php-version-mismatch) | `runtime` | **high** | `confirmed` | PHP, Composer | The active PHP CLI runtime does not satisfy the PHP version constraint declared in composer.json or .php-version. |
 | [`PORT_IN_USE`](#port-in-use) | `network` | **high** | `confirmed` | * | A network port required by the application is already bound by another process or listener on this machine. |
@@ -51,8 +55,43 @@ Total Built-in Rules: **32**
 
 ## Detailed Rule Reference
 
+<a id="aspnetcore-port-in-use"></a>
+### 1. `ASPNETCORE_PORT_IN_USE`
+
+**Title**: ASP.NET Core configured application port is already in use
+
+- **Category**: `network`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `.NET`, `ASP.NET Core`
+- **Evidence Types**: `network_probe`
+
+#### Description
+The port configured in Properties/launchSettings.json or appsettings.json is already occupied by another listening process.
+
+#### Diagnostic Checks
+- Identify which process is holding the target port.
+- Verify the 'applicationUrl' setting in Properties/launchSettings.json or 'ASPNETCORE_URLS'.
+- Change the configured port or stop the conflicting process.
+
+#### Remediation Guidance
+- **Problem**: Target ASP.NET Core port is occupied.
+  - **Relevance**: Kestrel web server will fail to start on application launch with IOException / address in use.
+  - **Action**: `Change the port in Properties/launchSettings.json or terminate the conflicting process.`
+  - **Expected Result**: Target port is available before application startup.
+  - **Risks**: Port configuration change only.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify target port is free before starting ASP.NET Core application.
+
+#### Documentation References
+- [https://learn.microsoft.com/aspnet/core/fundamentals/servers/kestrel/endpoints](https://learn.microsoft.com/aspnet/core/fundamentals/servers/kestrel/endpoints)
+
+---
+
 <a id="compose-service-not-found"></a>
-### 1. `COMPOSE_SERVICE_NOT_FOUND`
+### 2. `COMPOSE_SERVICE_NOT_FOUND`
 
 **Title**: Application references Docker Compose service not defined in compose file
 
@@ -86,7 +125,7 @@ Verify that all referenced container hostnames are defined under services in doc
 ---
 
 <a id="composer-deps-not-installed"></a>
-### 2. `COMPOSER_DEPS_NOT_INSTALLED`
+### 3. `COMPOSER_DEPS_NOT_INSTALLED`
 
 **Title**: Composer dependencies not installed
 
@@ -120,7 +159,7 @@ Verify that vendor/autoload.php exists after running composer install.
 ---
 
 <a id="db-connection-timeout"></a>
-### 3. `DB_CONNECTION_TIMEOUT`
+### 4. `DB_CONNECTION_TIMEOUT`
 
 **Title**: Database connection timed out
 
@@ -155,7 +194,7 @@ Verify that TCP connection completes before timeout.
 ---
 
 <a id="db-host-not-resolved"></a>
-### 4. `DB_HOST_NOT_RESOLVED`
+### 5. `DB_HOST_NOT_RESOLVED`
 
 **Title**: Database hostname failed DNS resolution
 
@@ -190,7 +229,7 @@ Verify hostname resolves via DNS lookup.
 ---
 
 <a id="django-migrations-pending"></a>
-### 5. `DJANGO_MIGRATIONS_PENDING`
+### 6. `DJANGO_MIGRATIONS_PENDING`
 
 **Title**: Unapplied database schema changes detected
 
@@ -224,7 +263,7 @@ Confirm showmigrations --plan reports no unapplied changes.
 ---
 
 <a id="django-settings-not-found"></a>
-### 6. `DJANGO_SETTINGS_NOT_FOUND`
+### 7. `DJANGO_SETTINGS_NOT_FOUND`
 
 **Title**: Django settings module file not found
 
@@ -257,8 +296,78 @@ Verify settings file exists at specified path.
 
 ---
 
+<a id="dotnet-sdk-missing"></a>
+### 8. `DOTNET_SDK_MISSING`
+
+**Title**: .NET SDK is not installed or not available on PATH
+
+- **Category**: `runtime`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `.NET`, `C#`
+- **Evidence Types**: `file_presence`
+
+#### Description
+.NET project or solution files were detected, but the 'dotnet' CLI was not found on PATH.
+
+#### Diagnostic Checks
+- Run 'dotnet --version' in your terminal.
+- Verify your PATH environment variable includes the directory where the .NET SDK is installed.
+- Download and install the .NET SDK from https://dotnet.microsoft.com/download.
+
+#### Remediation Guidance
+- **Problem**: .NET SDK is not installed or not found in system PATH.
+  - **Relevance**: Cannot build, restore, or run .NET applications without the .NET SDK.
+  - **Action**: `Install the .NET 8.0 SDK or higher and ensure 'dotnet' is in system PATH.`
+  - **Expected Result**: 'dotnet --version' returns the installed SDK version.
+  - **Risks**: None.
+  - **Verification**: `dotnet --version && stackdoctor scan`
+
+#### Verification Principle
+Verify that 'dotnet --version' runs and prints the installed SDK version.
+
+#### Documentation References
+- [https://dotnet.microsoft.com/download](https://dotnet.microsoft.com/download)
+
+---
+
+<a id="dotnet-target-framework-mismatch"></a>
+### 9. `DOTNET_TARGET_FRAMEWORK_MISMATCH`
+
+**Title**: Installed .NET SDK does not support project target framework
+
+- **Category**: `runtime`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `.NET`, `C#`
+- **Evidence Types**: `command_output`, `file_content`
+
+#### Description
+The active .NET SDK version is lower than the <TargetFramework> major version declared in the project .csproj file.
+
+#### Diagnostic Checks
+- Run 'dotnet --version' to inspect your active .NET SDK version.
+- Inspect the <TargetFramework> tag in your project .csproj file.
+- Install the required .NET SDK version or adjust global.json if present.
+
+#### Remediation Guidance
+- **Problem**: Installed .NET SDK is older than project target framework.
+  - **Relevance**: .NET build and run commands will immediately halt with NETSDK1045 ('The current .NET SDK does not support targeting .NET X.X').
+  - **Action**: `Install the matching .NET SDK version from https://dotnet.microsoft.com/download.`
+  - **Expected Result**: Active .NET SDK satisfies project TargetFramework.
+  - **Risks**: SDK installation only; does not modify source code.
+  - **Verification**: `dotnet --version && stackdoctor scan`
+
+#### Verification Principle
+Verify active .NET SDK version supports the project's target framework.
+
+#### Documentation References
+- [https://dotnet.microsoft.com/download](https://dotnet.microsoft.com/download)
+
+---
+
 <a id="env-example-present-no-env"></a>
-### 7. `ENV_EXAMPLE_PRESENT_NO_ENV`
+### 10. `ENV_EXAMPLE_PRESENT_NO_ENV`
 
 **Title**: Environment template present but .env file is missing
 
@@ -292,7 +401,7 @@ Confirm that .env file exists in project root.
 ---
 
 <a id="env-var-names-missing"></a>
-### 8. `ENV_VAR_NAMES_MISSING`
+### 11. `ENV_VAR_NAMES_MISSING`
 
 **Title**: Required environment variable names missing from .env
 
@@ -326,7 +435,7 @@ Check .env to ensure all expected variable names are present.
 ---
 
 <a id="java-runtime-missing"></a>
-### 9. `JAVA_RUNTIME_MISSING`
+### 12. `JAVA_RUNTIME_MISSING`
 
 **Title**: Java runtime is not installed or not available on PATH
 
@@ -361,7 +470,7 @@ Verify `java -version` executes successfully.
 ---
 
 <a id="java-version-mismatch"></a>
-### 10. `JAVA_VERSION_MISMATCH`
+### 13. `JAVA_VERSION_MISMATCH`
 
 **Title**: Installed Java version does not satisfy project requirement
 
@@ -396,7 +505,7 @@ Verify active Java version satisfies project build configuration.
 ---
 
 <a id="laravel-app-key-missing"></a>
-### 11. `LARAVEL_APP_KEY_MISSING`
+### 14. `LARAVEL_APP_KEY_MISSING`
 
 **Title**: Laravel application encryption key missing or empty
 
@@ -430,7 +539,7 @@ Verify that APP_KEY is populated with a base64 key in .env.
 ---
 
 <a id="lockfile-missing"></a>
-### 12. `LOCKFILE_MISSING`
+### 15. `LOCKFILE_MISSING`
 
 **Title**: Package lockfile missing
 
@@ -464,7 +573,7 @@ Confirm that a lockfile exists in the project root.
 ---
 
 <a id="mongo-auth-failed"></a>
-### 13. `MONGO_AUTH_FAILED`
+### 16. `MONGO_AUTH_FAILED`
 
 **Title**: MongoDB authentication failed
 
@@ -499,7 +608,7 @@ Verify MongoDB authentication succeeds.
 ---
 
 <a id="mongo-connection-refused"></a>
-### 14. `MONGO_CONNECTION_REFUSED`
+### 17. `MONGO_CONNECTION_REFUSED`
 
 **Title**: MongoDB connection refused on target endpoint
 
@@ -534,7 +643,7 @@ Verify that TCP connection to MongoDB endpoint succeeds.
 ---
 
 <a id="mysql-auth-failed"></a>
-### 15. `MYSQL_AUTH_FAILED`
+### 18. `MYSQL_AUTH_FAILED`
 
 **Title**: MySQL authentication failed
 
@@ -569,7 +678,7 @@ Verify MySQL authentication succeeds.
 ---
 
 <a id="mysql-connection-refused"></a>
-### 16. `MYSQL_CONNECTION_REFUSED`
+### 19. `MYSQL_CONNECTION_REFUSED`
 
 **Title**: MySQL connection refused on target endpoint
 
@@ -604,7 +713,7 @@ Verify that TCP connection to MySQL endpoint succeeds.
 ---
 
 <a id="node-deps-not-installed"></a>
-### 17. `NODE_DEPS_NOT_INSTALLED`
+### 20. `NODE_DEPS_NOT_INSTALLED`
 
 **Title**: Node.js dependencies not installed
 
@@ -638,7 +747,7 @@ Verify that node_modules directory exists after installation.
 ---
 
 <a id="node-version-mismatch"></a>
-### 18. `NODE_VERSION_MISMATCH`
+### 21. `NODE_VERSION_MISMATCH`
 
 **Title**: Installed Node.js version does not satisfy project requirement
 
@@ -671,8 +780,42 @@ Run `node -v` to confirm active version satisfies the declared range.
 
 ---
 
+<a id="nuget-packages-not-restored"></a>
+### 22. `NUGET_PACKAGES_NOT_RESTORED`
+
+**Title**: NuGet packages not restored
+
+- **Category**: `dependencies`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `.NET`, `C#`
+- **Evidence Types**: `file_presence`
+
+#### Description
+.NET project declares package references in .csproj, but obj/project.assets.json is missing, causing NETSDK1004 build failures.
+
+#### Diagnostic Checks
+- Check if obj/project.assets.json exists in the project directory.
+- Run 'dotnet restore' to generate the project assets file and download referenced packages.
+
+#### Remediation Guidance
+- **Problem**: Missing obj/project.assets.json NuGet restore assets file.
+  - **Relevance**: .NET build halts immediately with error NETSDK1004 ('Assets file not found. Run a NuGet package restore').
+  - **Action**: `dotnet restore`
+  - **Expected Result**: Generates obj/project.assets.json and restores referenced packages.
+  - **Risks**: Downloads NuGet packages from configured package sources; does not modify source code.
+  - **Verification**: `test -f obj/project.assets.json`
+
+#### Verification Principle
+Verify that obj/project.assets.json exists after running dotnet restore.
+
+#### Documentation References
+- [https://learn.microsoft.com/nuget/consume-packages/package-restore](https://learn.microsoft.com/nuget/consume-packages/package-restore)
+
+---
+
 <a id="php-runtime-missing"></a>
-### 19. `PHP_RUNTIME_MISSING`
+### 23. `PHP_RUNTIME_MISSING`
 
 **Title**: PHP CLI runtime is not installed or not in PATH
 
@@ -707,7 +850,7 @@ Verify 'php -v' runs and prints PHP version information.
 ---
 
 <a id="php-version-mismatch"></a>
-### 20. `PHP_VERSION_MISMATCH`
+### 24. `PHP_VERSION_MISMATCH`
 
 **Title**: Installed PHP version does not satisfy project requirement
 
@@ -742,7 +885,7 @@ Verify active PHP version satisfies project build configuration.
 ---
 
 <a id="port-in-use"></a>
-### 21. `PORT_IN_USE`
+### 25. `PORT_IN_USE`
 
 **Title**: Required network port is already in use
 
@@ -776,7 +919,7 @@ Verify that the port is free using TCP probe or netstat.
 ---
 
 <a id="port-invalid"></a>
-### 22. `PORT_INVALID`
+### 26. `PORT_INVALID`
 
 **Title**: Declared network port is invalid or out of range
 
@@ -810,7 +953,7 @@ Verify that all declared port numbers are valid integers in the 1-65535 range.
 ---
 
 <a id="postgres-auth-failed"></a>
-### 23. `POSTGRES_AUTH_FAILED`
+### 27. `POSTGRES_AUTH_FAILED`
 
 **Title**: PostgreSQL authentication failed
 
@@ -845,7 +988,7 @@ Verify PostgreSQL authentication succeeds.
 ---
 
 <a id="postgres-connection-refused"></a>
-### 24. `POSTGRES_CONNECTION_REFUSED`
+### 28. `POSTGRES_CONNECTION_REFUSED`
 
 **Title**: PostgreSQL connection refused on target endpoint
 
@@ -880,7 +1023,7 @@ Verify that TCP connection to PostgreSQL endpoint succeeds.
 ---
 
 <a id="postgres-database-not-found"></a>
-### 25. `POSTGRES_DATABASE_NOT_FOUND`
+### 29. `POSTGRES_DATABASE_NOT_FOUND`
 
 **Title**: PostgreSQL database does not exist
 
@@ -915,7 +1058,7 @@ Verify that PostgreSQL target database exists and accepts connections.
 ---
 
 <a id="postgres-ssl-required"></a>
-### 26. `POSTGRES_SSL_REQUIRED`
+### 30. `POSTGRES_SSL_REQUIRED`
 
 **Title**: PostgreSQL requires SSL/TLS connection
 
@@ -949,7 +1092,7 @@ Verify that encrypted SSL/TLS connection to PostgreSQL succeeds.
 ---
 
 <a id="python-package-version-mismatch"></a>
-### 27. `PYTHON_PACKAGE_VERSION_MISMATCH`
+### 31. `PYTHON_PACKAGE_VERSION_MISMATCH`
 
 **Title**: Installed Python package version does not satisfy requirement
 
@@ -983,7 +1126,7 @@ Verify that installed package versions satisfy declared requirements.
 ---
 
 <a id="python-packages-missing"></a>
-### 28. `PYTHON_PACKAGES_MISSING`
+### 32. `PYTHON_PACKAGES_MISSING`
 
 **Title**: Declared Python dependencies are not installed
 
@@ -1017,7 +1160,7 @@ Verify all declared packages are present in pip list.
 ---
 
 <a id="python-venv-missing"></a>
-### 29. `PYTHON_VENV_MISSING`
+### 33. `PYTHON_VENV_MISSING`
 
 **Title**: Python virtual environment missing
 
@@ -1051,7 +1194,7 @@ Confirm that .venv directory exists or VIRTUAL_ENV is active.
 ---
 
 <a id="runtime-declarations-conflict"></a>
-### 30. `RUNTIME_DECLARATIONS_CONFLICT`
+### 34. `RUNTIME_DECLARATIONS_CONFLICT`
 
 **Title**: Conflicting runtime version declarations between project files
 
@@ -1085,7 +1228,7 @@ Verify that .nvmrc satisfies the range specified in package.json engines.node.
 ---
 
 <a id="spring-boot-datasource-missing"></a>
-### 31. `SPRING_BOOT_DATASOURCE_MISSING`
+### 35. `SPRING_BOOT_DATASOURCE_MISSING`
 
 **Title**: Spring Boot DataSource URL is not configured
 
@@ -1120,7 +1263,7 @@ Verify `spring.datasource.url` is declared in application properties or environm
 ---
 
 <a id="spring-boot-port-in-use"></a>
-### 32. `SPRING_BOOT_PORT_IN_USE`
+### 36. `SPRING_BOOT_PORT_IN_USE`
 
 **Title**: Spring Boot server port is already in use by another process
 
