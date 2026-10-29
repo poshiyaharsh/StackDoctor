@@ -1,0 +1,180 @@
+{
+  "timestamp": "2026-10-29T15:14:43.773Z",
+  "os": "win32",
+  "arch": "x64",
+  "nodeVersion": "v24.13.0",
+  "totalFixtures": 6,
+  "metrics": {
+    "totalExpected": 11,
+    "totalDetected": 11,
+    "truePositives": 11,
+    "falseNegatives": 0,
+    "falsePositives": 0,
+    "accuracy": 100,
+    "falsePositiveRate": 0,
+    "missRate": 0
+  },
+  "perRule": {
+    "COMPOSE_SERVICE_NOT_FOUND": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "DB_HOST_NOT_RESOLVED": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "DJANGO_SETTINGS_NOT_FOUND": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "ENV_VAR_NAMES_MISSING": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "LOCKFILE_MISSING": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "NODE_DEPS_NOT_INSTALLED": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "NODE_VERSION_MISMATCH": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "PORT_IN_USE": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "PORT_INVALID": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "PYTHON_PACKAGES_MISSING": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "PYTHON_VENV_MISSING": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    }
+  },
+  "fixtures": [
+    {
+      "name": "broken-node-project",
+      "sourceId": "Phase 1 Baseline",
+      "expected": 5,
+      "detected": 5,
+      "tp": 5,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "broken-django-project",
+      "sourceId": "Phase 2 Baseline",
+      "expected": 3,
+      "detected": 3,
+      "tp": 3,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "broken-database-config",
+      "sourceId": "Phase 2 Baseline",
+      "expected": 3,
+      "detected": 3,
+      "tp": 3,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "healthy-node-project",
+      "sourceId": "Healthy Reference",
+      "expected": 0,
+      "detected": 0,
+      "tp": 0,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "reg/FB-002-node-range-conflict",
+      "sourceId": "FB-002",
+      "expected": 0,
+      "detected": 0,
+      "tp": 0,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "reg/FB-004-pnpm-lockfile",
+      "sourceId": "FB-004",
+      "expected": 0,
+      "detected": 0,
+      "tp": 0,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    }
+  ]
+}

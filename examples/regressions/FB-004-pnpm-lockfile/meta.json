@@ -1,0 +1,8 @@
+{
+  "id": "FB-004",
+  "slug": "pnpm-lockfile",
+  "category": "false_positive",
+  "expectedFindings": 0,
+  "sourceFeedbackId": "FB-004"
+}
+

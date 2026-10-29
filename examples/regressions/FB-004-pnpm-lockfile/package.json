@@ -1,0 +1,9 @@
+{
+  "name": "regression-pnpm-lockfile",
+  "version": "1.0.0",
+  "description": "Synthetic reproduction for FB-004",
+  "private": true,
+  "dependencies": {
+    "chalk": "^5.0.0"
+  }
+}

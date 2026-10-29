@@ -1,0 +1,8 @@
+lockfileVersion: '6.0'
+settings:
+  autoInstallPeers: true
+dependencies:
+  chalk:
+    specifier: ^5.0.0
+    version: 5.4.1
+

@@ -1,0 +1,9 @@
+{
+  "name": "regression-node-range-conflict",
+  "version": "1.0.0",
+  "description": "Synthetic reproduction for FB-002",
+  "private": true,
+  "engines": {
+    "node": ">= 20.0.0"
+  }
+}

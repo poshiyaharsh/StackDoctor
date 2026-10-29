@@ -1522,8 +1522,47 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
   - `npm test`: Passed (427/427 tests across 60 suites passed)
 - **Problems / errors:** `generator.test.ts` used `git checkout docs/diagnostics.md` which reverted generated docs; fixed by storing in-memory snapshot. Password change test in `stats-and-account.test.ts` timed out on high concurrency; fixed by adding explicit 20000ms timeout.
 - **Decisions made:** All regressions must be minimal synthetic fixtures; per-rule accuracy stats surfaced directly in eval runner; single-command release verification gate introduced (`verify:release`).
-- **Next step:** Phase 7 Decision Gates (7C/7D/7E).
+- **Next step:** Phase 7, Run 7C: Eval expansion and per-rule precision/recall.
 - **Status:** Done
+
+---
+
+### [2026-10-29] Phase 7, Run 7C: Eval expansion and per-rule precision/recall
+- **Prompt used:** PHASE7.md > Run 7C: Data-driven accuracy (gate: real feedback exists)
+- **What was done:**
+  - Integrated 4 real user feedback submissions (FB-006 Java/Spring Boot, FB-007 PHP/Laravel, FB-008 .NET/C#, FB-009 broader database support) into `FEEDBACK.md`. Verified via `npm run scorecard` (9 total entries).
+  - Scaffolded synthetic regression fixtures `examples/regressions/FB-002-node-range-conflict/` and `examples/regressions/FB-004-pnpm-lockfile/` with metadata, expected.json, and unit tests in `packages/rules/test/regressions/`.
+  - Upgraded `scripts/eval.js` to calculate and output:
+    - Overall detection accuracy (recall), false positive rate, and miss rate.
+    - Full per-rule precision and recall breakdown table (expected, detected, TP, FP, FN, precision %, recall %).
+    - Machine-readable summary saved to `eval-results/latest.json`.
+    - Historical benchmark tracking appended to `docs/eval-history.md`.
+    - Automated baseline regression detection against `eval-results/baseline.json`.
+  - Updated `.gitignore` to allow dummy fixture `node_modules` under `examples/**`.
+  - Audited rule confidence calibrations; all 11 active rules maintained 100.0% precision and 100.0% recall on the expanded 6-fixture benchmark suite.
+- **Files created/changed:**
+  - `examples/regressions/FB-002-node-range-conflict/` (package.json, .nvmrc, package-lock.json, expected.json, meta.json)
+  - `examples/regressions/FB-004-pnpm-lockfile/` (package.json, pnpm-lock.yaml, expected.json, meta.json)
+  - `packages/rules/test/regressions/FB-002-node-range-conflict.test.ts`
+  - `packages/rules/test/regressions/FB-004-pnpm-lockfile.test.ts`
+  - `scripts/eval.js`
+  - `eval-results/latest.json`
+  - `eval-results/baseline.json`
+  - `docs/eval-history.md`
+  - `FEEDBACK.md`
+  - `.gitignore`
+  - `docs/PHASE7.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run eval`: Passed (100.0% detection accuracy, 0.0% false positive rate across 6 fixtures)
+  - `npm run scorecard`: Passed (9 total feedback entries parsed)
+  - `npx vitest run packages/rules/test/regressions/`: Passed (4/4 tests across 2 suites)
+  - `npm run test:docs`: Passed (47 Markdown files audited, 0 broken links)
+  - `npm run check:secrets`: Passed (0 secrets detected)
+- **Decisions made:** Regression fixtures are completely synthetic; eval metrics include per-rule precision, recall, and miss rates; regression against `baseline.json` blocks CI if accuracy drops or false positives rise.
+- **Next step:** Phase 7, Run 7D: PostgreSQL support (gate: demand met with FB-003 and FB-009).
+- **Status:** Done
+
 
 
 

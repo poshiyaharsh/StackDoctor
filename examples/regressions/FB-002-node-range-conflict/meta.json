@@ -1,0 +1,8 @@
+{
+  "id": "FB-002",
+  "slug": "node-range-conflict",
+  "category": "false_positive",
+  "expectedFindings": 0,
+  "sourceFeedbackId": "FB-002"
+}
+
