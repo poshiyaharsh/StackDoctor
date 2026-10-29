@@ -468,6 +468,97 @@ export async function scanProject(targetDir: string, options: ScanOptions = {}):
     }
   }
 
+  // 11b. SQLite detection
+  for (const f of files) {
+    if (
+      f.name.endsWith(".sqlite") ||
+      f.name.endsWith(".sqlite3") ||
+      f.name.endsWith(".db") ||
+      [
+        "docker-compose.yml",
+        "compose.yml",
+        ".env",
+        ".env.example",
+        "package.json",
+        "requirements.txt",
+        "schema.prisma",
+        "settings.py"
+      ].includes(f.name)
+    ) {
+      if (f.name.endsWith(".sqlite") || f.name.endsWith(".sqlite3") || f.name.endsWith(".db")) {
+        addTech("SQLite", "confirmed", {
+          id: "ev-tech-sqlite-file",
+          kind: "file_presence",
+          description: `Found SQLite database file at ${f.relativePath}`,
+          observed: `File exists: ${f.relativePath}`,
+          source: f.relativePath,
+          collectedAt: now
+        });
+        break;
+      }
+      try {
+        const content = fs.readFileSync(f.absolutePath, "utf-8");
+        if (
+          /\b(?:sqlite|sqlite3|better-sqlite3)\b/i.test(content) ||
+          /file:[^\s'"]+\.db/i.test(content) ||
+          /django\.db\.backends\.sqlite3/i.test(content)
+        ) {
+          addTech("SQLite", "likely", {
+            id: "ev-tech-sqlite",
+            kind: "file_content",
+            description: `Detected SQLite reference in ${f.relativePath}`,
+            observed: `Found SQLite configuration/dependency in ${f.relativePath}`,
+            source: f.relativePath,
+            collectedAt: now
+          });
+          break;
+        }
+      } catch {
+        // Continue safely
+      }
+    }
+  }
+
+  // 11c. Microsoft SQL Server (MSSQL) detection
+  for (const f of files) {
+    if (
+      f.name.endsWith(".csproj") ||
+      [
+        "docker-compose.yml",
+        "docker-compose.yaml",
+        "compose.yml",
+        "compose.yaml",
+        ".env",
+        ".env.example",
+        "appsettings.json",
+        "package.json"
+      ].includes(f.name)
+    ) {
+      try {
+        const content = fs.readFileSync(f.absolutePath, "utf-8");
+        if (
+          /\b(?:mssql|sqlserver|tedious)\b/i.test(content) ||
+          /mcr\.microsoft\.com\/mssql/i.test(content) ||
+          /Microsoft\.EntityFrameworkCore\.SqlServer/i.test(content) ||
+          /Microsoft\.Data\.SqlClient/i.test(content) ||
+          /(?:mssql|sqlserver):\/\//i.test(content)
+        ) {
+          addTech("Microsoft SQL Server", "likely", {
+            id: "ev-tech-mssql",
+            kind: "file_content",
+            description: `Detected Microsoft SQL Server reference in ${f.relativePath}`,
+            observed: `Found Microsoft SQL Server configuration in ${f.relativePath}`,
+            source: f.relativePath,
+            collectedAt: now
+          });
+          break;
+        }
+      } catch {
+        // Continue safely
+      }
+    }
+  }
+
   // 12. Java, Maven, Gradle & Spring Boot detection
   const hasPom = files.some((f) => f.name === "pom.xml");
   const hasGradle = files.some((f) => f.name === "build.gradle" || f.name === "build.gradle.kts");

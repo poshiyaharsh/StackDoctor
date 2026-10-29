@@ -35,6 +35,10 @@ import { dotnetSdkMissingRule } from "./rules/dotnet-sdk-missing.js";
 import { dotnetTargetFrameworkMismatchRule } from "./rules/dotnet-target-framework-mismatch.js";
 import { nugetPackagesNotRestoredRule } from "./rules/nuget-packages-not-restored.js";
 import { aspnetcorePortInUseRule } from "./rules/aspnetcore-port-in-use.js";
+import { sqliteFileNotFoundRule } from "./rules/sqlite-file-not-found.js";
+import { sqliteFileCorruptedRule } from "./rules/sqlite-file-corrupted.js";
+import { mssqlConnectionRefusedRule } from "./rules/mssql-connection-refused.js";
+import { mssqlAuthFailedRule } from "./rules/mssql-auth-failed.js";
 
 export * from "./types.js";
 export * from "./registry.js";
@@ -74,6 +78,10 @@ export * from "./rules/dotnet-sdk-missing.js";
 export * from "./rules/dotnet-target-framework-mismatch.js";
 export * from "./rules/nuget-packages-not-restored.js";
 export * from "./rules/aspnetcore-port-in-use.js";
+export * from "./rules/sqlite-file-not-found.js";
+export * from "./rules/sqlite-file-corrupted.js";
+export * from "./rules/mssql-connection-refused.js";
+export * from "./rules/mssql-auth-failed.js";
 
 export const RULES_PACKAGE = "@stackdoctor/rules";
 export const RULES_DEPENDENCY = "@stackdoctor/schemas";
@@ -119,5 +127,9 @@ export function createDefaultRuleRegistry(): RuleRegistry {
   registry.register(dotnetTargetFrameworkMismatchRule);
   registry.register(nugetPackagesNotRestoredRule);
   registry.register(aspnetcorePortInUseRule);
+  registry.register(sqliteFileNotFoundRule);
+  registry.register(sqliteFileCorruptedRule);
+  registry.register(mssqlConnectionRefusedRule);
+  registry.register(mssqlAuthFailedRule);
   return registry;
 }

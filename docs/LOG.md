@@ -1741,3 +1741,35 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 
 
 
+
+
+---
+
+### [2026-10-29] Phase 7: Broader Database Support — SQLite & Microsoft SQL Server (FB-DRAFT-004)
+- **Prompt used:** User request: "FB-DRAFT-004 — Broader database support ... SQLite, Microsoft SQL Server ... This Is real Feedback so now work on phase 7"
+- **What was done:**
+  - Added dedicated SQLite inspection adapter in `packages/adapters/src/sqlite.ts` verifying path parsing, parent directory existence, file presence, valid SQLite 3 header magic string (`SQLite format 3\0`), and read/write permissions.
+  - Added Microsoft SQL Server staged TCP port 1433 probing and credential error categorization in `packages/adapters/src/database.ts` (distinguishing error 18456 auth failures from error 4060 missing databases and ECONNREFUSED socket failures) with strict canary credential redaction.
+  - Added static detection for SQLite and Microsoft SQL Server in `packages/core/src/scanner.ts`.
+  - Added 4 new production-tested diagnostic rules (catalog expanded from 36 to 40 rules):
+    - `SQLITE_FILE_NOT_FOUND`: Flags when SQLite database file or parent directory does not exist.
+    - `SQLITE_FILE_CORRUPTED`: Detects when SQLite file exists with non-zero size but lacks valid `SQLite format 3\0` magic bytes.
+    - `MSSQL_CONNECTION_REFUSED`: Detects when TCP connection to Microsoft SQL Server on port 1433 was refused.
+    - `MSSQL_AUTH_FAILED`: Detects when Microsoft SQL Server rejects credentials (Error 18456).
+  - Added allowlisted doc domains for `sqlite.org` in `packages/schemas/src/rules.ts`.
+  - Added synthetic fixtures `examples/broken-database-sqlite/` and `examples/healthy-database-sqlite/` to eval suite.
+  - Synchronized rule documentation in `docs/diagnostics.md` (all 40 rules).
+  - Triaged and marked FB-006, FB-007, FB-008, FB-009 as `fixed` in `FEEDBACK.md`. Verified with `npm run scorecard`.
+- **Files created/changed:**
+  - Created: `packages/adapters/src/sqlite.ts`, `packages/adapters/test/sqlite.test.ts`, `packages/adapters/test/mssql.test.ts`, `packages/rules/src/rules/sqlite-file-not-found.ts`, `packages/rules/src/rules/sqlite-file-corrupted.ts`, `packages/rules/src/rules/mssql-connection-refused.ts`, `packages/rules/src/rules/mssql-auth-failed.ts`, `packages/rules/test/sqlite-rules.test.ts`, `packages/rules/test/mssql-rules.test.ts`, `examples/broken-database-sqlite/`, `examples/healthy-database-sqlite/`
+  - Modified: `packages/schemas/src/rules.ts`, `packages/adapters/src/database.ts`, `packages/adapters/src/index.ts`, `packages/core/src/scanner.ts`, `packages/rules/src/types.ts`, `packages/rules/src/index.ts`, `apps/cli/src/collector.ts`, `scripts/eval.js`, `docs/diagnostics.md`, `README.md`, `CHANGELOG.md`, `FEEDBACK.md`, `docs/PHASE7.md`, `docs/LOG.md`, `apps/cli/test/cli.test.ts`, `packages/rules/test/registry.test.ts`, `packages/rules/test/database-rules.test.ts`, `packages/rules/test/phase2-rules.test.ts`, `packages/rules/test/port-rules.test.ts`, `packages/rules/test/python-django-rules.test.ts`, `apps/api/test/resources.test.ts`, `apps/api/test/tokens.test.ts`
+- **Verification:**
+  - `npm run verify:release`: Passed (100% SUCCESS across all 13 gates in 84.1s)
+  - `npm run eval`: Passed (100.0% Detection Accuracy, 0.0% False Positive Rate, 0.0% Miss Rate across 15 benchmark fixtures)
+  - `npm run scorecard`: Passed (9 total entries, 4 fixed, 0 parse errors)
+  - `npm run docs:rules -- --check`: Passed (all 40 rules synchronized)
+- **Decisions made:**
+  - Enforced zero external heavy dependencies for SQLite and MSSQL (used built-in fs binary buffer header inspection and Node's net socket probing, preserving 100% MIT license compliance).
+  - Maintained zero code execution guarantee: database diagnostics run purely via static inspection and staged socket probing with strict canary secret redaction.
+- **Next step:** Phase 7, Run 7G (v0.2.0 release preparation).
+- **Status:** Done

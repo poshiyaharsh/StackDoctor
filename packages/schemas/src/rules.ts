@@ -19,6 +19,7 @@ export const ALLOWED_DOC_DOMAINS = [
   "microsoft.com",
   "dotnet.microsoft.com",
   "nuget.org",
+  "sqlite.org",
   "docker.com",
   "npmjs.com",
   "12factor.net",

@@ -70,7 +70,7 @@ export interface RuleEvaluationContext {
   };
   database?: {
     diagnostics?: Array<{
-      dbType: "mongodb" | "mysql" | "postgresql" | "unknown";
+      dbType: "mongodb" | "mysql" | "postgresql" | "mssql" | "sqlite" | "unknown";
       host: string;
       port: number;
       scheme?: string;
@@ -86,8 +86,40 @@ export interface RuleEvaluationContext {
         | "database_not_found"
         | "ssl_required"
         | "protocol_error"
+        | "file_not_found"
+        | "directory_not_found"
+        | "corrupted_file"
+        | "permission_denied"
         | "unknown";
       error?: string;
+    }>;
+    sqlite?: Array<{
+      filePath: string;
+      resolvedPath: string;
+      source: string;
+      exists: boolean;
+      dirExists: boolean;
+      sizeBytes?: number;
+      isValidSqliteHeader?: boolean;
+      isReadable?: boolean;
+      isWritable?: boolean;
+      error?: string;
+      errorCategory?:
+        | "dns_failure"
+        | "connection_refused"
+        | "timeout"
+        | "unreachable_network"
+        | "tls_error"
+        | "auth_failed"
+        | "authorization_failed"
+        | "database_not_found"
+        | "ssl_required"
+        | "protocol_error"
+        | "file_not_found"
+        | "directory_not_found"
+        | "corrupted_file"
+        | "permission_denied"
+        | "unknown";
     }>;
   };
   python?: {

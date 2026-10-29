@@ -31,10 +31,12 @@ async function runEval() {
     { name: "broken-java-project", path: path.join(fixturesDir, "broken-java-project"), sourceId: "FB-006 / Run 7E Baseline" },
     { name: "broken-php-project", path: path.join(fixturesDir, "broken-php-project"), sourceId: "FB-DRAFT-002 / Run 7E Baseline" },
     { name: "broken-dotnet-project", path: path.join(fixturesDir, "broken-dotnet-project"), sourceId: "FB-DRAFT-003 / Run 7E Baseline" },
+    { name: "broken-database-sqlite", path: path.join(fixturesDir, "broken-database-sqlite"), sourceId: "FB-DRAFT-004 / Run 7D-E Baseline" },
     { name: "healthy-node-project", path: path.join(fixturesDir, "healthy-node-project"), sourceId: "Healthy Reference" },
     { name: "healthy-java-project", path: path.join(fixturesDir, "healthy-java-project"), sourceId: "Healthy Reference" },
     { name: "healthy-php-project", path: path.join(fixturesDir, "healthy-php-project"), sourceId: "Healthy Reference" },
-    { name: "healthy-dotnet-project", path: path.join(fixturesDir, "healthy-dotnet-project"), sourceId: "Healthy Reference" }
+    { name: "healthy-dotnet-project", path: path.join(fixturesDir, "healthy-dotnet-project"), sourceId: "Healthy Reference" },
+    { name: "healthy-database-sqlite", path: path.join(fixturesDir, "healthy-database-sqlite"), sourceId: "Healthy Reference" }
   ];
 
   // Discover dynamic regression fixtures under examples/regressions/

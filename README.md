@@ -138,9 +138,9 @@ stackdoctor scan
 
 ---
 
-## Diagnostic Rules Catalog (36 Built-In Rules)
+## Diagnostic Rules Catalog (40 Built-In Rules)
 
-StackDoctor includes 36 production-tested diagnostic rules across modern web stacks. For full rule specifications, see the [Complete Diagnostics Reference](docs/diagnostics.md).
+StackDoctor includes 40 production-tested diagnostic rules across modern web stacks. For full rule specifications, see the [Complete Diagnostics Reference](docs/diagnostics.md).
 
 | Category | Rule ID | Title | Severity |
 |---|---|---|:---:|
@@ -170,6 +170,10 @@ StackDoctor includes 36 production-tested diagnostic rules across modern web sta
 | **Database** | `POSTGRES_AUTH_FAILED` | PostgreSQL authentication failed | High |
 | **Database** | `POSTGRES_DATABASE_NOT_FOUND` | PostgreSQL database does not exist | High |
 | **Database** | `POSTGRES_SSL_REQUIRED` | PostgreSQL requires SSL/TLS connection | Medium |
+| **Database** | `SQLITE_FILE_NOT_FOUND` | SQLite database file or target directory not found | High |
+| **Database** | `SQLITE_FILE_CORRUPTED` | SQLite database file is corrupted or not a valid database | High |
+| **Database** | `MSSQL_CONNECTION_REFUSED` | Microsoft SQL Server connection refused on target endpoint | High |
+| **Database** | `MSSQL_AUTH_FAILED` | Microsoft SQL Server authentication failed | High |
 | **Database** | `DB_HOST_NOT_RESOLVED` | Database host could not be resolved | High |
 | **Database** | `DB_CONNECTION_TIMEOUT` | Database connection timed out | High |
 | **Framework** | `DJANGO_SETTINGS_NOT_FOUND` | Django settings module not found | High |

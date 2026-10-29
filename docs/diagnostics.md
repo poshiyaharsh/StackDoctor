@@ -6,7 +6,7 @@ To update or verify this document, run:
 npm run docs:rules
 ```
 
-Total Built-in Rules: **36**
+Total Built-in Rules: **40**
 
 ---
 
@@ -31,6 +31,8 @@ Total Built-in Rules: **36**
 | [`LOCKFILE_MISSING`](#lockfile-missing) | `dependencies` | **low** | `confirmed` | Node.js | package.json is present in the project root, but no lockfile (package-lock.json, pnpm-lock.yaml, yarn.lock) was found. |
 | [`MONGO_AUTH_FAILED`](#mongo-auth-failed) | `database` | **high** | `confirmed` | MongoDB | Network connection to MongoDB succeeded, but user authentication failed (invalid username, password, or authSource). |
 | [`MONGO_CONNECTION_REFUSED`](#mongo-connection-refused) | `database` | **high** | `confirmed` | MongoDB | TCP connection to the configured MongoDB endpoint was actively refused (ECONNREFUSED). |
+| [`MSSQL_AUTH_FAILED`](#mssql-auth-failed) | `database` | **high** | `confirmed` | Microsoft SQL Server | Authentication to Microsoft SQL Server failed (invalid username or password, disabled login, or untrusted domain). |
+| [`MSSQL_CONNECTION_REFUSED`](#mssql-connection-refused) | `database` | **high** | `confirmed` | Microsoft SQL Server | TCP connection to the configured Microsoft SQL Server endpoint was actively refused (ECONNREFUSED). |
 | [`MYSQL_AUTH_FAILED`](#mysql-auth-failed) | `database` | **high** | `confirmed` | MySQL | Network connection to MySQL succeeded, but user authentication was rejected (Access denied for user). |
 | [`MYSQL_CONNECTION_REFUSED`](#mysql-connection-refused) | `database` | **high** | `confirmed` | MySQL | TCP connection to the configured MySQL endpoint was actively refused (ECONNREFUSED). |
 | [`NODE_DEPS_NOT_INSTALLED`](#node-deps-not-installed) | `dependencies` | **high** | `confirmed` | Node.js | package.json exists in the project root, but the node_modules folder is missing. |
@@ -50,6 +52,8 @@ Total Built-in Rules: **36**
 | [`RUNTIME_DECLARATIONS_CONFLICT`](#runtime-declarations-conflict) | `configuration` | **medium** | `confirmed` | Node.js | The project contains mutually conflicting runtime version specifications across configuration files (e.g. .nvmrc conflicts with package.json engines.node). |
 | [`SPRING_BOOT_DATASOURCE_MISSING`](#spring-boot-datasource-missing) | `configuration` | **high** | `confirmed` | Spring Boot | Spring Data JPA or JDBC dependencies are present, but no database connection URL (spring.datasource.url) or embedded database is configured. |
 | [`SPRING_BOOT_PORT_IN_USE`](#spring-boot-port-in-use) | `network` | **high** | `confirmed` | Spring Boot | The configured Spring Boot server port is actively occupied by another process, which will cause startup failure with PortInUseException. |
+| [`SQLITE_FILE_CORRUPTED`](#sqlite-file-corrupted) | `database` | **high** | `confirmed` | SQLite | The SQLite database file exists with non-zero size, but does not start with the standard SQLite 3 header magic string ('SQLite format 3\0'). |
+| [`SQLITE_FILE_NOT_FOUND`](#sqlite-file-not-found) | `database` | **high** | `confirmed` | SQLite | The configured SQLite database file path or its parent directory does not exist on disk. |
 
 ---
 
@@ -642,8 +646,78 @@ Verify that TCP connection to MongoDB endpoint succeeds.
 
 ---
 
+<a id="mssql-auth-failed"></a>
+### 18. `MSSQL_AUTH_FAILED`
+
+**Title**: Microsoft SQL Server authentication failed
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Microsoft SQL Server`
+- **Evidence Types**: `command_output`
+
+#### Description
+Authentication to Microsoft SQL Server failed (invalid username or password, disabled login, or untrusted domain).
+
+#### Diagnostic Checks
+- Verify the SQL Server login username and password in your environment configuration
+- Ensure Mixed Mode Authentication (SQL Server and Windows Authentication mode) is enabled on the server
+- Confirm that the login account exists and is not locked or disabled
+
+#### Remediation Guidance
+- **Problem**: Microsoft SQL Server rejected the provided login credentials (Error 18456).
+  - **Relevance**: Application fails to initialize database connection pools on startup.
+  - **Action**: `Update the database credentials in your environment configuration to match an authorized SQL Server login.`
+  - **Expected Result**: Authentication succeeds and queries execute properly.
+  - **Risks**: Configuration update only; harmless to existing database state.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that Microsoft SQL Server accepts the configured authentication credentials.
+
+#### Documentation References
+- [https://learn.microsoft.com/sql/relational-databases/security/authentication-access/principals-database-engine](https://learn.microsoft.com/sql/relational-databases/security/authentication-access/principals-database-engine)
+
+---
+
+<a id="mssql-connection-refused"></a>
+### 19. `MSSQL_CONNECTION_REFUSED`
+
+**Title**: Microsoft SQL Server connection refused on target endpoint
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Microsoft SQL Server`
+- **Evidence Types**: `network_probe`
+
+#### Description
+TCP connection to the configured Microsoft SQL Server endpoint was actively refused (ECONNREFUSED).
+
+#### Diagnostic Checks
+- Check if Microsoft SQL Server service (MSSQLSERVER or SQL Express) or container is currently running
+- Verify that TCP/IP protocol is enabled in SQL Server Configuration Manager
+- Verify target hostname and port (default 1433) in database connection string
+
+#### Remediation Guidance
+- **Problem**: Microsoft SQL Server is not accepting TCP connections on the configured address and port.
+  - **Relevance**: Application crashes on startup when unable to establish connection to Microsoft SQL Server.
+  - **Action**: `Start SQL Server service locally or start the database container (`docker compose up -d <service>`).`
+  - **Expected Result**: Microsoft SQL Server accepts TCP connections on target port.
+  - **Risks**: Starts database process or container; harmless to project code.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that TCP connection to Microsoft SQL Server endpoint succeeds.
+
+#### Documentation References
+- [https://learn.microsoft.com/sql/database-engine/configure-windows/troubleshoot-connecting-to-the-sql-server-database-engine](https://learn.microsoft.com/sql/database-engine/configure-windows/troubleshoot-connecting-to-the-sql-server-database-engine)
+
+---
+
 <a id="mysql-auth-failed"></a>
-### 18. `MYSQL_AUTH_FAILED`
+### 20. `MYSQL_AUTH_FAILED`
 
 **Title**: MySQL authentication failed
 
@@ -678,7 +752,7 @@ Verify MySQL authentication succeeds.
 ---
 
 <a id="mysql-connection-refused"></a>
-### 19. `MYSQL_CONNECTION_REFUSED`
+### 21. `MYSQL_CONNECTION_REFUSED`
 
 **Title**: MySQL connection refused on target endpoint
 
@@ -713,7 +787,7 @@ Verify that TCP connection to MySQL endpoint succeeds.
 ---
 
 <a id="node-deps-not-installed"></a>
-### 20. `NODE_DEPS_NOT_INSTALLED`
+### 22. `NODE_DEPS_NOT_INSTALLED`
 
 **Title**: Node.js dependencies not installed
 
@@ -747,7 +821,7 @@ Verify that node_modules directory exists after installation.
 ---
 
 <a id="node-version-mismatch"></a>
-### 21. `NODE_VERSION_MISMATCH`
+### 23. `NODE_VERSION_MISMATCH`
 
 **Title**: Installed Node.js version does not satisfy project requirement
 
@@ -781,7 +855,7 @@ Run `node -v` to confirm active version satisfies the declared range.
 ---
 
 <a id="nuget-packages-not-restored"></a>
-### 22. `NUGET_PACKAGES_NOT_RESTORED`
+### 24. `NUGET_PACKAGES_NOT_RESTORED`
 
 **Title**: NuGet packages not restored
 
@@ -815,7 +889,7 @@ Verify that obj/project.assets.json exists after running dotnet restore.
 ---
 
 <a id="php-runtime-missing"></a>
-### 23. `PHP_RUNTIME_MISSING`
+### 25. `PHP_RUNTIME_MISSING`
 
 **Title**: PHP CLI runtime is not installed or not in PATH
 
@@ -850,7 +924,7 @@ Verify 'php -v' runs and prints PHP version information.
 ---
 
 <a id="php-version-mismatch"></a>
-### 24. `PHP_VERSION_MISMATCH`
+### 26. `PHP_VERSION_MISMATCH`
 
 **Title**: Installed PHP version does not satisfy project requirement
 
@@ -885,7 +959,7 @@ Verify active PHP version satisfies project build configuration.
 ---
 
 <a id="port-in-use"></a>
-### 25. `PORT_IN_USE`
+### 27. `PORT_IN_USE`
 
 **Title**: Required network port is already in use
 
@@ -919,7 +993,7 @@ Verify that the port is free using TCP probe or netstat.
 ---
 
 <a id="port-invalid"></a>
-### 26. `PORT_INVALID`
+### 28. `PORT_INVALID`
 
 **Title**: Declared network port is invalid or out of range
 
@@ -953,7 +1027,7 @@ Verify that all declared port numbers are valid integers in the 1-65535 range.
 ---
 
 <a id="postgres-auth-failed"></a>
-### 27. `POSTGRES_AUTH_FAILED`
+### 29. `POSTGRES_AUTH_FAILED`
 
 **Title**: PostgreSQL authentication failed
 
@@ -988,7 +1062,7 @@ Verify PostgreSQL authentication succeeds.
 ---
 
 <a id="postgres-connection-refused"></a>
-### 28. `POSTGRES_CONNECTION_REFUSED`
+### 30. `POSTGRES_CONNECTION_REFUSED`
 
 **Title**: PostgreSQL connection refused on target endpoint
 
@@ -1023,7 +1097,7 @@ Verify that TCP connection to PostgreSQL endpoint succeeds.
 ---
 
 <a id="postgres-database-not-found"></a>
-### 29. `POSTGRES_DATABASE_NOT_FOUND`
+### 31. `POSTGRES_DATABASE_NOT_FOUND`
 
 **Title**: PostgreSQL database does not exist
 
@@ -1058,7 +1132,7 @@ Verify that PostgreSQL target database exists and accepts connections.
 ---
 
 <a id="postgres-ssl-required"></a>
-### 30. `POSTGRES_SSL_REQUIRED`
+### 32. `POSTGRES_SSL_REQUIRED`
 
 **Title**: PostgreSQL requires SSL/TLS connection
 
@@ -1092,7 +1166,7 @@ Verify that encrypted SSL/TLS connection to PostgreSQL succeeds.
 ---
 
 <a id="python-package-version-mismatch"></a>
-### 31. `PYTHON_PACKAGE_VERSION_MISMATCH`
+### 33. `PYTHON_PACKAGE_VERSION_MISMATCH`
 
 **Title**: Installed Python package version does not satisfy requirement
 
@@ -1126,7 +1200,7 @@ Verify that installed package versions satisfy declared requirements.
 ---
 
 <a id="python-packages-missing"></a>
-### 32. `PYTHON_PACKAGES_MISSING`
+### 34. `PYTHON_PACKAGES_MISSING`
 
 **Title**: Declared Python dependencies are not installed
 
@@ -1160,7 +1234,7 @@ Verify all declared packages are present in pip list.
 ---
 
 <a id="python-venv-missing"></a>
-### 33. `PYTHON_VENV_MISSING`
+### 35. `PYTHON_VENV_MISSING`
 
 **Title**: Python virtual environment missing
 
@@ -1194,7 +1268,7 @@ Confirm that .venv directory exists or VIRTUAL_ENV is active.
 ---
 
 <a id="runtime-declarations-conflict"></a>
-### 34. `RUNTIME_DECLARATIONS_CONFLICT`
+### 36. `RUNTIME_DECLARATIONS_CONFLICT`
 
 **Title**: Conflicting runtime version declarations between project files
 
@@ -1228,7 +1302,7 @@ Verify that .nvmrc satisfies the range specified in package.json engines.node.
 ---
 
 <a id="spring-boot-datasource-missing"></a>
-### 35. `SPRING_BOOT_DATASOURCE_MISSING`
+### 37. `SPRING_BOOT_DATASOURCE_MISSING`
 
 **Title**: Spring Boot DataSource URL is not configured
 
@@ -1263,7 +1337,7 @@ Verify `spring.datasource.url` is declared in application properties or environm
 ---
 
 <a id="spring-boot-port-in-use"></a>
-### 36. `SPRING_BOOT_PORT_IN_USE`
+### 38. `SPRING_BOOT_PORT_IN_USE`
 
 **Title**: Spring Boot server port is already in use by another process
 
@@ -1294,6 +1368,76 @@ Verify target Spring Boot port is free and available.
 
 #### Documentation References
 - [https://spring.io/guides/gs/spring-boot](https://spring.io/guides/gs/spring-boot)
+
+---
+
+<a id="sqlite-file-corrupted"></a>
+### 39. `SQLITE_FILE_CORRUPTED`
+
+**Title**: SQLite database file is corrupted or not a valid database
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `SQLite`
+- **Evidence Types**: `file_stat`
+
+#### Description
+The SQLite database file exists with non-zero size, but does not start with the standard SQLite 3 header magic string ('SQLite format 3\0').
+
+#### Diagnostic Checks
+- Inspect the database file with `file <path>` or a text viewer to check for HTML errors or JSON payloads
+- Check whether git conflict markers or download failure pages were written to the database path
+- Restore the database from a valid backup or recreate it with your migration tool
+
+#### Remediation Guidance
+- **Problem**: The file at the SQLite path contains invalid data or corrupt headers instead of SQLite 3 database format.
+  - **Relevance**: Application crashes immediately with `SQLITE_NOTADB: file is not a database` or equivalent driver exception.
+  - **Action**: `Move the corrupted file aside and recreate the database with migration commands.`
+  - **Expected Result**: A clean SQLite database with valid headers is generated.
+  - **Risks**: Back up the corrupted file before deletion or overwrite to prevent data loss.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that the SQLite database file contains the standard 'SQLite format 3' header.
+
+#### Documentation References
+- [https://sqlite.org/fileformat.html](https://sqlite.org/fileformat.html)
+
+---
+
+<a id="sqlite-file-not-found"></a>
+### 40. `SQLITE_FILE_NOT_FOUND`
+
+**Title**: SQLite database file or target directory not found
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `SQLite`
+- **Evidence Types**: `file_stat`
+
+#### Description
+The configured SQLite database file path or its parent directory does not exist on disk.
+
+#### Diagnostic Checks
+- Verify the SQLite database path in your environment file or database configuration
+- Ensure the parent directory exists before starting the application
+- Run database migrations or seed scripts to initialize the SQLite database file
+
+#### Remediation Guidance
+- **Problem**: The configured SQLite database file or parent directory is missing.
+  - **Relevance**: Applications attempting to connect to a SQLite database in a non-existent directory fail with SQLITE_CANTOPEN.
+  - **Action**: `Create the target directory or run migrations (`npx prisma db push` or `python manage.py migrate`).`
+  - **Expected Result**: Target directory exists and SQLite database file is created.
+  - **Risks**: Creating directories does not alter existing data.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that the SQLite database file or its parent directory exists on disk.
+
+#### Documentation References
+- [https://sqlite.org/quickstart.html](https://sqlite.org/quickstart.html)
 
 ---
 

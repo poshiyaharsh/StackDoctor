@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-29T17:26:04.484Z",
+  "timestamp": "2026-10-29T17:48:02.323Z",
   "os": "win32",
   "arch": "x64",
   "nodeVersion": "v24.13.0",
-  "totalFixtures": 13,
+  "totalFixtures": 15,
   "metrics": {
-    "totalExpected": 16,
-    "totalDetected": 16,
-    "truePositives": 16,
+    "totalExpected": 18,
+    "totalDetected": 18,
+    "truePositives": 18,
     "falseNegatives": 0,
     "falsePositives": 0,
     "accuracy": 100,
@@ -158,6 +158,24 @@
       "fn": 0,
       "precision": 100,
       "recall": 100
+    },
+    "SQLITE_FILE_CORRUPTED": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "SQLITE_FILE_NOT_FOUND": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
     }
   },
   "fixtures": [
@@ -232,6 +250,16 @@
       "passed": true
     },
     {
+      "name": "broken-database-sqlite",
+      "sourceId": "FB-DRAFT-004 / Run 7D-E Baseline",
+      "expected": 2,
+      "detected": 2,
+      "tp": 2,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
       "name": "healthy-node-project",
       "sourceId": "Healthy Reference",
       "expected": 0,
@@ -263,6 +291,16 @@
     },
     {
       "name": "healthy-dotnet-project",
+      "sourceId": "Healthy Reference",
+      "expected": 0,
+      "detected": 0,
+      "tp": 0,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "healthy-database-sqlite",
       "sourceId": "Healthy Reference",
       "expected": 0,
       "detected": 0,

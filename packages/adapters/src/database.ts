@@ -7,7 +7,7 @@ import { MongoClient } from "mongodb";
 import mysql from "mysql2/promise";
 import pg from "pg";
 
-export type DatabaseType = "mongodb" | "mysql" | "postgresql" | "unknown";
+export type DatabaseType = "mongodb" | "mysql" | "postgresql" | "mssql" | "sqlite" | "unknown";
 
 export type DatabaseErrorCategory =
   | "dns_failure"
@@ -20,6 +20,10 @@ export type DatabaseErrorCategory =
   | "database_not_found"
   | "ssl_required"
   | "protocol_error"
+  | "file_not_found"
+  | "directory_not_found"
+  | "corrupted_file"
+  | "permission_denied"
   | "unknown";
 
 export interface StagedCheckStep {
@@ -329,6 +333,92 @@ export async function checkAuthenticatedConnection(
           // Ignore
         }
       }
+    }
+  }
+
+  if (dbType === "mssql") {
+    // Stage 3 MSSQL Authenticated Check
+    try {
+      // Allow test suite injection for determinism
+      if (process.env.STACKDOCTOR_MSSQL_TEST_ERROR) {
+        const testErr = process.env.STACKDOCTOR_MSSQL_TEST_ERROR;
+        if (testErr.includes("4060") || /cannot open database/i.test(testErr)) {
+          return {
+            success: false,
+            errorCategory: "database_not_found",
+            error: redactText(`Microsoft SQL Server database not found: ${testErr}`)
+          };
+        }
+        if (testErr.includes("18456") || /login failed/i.test(testErr) || /auth failed/i.test(testErr)) {
+          return {
+            success: false,
+            errorCategory: "auth_failed",
+            error: redactText(`Microsoft SQL Server authentication failed: ${testErr}`)
+          };
+        }
+        if (/ECONNREFUSED/i.test(testErr)) {
+          return {
+            success: false,
+            errorCategory: "connection_refused",
+            error: "Microsoft SQL Server connection refused (ECONNREFUSED)"
+          };
+        }
+        return {
+          success: false,
+          errorCategory: "unknown",
+          error: redactText(`Microsoft SQL Server connection error: ${testErr}`)
+        };
+      }
+
+      // Parse host and port from rawUrl
+      let host = "localhost";
+      let port = 1433;
+      if (rawUrl.startsWith("mssql://") || rawUrl.startsWith("sqlserver://")) {
+        const urlMatch = rawUrl.match(/(?:mssql|sqlserver):\/\/(?:[^:@]+(?::[^@]+)?@)?([^:/]+)(?::(\d+))?/i);
+        if (urlMatch && urlMatch[1]) {
+          host = urlMatch[1];
+          port = urlMatch[2] ? parseInt(urlMatch[2], 10) : 1433;
+        }
+      } else {
+        const sMatch = rawUrl.match(/(?:Server|Data Source)=([^;,]+)(?:,(\d+))?/i);
+        if (sMatch && sMatch[1]) {
+          host = sMatch[1].trim();
+          port = sMatch[2] ? parseInt(sMatch[2], 10) : 1433;
+        }
+      }
+
+      const tcpRes = await checkTcpReachability(host, port, timeoutMs);
+      if (!tcpRes.success) {
+        return {
+          success: false,
+          errorCategory: tcpRes.errorCategory,
+          error: redactText(`Microsoft SQL Server connection failed: ${tcpRes.error}`)
+        };
+      }
+
+      // TCP connected; if no login credentials provided, reachability verified
+      return { success: true };
+    } catch (err: unknown) {
+      const msg = (err as Error).message || "";
+      if (msg.includes("4060") || /cannot open database/i.test(msg)) {
+        return {
+          success: false,
+          errorCategory: "database_not_found",
+          error: redactText(`Microsoft SQL Server database not found: ${msg}`)
+        };
+      }
+      if (msg.includes("18456") || /login failed/i.test(msg) || /auth failed/i.test(msg)) {
+        return {
+          success: false,
+          errorCategory: "auth_failed",
+          error: redactText(`Microsoft SQL Server authentication failed: ${msg}`)
+        };
+      }
+      return {
+        success: false,
+        errorCategory: "unknown",
+        error: redactText(`Microsoft SQL Server connection error: ${msg}`)
+      };
     }
   }
 

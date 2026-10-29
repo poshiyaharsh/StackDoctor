@@ -127,7 +127,7 @@ describe("StackDoctor API Tokens (Run 3C)", () => {
         .set("Authorization", `Bearer ${rawToken}`);
 
       expect(rulesRes.status).toBe(200);
-      expect(rulesRes.body.total).toBe(36);
+      expect(rulesRes.body.total).toBe(40);
     });
 
     it("rejects invalid, revoked, and expired tokens with 401", async () => {

@@ -26,7 +26,8 @@ import {
   inspectComposerDependencies,
   inspectLaravelConfig,
   detectDotnetRuntime,
-  inspectDotnetProjects
+  inspectDotnetProjects,
+  findSqliteConfigurations
 } from "@stackdoctor/adapters";
 import type { CliOptions } from "./index.js";
 
@@ -118,7 +119,7 @@ export async function collectEvaluationContext(
   // 5. Database Diagnostics
   const dbDiagnostics: NonNullable<RuleEvaluationContext["database"]>["diagnostics"] = [];
   const dbEndpointsToCheck: Array<{
-    dbType: "mongodb" | "mysql" | "postgresql";
+    dbType: "mongodb" | "mysql" | "postgresql" | "mssql";
     host: string;
     port: number;
   }> = [];
@@ -162,6 +163,25 @@ export async function collectEvaluationContext(
           const port = portMatch && portMatch[1] ? parseInt(portMatch[1], 10) : 5432;
           if (!dbEndpointsToCheck.some((e) => e.host === host && e.port === port)) {
             dbEndpointsToCheck.push({ dbType: "postgresql", host, port });
+          }
+        }
+
+        const mssqlMatch = content.match(/(?:mssql|sqlserver):\/\/(?:[^:@]+(?::[^@]+)?@)?([^:/]+)(?::(\d+))?/i);
+        if (mssqlMatch && mssqlMatch[1]) {
+          const host = mssqlMatch[1];
+          const port = mssqlMatch[2] ? parseInt(mssqlMatch[2], 10) : 1433;
+          if (!dbEndpointsToCheck.some((e) => e.host === host && e.port === port)) {
+            dbEndpointsToCheck.push({ dbType: "mssql", host, port });
+          }
+        }
+
+        const mssqlHostMatch = content.match(/(?:MSSQL_HOST|SQLSERVER_HOST)\s*=\s*([^\s#]+)/i);
+        if (mssqlHostMatch && mssqlHostMatch[1]) {
+          const host = mssqlHostMatch[1].trim();
+          const portMatch = content.match(/(?:MSSQL_PORT|SQLSERVER_PORT)\s*=\s*(\d+)/i);
+          const port = portMatch && portMatch[1] ? parseInt(portMatch[1], 10) : 1433;
+          if (!dbEndpointsToCheck.some((e) => e.host === host && e.port === port)) {
+            dbEndpointsToCheck.push({ dbType: "mssql", host, port });
           }
         }
 
@@ -250,6 +270,9 @@ export async function collectEvaluationContext(
     if ((s.includes("postgres") || s.includes("psql")) && !hasPgEndpoint) {
       dbEndpointsToCheck.push({ dbType: "postgresql", host: "localhost", port: 5432 });
     }
+    if ((s.includes("mssql") || s.includes("sqlserver")) && !dbEndpointsToCheck.some((e) => e.dbType === "mssql")) {
+      dbEndpointsToCheck.push({ dbType: "mssql", host: "localhost", port: 1433 });
+    }
   }
 
   if (hasPgPrisma && !dbEndpointsToCheck.some((e) => e.dbType === "postgresql")) {
@@ -267,6 +290,20 @@ export async function collectEvaluationContext(
       dbDiagnostics.push(diag);
     } catch {
       // Safe runner never throws
+    }
+  }
+
+  // SQLite database static inspection
+  const sqliteConfigs = findSqliteConfigurations(dir);
+  for (const sq of sqliteConfigs) {
+    if (sq.errorCategory) {
+      dbDiagnostics.push({
+        dbType: "sqlite",
+        host: "localhost",
+        port: 0,
+        finalCategory: sq.errorCategory,
+        error: sq.error
+      });
     }
   }
 
@@ -464,7 +501,8 @@ export async function collectEvaluationContext(
       }
     },
     database: {
-      diagnostics: dbDiagnostics
+      diagnostics: dbDiagnostics,
+      sqlite: sqliteConfigs
     },
     python: {
       hasDeclaredDeps: pyDeps.hasDeclaredDeps,

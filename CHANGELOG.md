@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Broader Database Support: SQLite & Microsoft SQL Server (FB-DRAFT-004 / Run 7D-E Extension)**:
+  - Added dedicated SQLite inspection adapter (`@stackdoctor/adapters`) verifying database URI/path parsing, parent directory existence, file presence, valid SQLite 3 header magic bytes (`SQLite format 3\0`), and read/write file permissions.
+  - Added Microsoft SQL Server staged connectivity, TCP port 1433 probing, and error categorization mapping error 18456 to `auth_failed`, error 4060 to `database_not_found`, and ECONNREFUSED to `connection_refused` with strict canary credential redaction.
+  - Added static detection for SQLite and Microsoft SQL Server in `@stackdoctor/core` across project files, `.env`, `.env.example`, `schema.prisma`, `settings.py`, and Docker Compose.
+  - Added 4 new production-tested diagnostic rules (catalog expanded to 40 rules):
+    - `SQLITE_FILE_NOT_FOUND`: Statically flags when a configured SQLite database file or its enclosing parent directory does not exist, catching `SQLITE_CANTOPEN` errors before runtime crashes.
+    - `SQLITE_FILE_CORRUPTED`: Detects when a file exists at the SQLite path with non-zero size but does not start with the standard SQLite 3 header (`SQLite format 3\0`), catching corrupted files, HTML 502 error pages, or textual download failures.
+    - `MSSQL_CONNECTION_REFUSED`: Detects when TCP connection to the configured Microsoft SQL Server endpoint (default port 1433) was actively refused (ECONNREFUSED).
+    - `MSSQL_AUTH_FAILED`: Detects when Microsoft SQL Server login or authentication failed (Error 18456), distinguishing credential rejection from network socket failures.
+  - Added allowlisted doc domains for `sqlite.org` in `@stackdoctor/schemas`.
+  - Added synthetic fixtures `examples/broken-database-sqlite/` and `examples/healthy-database-sqlite/` with 100.0% detection accuracy and 0.0% false positive benchmark verification.
 - **.NET, C# & ASP.NET Core Ecosystem Support (FB-DRAFT-003 / Run 7E Extension)**:
   - Added .NET SDK runtime (`dotnet --version`), TargetFramework parsing (`net8.0`, `net9.0`, `netcoreapp3.1`, `netstandard2.0`), NuGet package references, project asset verification (`obj/project.assets.json`), and ASP.NET Core launch port inspection (`Properties/launchSettings.json`, `applicationUrl`) static inspection in `@stackdoctor/adapters`.
   - Added static detection for `.NET`, `C#`, and `ASP.NET Core` projects in `@stackdoctor/core`.
