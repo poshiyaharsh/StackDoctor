@@ -99,6 +99,6 @@ exports[`JSON Report Stability and Schema Invariance (Run 4B) > matches structur
       "name": "Node.js",
     },
   ],
-  "toolVersion": "0.1.0",
+  "toolVersion": "0.2.0",
 }
 `;

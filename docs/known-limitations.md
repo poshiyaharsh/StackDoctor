@@ -1,29 +1,37 @@
 # Known Limitations
 
-This document provides a transparent, honest account of current limitations, trade-offs, and edge cases in StackDoctor v0.1.0.
+This document provides a transparent, honest account of current limitations, trade-offs, and edge cases in StackDoctor v0.2.0.
 
 ---
 
 ## 1. Supported Ecosystems & Runtimes
 
 - **Node.js**:
-  - Full support for standard npm and package.json configurations.
+  - Full support for standard npm, pnpm, and yarn configurations.
   - Multi-package monorepos with nested workspaces (`pnpm-workspace.yaml`, Lerna, Yarn Berry zero-install) have basic scanning but lack deep workspace topological diagnostics.
 - **Python & Django**:
   - Detection covers standard `virtualenv`, `.venv`, `requirements.txt`, and Django `manage.py` / `settings.py`.
   - Poetry (`pyproject.toml`), Pipenv (`Pipfile`), and Conda environments are currently recognized only through active `$VIRTUAL_ENV` environment flags.
+- **Java & Spring Boot**:
+  - Static inspection covers `pom.xml`, `build.gradle`, `.java-version`, and Spring Boot properties/YAML.
+  - Multi-module Maven reactor or Gradle composite builds have basic single-project scanning.
+- **PHP & Laravel**:
+  - Static inspection covers `composer.json`, `vendor/autoload.php`, `.php-version`, `artisan`, and `.env` (`APP_KEY`).
+  - Symfony, Drupal, or WordPress framework-specific configurations are not yet deeply inspected.
+- **.NET, C# & ASP.NET Core**:
+  - Static inspection covers `.csproj`, `.sln`, `obj/project.assets.json`, and `Properties/launchSettings.json`.
+  - F# and VB.NET projects are recognized by runtime but lack specialized rule packs.
 - **Unimplemented Runtimes**:
-  - Go, Rust, Ruby on Rails, Java (Maven/Gradle), PHP, and .NET are not yet supported.
+  - Go, Rust, and Ruby on Rails are not yet supported.
 
 ---
 
 ## 2. Database Support
 
-- **Supported**: MongoDB and MySQL.
+- **Supported**: MongoDB, MySQL, PostgreSQL, SQLite, and Microsoft SQL Server (MSSQL).
 - **Not Yet Supported**:
-  - PostgreSQL adapter is not yet implemented (planned for v0.2.0).
   - Redis connection reachability is currently inferred from Docker Compose service names, but direct `PING/PONG` protocol handshakes are not yet implemented.
-  - SQLite file permissions and lock contentions are not diagnosed.
+  - Cassandra, DynamoDB, Oracle Database, and CockroachDB are not yet supported.
 
 ---
 

@@ -73,3 +73,4 @@ describe("Microsoft SQL Server (MSSQL) Adapter Unit Tests", () => {
     expect(res.error).not.toContain(canary);
   });
 });
+

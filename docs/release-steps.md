@@ -1,8 +1,8 @@
-# StackDoctor v0.1.0 Release Execution Guide
+# StackDoctor v0.2.0 Release Execution Guide
 
-This document contains the step-by-step instructions for the maintainer to execute the official v0.1.0 release.
+This document contains the step-by-step instructions for the maintainer to execute the official v0.2.0 release.
 
-> **CRITICAL**: Do NOT run these steps until you are ready to publish packages publicly to npm and GitHub Releases. All automated CI checks, security scans, license audits, and package packing dry-runs have passed.
+> **CRITICAL**: Do NOT run these steps until you are ready to publish packages publicly to npm and GitHub Releases. All automated CI checks, security scans, license audits, and package packing dry-runs have passed via `npm run verify:release`.
 
 ---
 
@@ -37,17 +37,20 @@ From your terminal on `main`:
 git checkout main
 git pull origin main
 
-# 2. Create the annotated release tag
-git tag -a v0.1.0 -m "Release v0.1.0: StackDoctor initial public release"
+# 2. Run release verification
+npm run verify:release
 
-# 3. Push the tag to GitHub
-git push origin v0.1.0
+# 3. Create the annotated release tag
+git tag -a v0.2.0 -m "Release v0.2.0: Multi-ecosystem expansion and 40 diagnostic rules"
+
+# 4. Push the tag to GitHub
+git push origin v0.2.0
 ```
 
 ### Option B: Manual GitHub Actions Dispatch
 1. Go to the **Actions** tab in GitHub.
 2. Select the **Release** workflow (`.github/workflows/release.yml`).
-3. Click **Run workflow**, enter `v0.1.0`, and click **Run**.
+3. Click **Run workflow**, enter `v0.2.0`, and click **Run**.
 
 ---
 
@@ -58,8 +61,8 @@ git push origin v0.1.0
 3. Review and approve the deployment.
 4. The workflow will:
    - Build the distribution bundle.
-   - Publish `@harshposhiya/stackdoctor@0.1.0` to npm with cryptographic provenance signing.
-   - Create a draft release on GitHub with release notes from `RELEASE_NOTES_0.1.0.md`.
+   - Publish `@harshposhiya/stackdoctor@0.2.0` to npm with cryptographic provenance signing.
+   - Create a draft release on GitHub with release notes from `RELEASE_NOTES_0.2.0.md`.
 
 ---
 

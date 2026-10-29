@@ -250,3 +250,4 @@ export function findSqliteConfigurations(projectDir: string): SqliteInspectionRe
 
   return results;
 }
+

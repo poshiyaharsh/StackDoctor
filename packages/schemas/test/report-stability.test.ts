@@ -118,7 +118,7 @@ describe("JSON Report Stability and Schema Invariance (Run 4B)", () => {
     if (!result.success) return;
 
     expect(result.data.schemaVersion).toBe("1.0.0");
-    expect(result.data.toolVersion).toBe("0.1.0");
+    expect(result.data.toolVersion).toBe(CURRENT_TOOL_VERSION);
     expect(result.data.projectName).toBe("canonical-service");
   });
 

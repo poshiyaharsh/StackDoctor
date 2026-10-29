@@ -6,7 +6,7 @@ import { FindingSchema } from "./findings.js";
 
 export const MAX_REPORT_FINDINGS = 1_000;
 export const CURRENT_SCHEMA_VERSION = "1.0.0";
-export const CURRENT_TOOL_VERSION = "0.1.0";
+export const CURRENT_TOOL_VERSION = "0.2.0";
 
 export const ReportSummarySchema = z.object({
   totalChecks: z.number().int().nonnegative(),

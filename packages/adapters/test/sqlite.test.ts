@@ -82,3 +82,4 @@ describe("SQLite Adapter Unit Tests", () => {
     expect(configs[0].isValidSqliteHeader).toBe(true);
   });
 });
+

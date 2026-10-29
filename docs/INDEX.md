@@ -24,6 +24,7 @@
 | 4 | Integrations | GitHub issue drafts, CI JSON, report compare | Done |
 | 5 | Optional AI | Evidence-grounded explanations | Done |
 | 6 | Open-source launch | Docs, license, security policy, release | Done |
+| 7 | Post-launch & v0.2 | Real feedback triage, 4 new ecosystems, 40 rules, v0.2.0 prep | Done |
 
 Status values: Not started, In progress, Needs fixes, Done.
 

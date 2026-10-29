@@ -136,3 +136,4 @@ describe("SQLite Diagnostic Rules", () => {
     });
   });
 });
+

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-29
+
 ### Added
 - **Broader Database Support: SQLite & Microsoft SQL Server (FB-DRAFT-004 / Run 7D-E Extension)**:
   - Added dedicated SQLite inspection adapter (`@stackdoctor/adapters`) verifying database URI/path parsing, parent directory existence, file presence, valid SQLite 3 header magic bytes (`SQLite format 3\0`), and read/write file permissions.

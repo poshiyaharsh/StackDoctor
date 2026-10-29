@@ -6,44 +6,13 @@ StackDoctor's mission is to provide an evidence-first, deterministic self-healin
 
 ---
 
-## Current Version: v0.1.0 (Released October 2026)
+## Current Version: v0.2.0 (Released October 2026)
 
-- Core deterministic diagnostic engine (`@stackdoctor/core`) with 20 rules across Node.js, Python, Docker, MongoDB, and MySQL.
-- Cross-platform CLI (`stackdoctor`) with `scan`, `rules`, and `explain` subcommands.
-- Deterministic heuristic analysis with explicit evidence vs. hypothesis classification.
-- Interactive terminal UI with color-coded severity, confidence levels, and rollback/undo instructions.
-- CI/CD integration with machine-readable `--json` and exit-code enforcement (`--ci`).
-- Optional local web dashboard (`apps/web`) and ingestion API (`apps/api`).
-- Zero-external-dependency local scan mode (zero telemetry, zero phone-home by default).
-- Evaluation harness (`npm run eval`) with 100% precision on baseline fixtures.
-
----
-
-## Planned for v0.2.0 (Milestone 1)
-
-### 1. PostgreSQL Ecosystem Support
-- **Issue**: StackDoctor currently inspects MySQL and MongoDB connection strings, services, and ports, but lacks a dedicated PostgreSQL adapter.
-- **Planned Work**:
-  - Add `POSTGRES_CONNECTION_FAILED`, `POSTGRES_PORT_IN_USE`, `POSTGRES_DATABASE_NOT_FOUND`, and `POSTGRES_AUTH_METHOD_MISMATCH` diagnostic rules.
-  - Detect PostgreSQL connection parameters from `.env`, `DATABASE_URL`, and Prisma/TypeORM/Drizzle schema files.
-  - Safe TCP/socket probe to verify Postgres availability on default port 5432.
-
-### 2. Workspace & Monorepo Package Manager Support
-- **Issue**: Monorepos utilizing `pnpm` (virtual store symlinks) or `bun` (bun.lockb) currently fallback to standard npm scanning patterns.
-- **Planned Work**:
-  - Parse `pnpm-workspace.yaml` and resolve peer dependencies across workspace packages.
-  - Parse `bun.lockb` and handle bun runtime package resolution.
-  - Detect hoisting errors and ghost dependencies across nested workspaces.
-
-### 3. Expanded Diagnostic Rule Coverage
-- **Next.js & React Ecosystem**:
-  - Next.js 14/15 App Router vs. Pages Router environment variable collisions (`NEXT_PUBLIC_*`).
-  - Turbopack cache corruption detection (`.next/cache`).
-- **Python / Django / FastAPI**:
-  - Virtual environment mismatch detection when multiple `python` or `pyenv` binaries are present in PATH.
-  - Detect unapplied Alembic and Django database migrations prior to service launch.
-- **Redis & In-Memory Stores**:
-  - Redis connection failure and maxmemory exhaustion detection.
+- Expanded multi-ecosystem diagnostic engine (`@stackdoctor/core`) with 40 rules across Node.js, Python, Java, PHP, .NET, Docker, MongoDB, MySQL, PostgreSQL, SQLite, and Microsoft SQL Server.
+- Full support for Java/Spring Boot (Maven/Gradle), PHP/Laravel (Composer), and C#/.NET (ASP.NET Core).
+- Staged connectivity probing for PostgreSQL, SQLite, and Microsoft SQL Server with strict canary credential protection.
+- Data-driven accuracy benchmark harness (`npm run eval`) with 100.0% accuracy across 15 fixtures and regression cases (`FB-002`, `FB-004`).
+- Single-command release verification chain (`npm run verify:release`) enforcing 13 quality gates.
 
 ---
 
@@ -53,6 +22,18 @@ StackDoctor's mission is to provide an evidence-first, deterministic self-healin
 - Currently, StackDoctor provides explicit copy-paste commands with expected outcomes, risk assessments, and rollback/undo steps.
 - **Planned Work**:
   - Optional `--fix` flag with interactive confirmation prompts before executing any remediation commands.
+  - Automatic rollback checkpoints and pre-fix environment snapshots.
+  - Strict sandboxing: remediation actions that modify critical system configurations or delete non-reproducible assets will remain strictly manual.
+
+### 2. Deep Monorepo Workspace Topology
+- **Planned Work**:
+  - Parse `pnpm-workspace.yaml`, Lerna, and Bun workspaces.
+  - Detect phantom dependencies, hoisting issues, and version drift across monorepo packages.
+
+### 3. Redis & Cache Diagnostics
+- **Planned Work**:
+  - Direct Redis PING/PONG socket probe.
+  - Next.js Turbopack cache corruption detection (`.next/cache`).
   - Automatic rollback checkpoints and pre-fix environment snapshots.
   - Strict sandboxing: remediation actions that modify critical system configurations or delete non-reproducible assets will remain strictly manual.
 

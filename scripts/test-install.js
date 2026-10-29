@@ -9,6 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 const cliDir = path.resolve(rootDir, "apps", "cli");
+const cliPkg = JSON.parse(fs.readFileSync(path.join(cliDir, "package.json"), "utf-8"));
+const currentVersion = cliPkg.version;
 
 console.log("======================================================");
 console.log("     StackDoctor Fresh Tarball Installation Test      ");
@@ -63,8 +65,8 @@ try {
     : `"${binExecutable}" --version`;
   const versionOut = execSync(versionCmd, { encoding: "utf-8" }).trim();
   console.log("Output:", versionOut);
-  if (!versionOut.includes("0.1.0")) {
-    throw new Error(`Expected version 0.1.0 in output, got: ${versionOut}`);
+  if (!versionOut.includes(currentVersion)) {
+    throw new Error(`Expected version ${currentVersion} in output, got: ${versionOut}`);
   }
 
   // Test 2: rules
@@ -97,10 +99,10 @@ try {
     : `"${binExecutable}" scan "${fixturePath}" --json`;
   const scanOut = execSync(scanCmd, { encoding: "utf-8" });
   const report = JSON.parse(scanOut);
-  if (report.toolVersion !== "0.1.0" || report.status !== "completed" || report.findings.length !== 0) {
+  if (report.toolVersion !== currentVersion || report.status !== "completed" || report.findings.length !== 0) {
     throw new Error(`Unexpected scan report result: ${JSON.stringify(report.summary)}`);
   }
-  console.log("Healthy scan report verified (status: completed, findings: 0, toolVersion: 0.1.0).");
+  console.log(`Healthy scan report verified (status: completed, findings: 0, toolVersion: ${currentVersion}).`);
 
   // Test 5: scan on broken fixture exit code
   const brokenPath = path.join(rootDir, "examples", "broken-node-project");
