@@ -528,6 +528,62 @@ export async function scanProject(targetDir: string, options: ScanOptions = {}):
     }
   }
 
+  // 13. PHP, Composer & Laravel detection
+  const composerJson = files.find((f) => f.name === "composer.json");
+  const composerLock = files.find((f) => f.name === "composer.lock");
+  const phpVersionFile = files.find((f) => f.name === ".php-version");
+  const hasPhpFiles = files.some((f) => f.name.endsWith(".php"));
+
+  if (composerJson || composerLock || phpVersionFile || hasPhpFiles) {
+    addTech("PHP", "confirmed", {
+      id: "ev-tech-php",
+      kind: "file_presence",
+      description: "PHP project configuration detected",
+      observed: composerJson
+        ? "Found composer.json in project root"
+        : phpVersionFile
+        ? "Found .php-version file"
+        : "Found PHP source files in project",
+      source: composerJson ? "composer.json" : phpVersionFile ? ".php-version" : "index.php",
+      collectedAt: now
+    });
+  }
+
+  if (composerJson || composerLock) {
+    addTech("Composer", "confirmed", {
+      id: "ev-tech-composer",
+      kind: "file_presence",
+      description: "Composer package management detected",
+      observed: composerJson ? "Found composer.json" : "Found composer.lock",
+      source: composerJson ? "composer.json" : "composer.lock",
+      collectedAt: now
+    });
+  }
+
+  const artisanFile = files.find((f) => f.name === "artisan");
+  let hasLaravelFramework = false;
+  if (composerJson) {
+    try {
+      const content = fs.readFileSync(composerJson.absolutePath, "utf-8");
+      if (/laravel\/framework/i.test(content)) {
+        hasLaravelFramework = true;
+      }
+    } catch {
+      // Continue safely
+    }
+  }
+
+  if (artisanFile || hasLaravelFramework) {
+    addTech("Laravel", "confirmed", {
+      id: "ev-tech-laravel",
+      kind: "file_presence",
+      description: "Laravel framework detected",
+      observed: artisanFile ? "Found artisan CLI in project root" : "Found laravel/framework dependency",
+      source: artisanFile ? "artisan" : "composer.json",
+      collectedAt: now
+    });
+  }
+
   // Convert technology map to array
   const technologies: TechnologyDetection[] = Array.from(techMap.entries()).map(([name, val]) => ({
     name,

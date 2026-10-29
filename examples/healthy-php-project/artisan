@@ -1,0 +1,4 @@
+#!/usr/bin/env php
+<?php
+// Healthy Laravel Artisan entrypoint
+

@@ -1,0 +1,10 @@
+{
+  "name": "example/healthy-php-project",
+  "description": "Synthetic healthy PHP and Laravel fixture for StackDoctor",
+  "type": "project",
+  "require": {
+    "php": "^8.1",
+    "laravel/framework": "^10.0"
+  }
+}
+

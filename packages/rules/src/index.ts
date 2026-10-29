@@ -27,6 +27,10 @@ import { javaVersionMismatchRule } from "./rules/java-version-mismatch.js";
 import { javaRuntimeMissingRule } from "./rules/java-runtime-missing.js";
 import { springBootDatasourceMissingRule } from "./rules/spring-boot-datasource-missing.js";
 import { springBootPortInUseRule } from "./rules/spring-boot-port-in-use.js";
+import { phpVersionMismatchRule } from "./rules/php-version-mismatch.js";
+import { phpRuntimeMissingRule } from "./rules/php-runtime-missing.js";
+import { composerDepsNotInstalledRule } from "./rules/composer-deps-not-installed.js";
+import { laravelAppKeyMissingRule } from "./rules/laravel-app-key-missing.js";
 
 export * from "./types.js";
 export * from "./registry.js";
@@ -58,6 +62,10 @@ export * from "./rules/java-version-mismatch.js";
 export * from "./rules/java-runtime-missing.js";
 export * from "./rules/spring-boot-datasource-missing.js";
 export * from "./rules/spring-boot-port-in-use.js";
+export * from "./rules/php-version-mismatch.js";
+export * from "./rules/php-runtime-missing.js";
+export * from "./rules/composer-deps-not-installed.js";
+export * from "./rules/laravel-app-key-missing.js";
 
 export const RULES_PACKAGE = "@stackdoctor/rules";
 export const RULES_DEPENDENCY = "@stackdoctor/schemas";
@@ -95,5 +103,9 @@ export function createDefaultRuleRegistry(): RuleRegistry {
   registry.register(javaRuntimeMissingRule);
   registry.register(springBootDatasourceMissingRule);
   registry.register(springBootPortInUseRule);
+  registry.register(phpVersionMismatchRule);
+  registry.register(phpRuntimeMissingRule);
+  registry.register(composerDepsNotInstalledRule);
+  registry.register(laravelAppKeyMissingRule);
   return registry;
 }

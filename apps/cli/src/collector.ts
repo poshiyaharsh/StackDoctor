@@ -20,7 +20,11 @@ import {
   checkDjangoMigrations,
   detectJavaRuntime,
   detectJavaRequirement,
-  inspectSpringBootConfig
+  inspectSpringBootConfig,
+  detectPhpRuntime,
+  detectPhpRequirement,
+  inspectComposerDependencies,
+  inspectLaravelConfig
 } from "@stackdoctor/adapters";
 import type { CliOptions } from "./index.js";
 
@@ -60,7 +64,7 @@ export async function collectEvaluationContext(
   for (const dp of declaredPorts) {
     if (dp.valid && dp.port > 0) {
       try {
-        const check = await checkPort("127.0.0.1", dp.port, 1000);
+        const check = await checkPort("127.0.0.1", dp.port, 3000);
         portChecks.push({
           port: check.port,
           host: check.host,
@@ -329,7 +333,7 @@ export async function collectEvaluationContext(
         valid: true
       });
 
-      const portCheck = await checkPort("127.0.0.1", springConfig.serverPort, 1000);
+      const portCheck = await checkPort("127.0.0.1", springConfig.serverPort, 3000);
       portChecks.push({
         port: portCheck.port,
         host: portCheck.host,
@@ -341,6 +345,32 @@ export async function collectEvaluationContext(
         error: portCheck.error
       });
     }
+  }
+
+  // 6d. PHP, Composer & Laravel Diagnostics
+  const isPhp = scanResult.technologies.some((t) => t.name === "PHP");
+  let phpContext: RuleEvaluationContext["php"];
+  let composerContext: RuleEvaluationContext["composer"];
+  let laravelContext: RuleEvaluationContext["laravel"];
+
+  if (isPhp) {
+    const phpRuntime = await detectPhpRuntime();
+    const phpReq = await detectPhpRequirement(dir);
+    phpContext = {
+      installed: phpRuntime.available,
+      version: phpRuntime.version,
+      rawOutput: phpRuntime.rawOutput,
+      requirement: phpReq
+        ? {
+            declared: true,
+            requiredVersion: phpReq.requiredVersion,
+            sourceFile: phpReq.sourceFile
+          }
+        : undefined
+    };
+
+    composerContext = await inspectComposerDependencies(dir);
+    laravelContext = await inspectLaravelConfig(dir);
   }
 
   // 7. Assemble full RuleEvaluationContext
@@ -403,7 +433,10 @@ export async function collectEvaluationContext(
       migrations: djangoMigrations
     },
     java: javaContext,
-    springBoot: springBootContext
+    springBoot: springBootContext,
+    php: phpContext,
+    composer: composerContext,
+    laravel: laravelContext
   };
 
   return evalCtx;

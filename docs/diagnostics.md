@@ -6,7 +6,7 @@ To update or verify this document, run:
 npm run docs:rules
 ```
 
-Total Built-in Rules: **28**
+Total Built-in Rules: **32**
 
 ---
 
@@ -15,6 +15,7 @@ Total Built-in Rules: **28**
 | Rule ID | Category | Severity | Confidence | Technologies | Description |
 |---|---|---|---|---|---|
 | [`COMPOSE_SERVICE_NOT_FOUND`](#compose-service-not-found) | `configuration` | **high** | `confirmed` | Docker, Docker Compose | An application configuration or environment URL references a service name that does not exist in the project's docker-compose.yml services. |
+| [`COMPOSER_DEPS_NOT_INSTALLED`](#composer-deps-not-installed) | `dependencies` | **high** | `confirmed` | PHP, Composer | composer.json exists and declares dependencies, but the vendor directory or vendor/autoload.php is missing. |
 | [`DB_CONNECTION_TIMEOUT`](#db-connection-timeout) | `database` | **high** | `confirmed` | MongoDB, MySQL | TCP connection to the database endpoint timed out before establishing a socket connection. |
 | [`DB_HOST_NOT_RESOLVED`](#db-host-not-resolved) | `database` | **high** | `confirmed` | MongoDB, MySQL | The database hostname configured in project settings could not be resolved to an IP address (ENOTFOUND). |
 | [`DJANGO_MIGRATIONS_PENDING`](#django-migrations-pending) | `database` | **medium** | `confirmed` | Django | Django project has unapplied schema changes that have not yet been applied to the database. |
@@ -23,6 +24,7 @@ Total Built-in Rules: **28**
 | [`ENV_VAR_NAMES_MISSING`](#env-var-names-missing) | `configuration` | **high** | `confirmed` | * | .env file exists, but one or more variable names documented in .env.example are missing. |
 | [`JAVA_RUNTIME_MISSING`](#java-runtime-missing) | `runtime` | **high** | `confirmed` | Java | A Java project build file was detected, but no Java executable (java) was found in the environment. |
 | [`JAVA_VERSION_MISMATCH`](#java-version-mismatch) | `runtime` | **high** | `confirmed` | Java | The active Java runtime does not satisfy the Java version required in the project build configuration. |
+| [`LARAVEL_APP_KEY_MISSING`](#laravel-app-key-missing) | `environment` | **high** | `confirmed` | PHP, Laravel | Laravel application encryption key (APP_KEY) is missing or empty in .env, causing fatal bootstrap decryption exceptions. |
 | [`LOCKFILE_MISSING`](#lockfile-missing) | `dependencies` | **low** | `confirmed` | Node.js | package.json is present in the project root, but no lockfile (package-lock.json, pnpm-lock.yaml, yarn.lock) was found. |
 | [`MONGO_AUTH_FAILED`](#mongo-auth-failed) | `database` | **high** | `confirmed` | MongoDB | Network connection to MongoDB succeeded, but user authentication failed (invalid username, password, or authSource). |
 | [`MONGO_CONNECTION_REFUSED`](#mongo-connection-refused) | `database` | **high** | `confirmed` | MongoDB | TCP connection to the configured MongoDB endpoint was actively refused (ECONNREFUSED). |
@@ -30,6 +32,8 @@ Total Built-in Rules: **28**
 | [`MYSQL_CONNECTION_REFUSED`](#mysql-connection-refused) | `database` | **high** | `confirmed` | MySQL | TCP connection to the configured MySQL endpoint was actively refused (ECONNREFUSED). |
 | [`NODE_DEPS_NOT_INSTALLED`](#node-deps-not-installed) | `dependencies` | **high** | `confirmed` | Node.js | package.json exists in the project root, but the node_modules folder is missing. |
 | [`NODE_VERSION_MISMATCH`](#node-version-mismatch) | `runtime` | **high** | `confirmed` | Node.js | The active Node.js runtime version does not satisfy the version range explicitly declared by the project. |
+| [`PHP_RUNTIME_MISSING`](#php-runtime-missing) | `runtime` | **high** | `confirmed` | PHP, Composer | PHP project files or composer.json are present, but the 'php' binary cannot be located in PATH. |
+| [`PHP_VERSION_MISMATCH`](#php-version-mismatch) | `runtime` | **high** | `confirmed` | PHP, Composer | The active PHP CLI runtime does not satisfy the PHP version constraint declared in composer.json or .php-version. |
 | [`PORT_IN_USE`](#port-in-use) | `network` | **high** | `confirmed` | * | A network port required by the application is already bound by another process or listener on this machine. |
 | [`PORT_INVALID`](#port-invalid) | `configuration` | **high** | `confirmed` | * | A network port specified in project configuration or scripts is not a valid TCP port number (must be an integer between 1 and 65535). |
 | [`POSTGRES_AUTH_FAILED`](#postgres-auth-failed) | `database` | **high** | `confirmed` | PostgreSQL | Network connection to PostgreSQL succeeded, but user authentication was rejected (password authentication failed or role not authorized). |
@@ -81,8 +85,42 @@ Verify that all referenced container hostnames are defined under services in doc
 
 ---
 
+<a id="composer-deps-not-installed"></a>
+### 2. `COMPOSER_DEPS_NOT_INSTALLED`
+
+**Title**: Composer dependencies not installed
+
+- **Category**: `dependencies`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `PHP`, `Composer`
+- **Evidence Types**: `file_presence`
+
+#### Description
+composer.json exists and declares dependencies, but the vendor directory or vendor/autoload.php is missing.
+
+#### Diagnostic Checks
+- Check if vendor/autoload.php exists in the project root.
+- Verify whether 'composer install' has been run after cloning the repository.
+
+#### Remediation Guidance
+- **Problem**: Composer dependencies are missing locally.
+  - **Relevance**: Application runtime fails immediately without installed vendor dependencies and PSR-4 autoloader.
+  - **Action**: `composer install`
+  - **Expected Result**: vendor directory is created and autoload.php is generated.
+  - **Risks**: Downloads dependencies from Packagist; does not modify source code.
+  - **Verification**: `test -f vendor/autoload.php`
+
+#### Verification Principle
+Verify that vendor/autoload.php exists after running composer install.
+
+#### Documentation References
+- [https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies](https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies)
+
+---
+
 <a id="db-connection-timeout"></a>
-### 2. `DB_CONNECTION_TIMEOUT`
+### 3. `DB_CONNECTION_TIMEOUT`
 
 **Title**: Database connection timed out
 
@@ -117,7 +155,7 @@ Verify that TCP connection completes before timeout.
 ---
 
 <a id="db-host-not-resolved"></a>
-### 3. `DB_HOST_NOT_RESOLVED`
+### 4. `DB_HOST_NOT_RESOLVED`
 
 **Title**: Database hostname failed DNS resolution
 
@@ -152,7 +190,7 @@ Verify hostname resolves via DNS lookup.
 ---
 
 <a id="django-migrations-pending"></a>
-### 4. `DJANGO_MIGRATIONS_PENDING`
+### 5. `DJANGO_MIGRATIONS_PENDING`
 
 **Title**: Unapplied database schema changes detected
 
@@ -186,7 +224,7 @@ Confirm showmigrations --plan reports no unapplied changes.
 ---
 
 <a id="django-settings-not-found"></a>
-### 5. `DJANGO_SETTINGS_NOT_FOUND`
+### 6. `DJANGO_SETTINGS_NOT_FOUND`
 
 **Title**: Django settings module file not found
 
@@ -220,7 +258,7 @@ Verify settings file exists at specified path.
 ---
 
 <a id="env-example-present-no-env"></a>
-### 6. `ENV_EXAMPLE_PRESENT_NO_ENV`
+### 7. `ENV_EXAMPLE_PRESENT_NO_ENV`
 
 **Title**: Environment template present but .env file is missing
 
@@ -254,7 +292,7 @@ Confirm that .env file exists in project root.
 ---
 
 <a id="env-var-names-missing"></a>
-### 7. `ENV_VAR_NAMES_MISSING`
+### 8. `ENV_VAR_NAMES_MISSING`
 
 **Title**: Required environment variable names missing from .env
 
@@ -288,7 +326,7 @@ Check .env to ensure all expected variable names are present.
 ---
 
 <a id="java-runtime-missing"></a>
-### 8. `JAVA_RUNTIME_MISSING`
+### 9. `JAVA_RUNTIME_MISSING`
 
 **Title**: Java runtime is not installed or not available on PATH
 
@@ -323,7 +361,7 @@ Verify `java -version` executes successfully.
 ---
 
 <a id="java-version-mismatch"></a>
-### 9. `JAVA_VERSION_MISMATCH`
+### 10. `JAVA_VERSION_MISMATCH`
 
 **Title**: Installed Java version does not satisfy project requirement
 
@@ -357,8 +395,42 @@ Verify active Java version satisfies project build configuration.
 
 ---
 
+<a id="laravel-app-key-missing"></a>
+### 11. `LARAVEL_APP_KEY_MISSING`
+
+**Title**: Laravel application encryption key missing or empty
+
+- **Category**: `environment`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `PHP`, `Laravel`
+- **Evidence Types**: `file_content`
+
+#### Description
+Laravel application encryption key (APP_KEY) is missing or empty in .env, causing fatal bootstrap decryption exceptions.
+
+#### Diagnostic Checks
+- Check .env file for an 'APP_KEY' entry.
+- Verify whether 'php artisan key:generate' has been run.
+
+#### Remediation Guidance
+- **Problem**: Missing or unconfigured Laravel APP_KEY encryption key.
+  - **Relevance**: Laravel halts on boot with a 500 error ('No application encryption key has been specified').
+  - **Action**: `php artisan key:generate`
+  - **Expected Result**: Populates APP_KEY with a secure base64 string in .env.
+  - **Risks**: If existing user session cookies or database fields were encrypted with a prior key, they will become invalid.
+  - **Verification**: `grep -E '^APP_KEY=base64:' .env`
+
+#### Verification Principle
+Verify that APP_KEY is populated with a base64 key in .env.
+
+#### Documentation References
+- [https://laravel.com/docs/configuration#environment-configuration](https://laravel.com/docs/configuration#environment-configuration)
+
+---
+
 <a id="lockfile-missing"></a>
-### 10. `LOCKFILE_MISSING`
+### 12. `LOCKFILE_MISSING`
 
 **Title**: Package lockfile missing
 
@@ -392,7 +464,7 @@ Confirm that a lockfile exists in the project root.
 ---
 
 <a id="mongo-auth-failed"></a>
-### 11. `MONGO_AUTH_FAILED`
+### 13. `MONGO_AUTH_FAILED`
 
 **Title**: MongoDB authentication failed
 
@@ -427,7 +499,7 @@ Verify MongoDB authentication succeeds.
 ---
 
 <a id="mongo-connection-refused"></a>
-### 12. `MONGO_CONNECTION_REFUSED`
+### 14. `MONGO_CONNECTION_REFUSED`
 
 **Title**: MongoDB connection refused on target endpoint
 
@@ -462,7 +534,7 @@ Verify that TCP connection to MongoDB endpoint succeeds.
 ---
 
 <a id="mysql-auth-failed"></a>
-### 13. `MYSQL_AUTH_FAILED`
+### 15. `MYSQL_AUTH_FAILED`
 
 **Title**: MySQL authentication failed
 
@@ -497,7 +569,7 @@ Verify MySQL authentication succeeds.
 ---
 
 <a id="mysql-connection-refused"></a>
-### 14. `MYSQL_CONNECTION_REFUSED`
+### 16. `MYSQL_CONNECTION_REFUSED`
 
 **Title**: MySQL connection refused on target endpoint
 
@@ -532,7 +604,7 @@ Verify that TCP connection to MySQL endpoint succeeds.
 ---
 
 <a id="node-deps-not-installed"></a>
-### 15. `NODE_DEPS_NOT_INSTALLED`
+### 17. `NODE_DEPS_NOT_INSTALLED`
 
 **Title**: Node.js dependencies not installed
 
@@ -566,7 +638,7 @@ Verify that node_modules directory exists after installation.
 ---
 
 <a id="node-version-mismatch"></a>
-### 16. `NODE_VERSION_MISMATCH`
+### 18. `NODE_VERSION_MISMATCH`
 
 **Title**: Installed Node.js version does not satisfy project requirement
 
@@ -599,8 +671,78 @@ Run `node -v` to confirm active version satisfies the declared range.
 
 ---
 
+<a id="php-runtime-missing"></a>
+### 19. `PHP_RUNTIME_MISSING`
+
+**Title**: PHP CLI runtime is not installed or not in PATH
+
+- **Category**: `runtime`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `PHP`, `Composer`
+- **Evidence Types**: `file_presence`
+
+#### Description
+PHP project files or composer.json are present, but the 'php' binary cannot be located in PATH.
+
+#### Diagnostic Checks
+- Run 'which php' or 'where php' in your terminal.
+- Verify your PATH environment variable includes the directory where PHP is installed.
+- If using Docker, check if running inside the container via 'docker compose exec app php -v' is expected.
+
+#### Remediation Guidance
+- **Problem**: PHP CLI runtime is not installed or not found in system PATH.
+  - **Relevance**: Cannot run Composer, Artisan, or execute local PHP scripts.
+  - **Action**: `Install PHP 8.x and ensure 'php' is accessible in your system PATH.`
+  - **Expected Result**: 'php -v' executes successfully in your terminal.
+  - **Risks**: None.
+  - **Verification**: `php -v`
+
+#### Verification Principle
+Verify 'php -v' runs and prints PHP version information.
+
+#### Documentation References
+- [https://www.php.net/manual/en/install.php](https://www.php.net/manual/en/install.php)
+
+---
+
+<a id="php-version-mismatch"></a>
+### 20. `PHP_VERSION_MISMATCH`
+
+**Title**: Installed PHP version does not satisfy project requirement
+
+- **Category**: `runtime`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `PHP`, `Composer`
+- **Evidence Types**: `command_output`
+
+#### Description
+The active PHP CLI runtime does not satisfy the PHP version constraint declared in composer.json or .php-version.
+
+#### Diagnostic Checks
+- Run 'php -v' in your terminal to inspect the active PHP runtime.
+- Check the 'require.php' constraint declared in composer.json or .php-version.
+- If using a PHP version manager (e.g., brew, phpbrew, phpenv), switch to an active version satisfying the constraint.
+
+#### Remediation Guidance
+- **Problem**: Installed PHP CLI runtime does not satisfy project requirements.
+  - **Relevance**: PHP frameworks and dependencies will refuse to run or fail with syntax and runtime compatibility errors.
+  - **Action**: `Switch to a matching PHP runtime version or update your system PATH.`
+  - **Expected Result**: Active PHP version satisfies the project constraint.
+  - **Risks**: Environment variable change; does not modify source code.
+  - **Verification**: `php -v && stackdoctor scan`
+
+#### Verification Principle
+Verify active PHP version satisfies project build configuration.
+
+#### Documentation References
+- [https://www.php.net/supported-versions.php](https://www.php.net/supported-versions.php)
+
+---
+
 <a id="port-in-use"></a>
-### 17. `PORT_IN_USE`
+### 21. `PORT_IN_USE`
 
 **Title**: Required network port is already in use
 
@@ -634,7 +776,7 @@ Verify that the port is free using TCP probe or netstat.
 ---
 
 <a id="port-invalid"></a>
-### 18. `PORT_INVALID`
+### 22. `PORT_INVALID`
 
 **Title**: Declared network port is invalid or out of range
 
@@ -668,7 +810,7 @@ Verify that all declared port numbers are valid integers in the 1-65535 range.
 ---
 
 <a id="postgres-auth-failed"></a>
-### 19. `POSTGRES_AUTH_FAILED`
+### 23. `POSTGRES_AUTH_FAILED`
 
 **Title**: PostgreSQL authentication failed
 
@@ -703,7 +845,7 @@ Verify PostgreSQL authentication succeeds.
 ---
 
 <a id="postgres-connection-refused"></a>
-### 20. `POSTGRES_CONNECTION_REFUSED`
+### 24. `POSTGRES_CONNECTION_REFUSED`
 
 **Title**: PostgreSQL connection refused on target endpoint
 
@@ -738,7 +880,7 @@ Verify that TCP connection to PostgreSQL endpoint succeeds.
 ---
 
 <a id="postgres-database-not-found"></a>
-### 21. `POSTGRES_DATABASE_NOT_FOUND`
+### 25. `POSTGRES_DATABASE_NOT_FOUND`
 
 **Title**: PostgreSQL database does not exist
 
@@ -773,7 +915,7 @@ Verify that PostgreSQL target database exists and accepts connections.
 ---
 
 <a id="postgres-ssl-required"></a>
-### 22. `POSTGRES_SSL_REQUIRED`
+### 26. `POSTGRES_SSL_REQUIRED`
 
 **Title**: PostgreSQL requires SSL/TLS connection
 
@@ -807,7 +949,7 @@ Verify that encrypted SSL/TLS connection to PostgreSQL succeeds.
 ---
 
 <a id="python-package-version-mismatch"></a>
-### 23. `PYTHON_PACKAGE_VERSION_MISMATCH`
+### 27. `PYTHON_PACKAGE_VERSION_MISMATCH`
 
 **Title**: Installed Python package version does not satisfy requirement
 
@@ -841,7 +983,7 @@ Verify that installed package versions satisfy declared requirements.
 ---
 
 <a id="python-packages-missing"></a>
-### 24. `PYTHON_PACKAGES_MISSING`
+### 28. `PYTHON_PACKAGES_MISSING`
 
 **Title**: Declared Python dependencies are not installed
 
@@ -875,7 +1017,7 @@ Verify all declared packages are present in pip list.
 ---
 
 <a id="python-venv-missing"></a>
-### 25. `PYTHON_VENV_MISSING`
+### 29. `PYTHON_VENV_MISSING`
 
 **Title**: Python virtual environment missing
 
@@ -909,7 +1051,7 @@ Confirm that .venv directory exists or VIRTUAL_ENV is active.
 ---
 
 <a id="runtime-declarations-conflict"></a>
-### 26. `RUNTIME_DECLARATIONS_CONFLICT`
+### 30. `RUNTIME_DECLARATIONS_CONFLICT`
 
 **Title**: Conflicting runtime version declarations between project files
 
@@ -943,7 +1085,7 @@ Verify that .nvmrc satisfies the range specified in package.json engines.node.
 ---
 
 <a id="spring-boot-datasource-missing"></a>
-### 27. `SPRING_BOOT_DATASOURCE_MISSING`
+### 31. `SPRING_BOOT_DATASOURCE_MISSING`
 
 **Title**: Spring Boot DataSource URL is not configured
 
@@ -978,7 +1120,7 @@ Verify `spring.datasource.url` is declared in application properties or environm
 ---
 
 <a id="spring-boot-port-in-use"></a>
-### 28. `SPRING_BOOT_PORT_IN_USE`
+### 32. `SPRING_BOOT_PORT_IN_USE`
 
 **Title**: Spring Boot server port is already in use by another process
 

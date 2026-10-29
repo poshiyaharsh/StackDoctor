@@ -138,9 +138,9 @@ stackdoctor scan
 
 ---
 
-## Diagnostic Rules Catalog (28 Built-In Rules)
+## Diagnostic Rules Catalog (32 Built-In Rules)
 
-StackDoctor includes 28 production-tested diagnostic rules across modern web stacks. For full rule specifications, see the [Complete Diagnostics Reference](docs/diagnostics.md).
+StackDoctor includes 32 production-tested diagnostic rules across modern web stacks. For full rule specifications, see the [Complete Diagnostics Reference](docs/diagnostics.md).
 
 | Category | Rule ID | Title | Severity |
 |---|---|---|:---:|
@@ -152,9 +152,11 @@ StackDoctor includes 28 production-tested diagnostic rules across modern web sta
 | **Dependencies** | `PYTHON_PACKAGE_VERSION_MISMATCH` | Installed Python package version does not satisfy requirement | Medium |
 | **Dependencies** | `JAVA_VERSION_MISMATCH` | Installed Java version does not satisfy project requirement | High |
 | **Dependencies** | `JAVA_RUNTIME_MISSING` | Java runtime environment (JRE/JDK) is not installed or not in PATH | High |
+| **Dependencies** | `COMPOSER_DEPS_NOT_INSTALLED` | Composer dependencies not installed | High |
 | **Environment** | `ENV_EXAMPLE_PRESENT_NO_ENV` | Environment template exists but .env is missing | High |
 | **Environment** | `ENV_VAR_NAMES_MISSING` | Environment variable names missing from .env | High |
 | **Environment** | `RUNTIME_DECLARATIONS_CONFLICT` | Conflicting runtime version declarations | Medium |
+| **Environment** | `LARAVEL_APP_KEY_MISSING` | Laravel application encryption key missing or empty | High |
 | **Network** | `PORT_IN_USE` | Target network port is already in use by another process | High |
 | **Network** | `PORT_INVALID` | Configured port number is invalid | High |
 | **Containers** | `COMPOSE_SERVICE_NOT_FOUND` | Docker Compose service referenced in configuration does not exist | High |
@@ -172,6 +174,8 @@ StackDoctor includes 28 production-tested diagnostic rules across modern web sta
 | **Framework** | `DJANGO_MIGRATIONS_PENDING` | Unapplied Django migrations detected | Medium |
 | **Framework** | `SPRING_BOOT_DATASOURCE_MISSING` | Spring Boot datasource configuration missing for Spring Data | High |
 | **Framework** | `SPRING_BOOT_PORT_IN_USE` | Spring Boot configured server port is already in use | High |
+| **Runtime** | `PHP_VERSION_MISMATCH` | Installed PHP version does not satisfy project requirement | High |
+| **Runtime** | `PHP_RUNTIME_MISSING` | PHP CLI runtime is not installed or not in PATH | High |
 
 *(Regenerate this table automatically using `npm run docs:rules`).*
 
@@ -195,7 +199,7 @@ StackDoctor includes 28 production-tested diagnostic rules across modern web sta
 ## Documentation
 
 - **[Installation Guide](docs/installation.md)**: Platform support matrix, npx/npm/source installation, and troubleshooting common setup issues.
-- **[Diagnostics Reference](docs/diagnostics.md)**: In-depth documentation for all 28 rules, preconditions, evidence sources, and remediation steps.
+- **[Diagnostics Reference](docs/diagnostics.md)**: In-depth documentation for all 32 rules, preconditions, evidence sources, and remediation steps.
 - **[CI/CD Guide](docs/ci.md)**: Running StackDoctor in GitHub Actions, GitLab CI, or local pre-commit hooks with deterministic exit codes.
 - **[Privacy & Data Handling](docs/privacy.md)**: Full disclosure on secret redaction, local execution, and optional platform retention.
 - **[Self-Hosting Guide](docs/self-hosting.md)**: Deploying the web dashboard and API with Docker Compose.

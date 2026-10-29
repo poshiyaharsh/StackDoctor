@@ -1647,6 +1647,40 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 7, Run 7F (Team workspaces if demand met) or further ecosystem expansion (PHP/Laravel, .NET/C#) / v0.2.0 release preparation (Run 7G).
 - **Status:** Done
 
+---
+
+### [2026-10-29] Phase 7, Run 7E (Extension): PHP, Composer & Laravel Ecosystem Support
+- **Prompt used:** Phase 7, Run 7E Extension: PHP & Laravel Ecosystem Support (`FB-DRAFT-002`)
+- **What was done:**
+  - Implemented static PHP version parsing and Composer version constraint evaluation in `@stackdoctor/adapters`.
+  - Implemented static PHP CLI runtime check via `php -v`.
+  - Implemented static requirement parsing across `composer.json` (`require.php`) and `.php-version`.
+  - Implemented static Composer dependency inspection (`vendor/autoload.php`).
+  - Implemented static Laravel bootstrap configuration parsing for `APP_KEY` in `.env`.
+  - Implemented static technology detection for `PHP`, `Composer`, and `Laravel` in `@stackdoctor/core`.
+  - Added 4 new production diagnostic rules:
+    - `PHP_VERSION_MISMATCH`: Detects when active PHP CLI runtime does not satisfy the constraint in `composer.json` or `.php-version`.
+    - `PHP_RUNTIME_MISSING`: Detects when PHP project files exist but `php` binary is not found on PATH.
+    - `COMPOSER_DEPS_NOT_INSTALLED`: Detects when dependencies are declared in `composer.json` but `vendor/autoload.php` is missing.
+    - `LARAVEL_APP_KEY_MISSING`: Detects missing or empty `APP_KEY` in `.env` for Laravel applications.
+  - Added allowlisted doc domains for `php.net`, `getcomposer.org`, and `laravel.com` in `@stackdoctor/schemas`.
+  - Added synthetic fixtures `examples/broken-php-project/` and `examples/healthy-php-project/` to benchmark harness in `scripts/eval.js`.
+  - Synchronized rule documentation in `docs/diagnostics.md` (32 rules catalog).
+  - Increased port probe timeout to 3000ms for parallel worker stability on high-load Windows test runs.
+- **Files created/changed:**
+  - Created: `packages/adapters/src/php.ts`, `packages/adapters/test/php.test.ts`, `packages/rules/src/rules/php-version-mismatch.ts`, `packages/rules/src/rules/php-runtime-missing.ts`, `packages/rules/src/rules/composer-deps-not-installed.ts`, `packages/rules/src/rules/laravel-app-key-missing.ts`, `packages/rules/test/php-rules.test.ts`, `examples/broken-php-project/`, `examples/healthy-php-project/`
+  - Modified: `packages/schemas/src/rules.ts`, `packages/adapters/src/index.ts`, `packages/adapters/src/exec.ts`, `packages/core/src/scanner.ts`, `packages/rules/src/types.ts`, `packages/rules/src/index.ts`, `apps/cli/src/collector.ts`, `scripts/eval.js`, `docs/diagnostics.md`, `README.md`, `CHANGELOG.md`, `docs/PHASE7.md`, `docs/LOG.md`, `apps/cli/test/cli.test.ts`, `apps/cli/test/integration.test.ts`, `packages/rules/test/registry.test.ts`, `packages/rules/test/database-rules.test.ts`, `packages/rules/test/phase2-rules.test.ts`, `packages/rules/test/port-rules.test.ts`, `packages/rules/test/python-django-rules.test.ts`, `apps/api/test/resources.test.ts`, `apps/api/test/tokens.test.ts`
+- **Verification:**
+  - `npm run verify:release`: Passed (100% SUCCESS across all 13 gates in 68.1s)
+  - `npm run eval`: Passed (100.0% Detection Accuracy, 0.0% False Positive Rate, 0.0% Miss Rate across 11 fixtures)
+  - `npm test`: Passed (68 test files, 477/477 tests passed)
+  - `npm run docs:rules -- --check`: Passed (32 rules documented)
+- **Decisions made:**
+  - Zero project execution guarantee: All PHP and Laravel diagnostics operate strictly on static file and runtime environment inspections with zero user code execution.
+  - Allowed `php` executable only for `php -v` runtime detection.
+- **Next step:** Phase 7, Run 7F (Team workspaces if demand met) or further ecosystem expansion (.NET/C#, Broader DBs) / v0.2.0 release preparation (Run 7G).
+- **Status:** Done
+
 
 
 

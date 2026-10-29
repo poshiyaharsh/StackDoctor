@@ -88,6 +88,7 @@ describe("Phase 2 End-to-End Fixture Integration Tests", () => {
         await new Promise((r) => setTimeout(r, 200));
       }
     }
+    expect(server).toBeDefined();
 
     try {
       let jsonOutput = "";

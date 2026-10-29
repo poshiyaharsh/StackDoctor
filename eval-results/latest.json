@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-29T16:22:41.193Z",
+  "timestamp": "2026-10-29T17:00:01.404Z",
   "os": "win32",
   "arch": "x64",
   "nodeVersion": "v24.13.0",
-  "totalFixtures": 9,
+  "totalFixtures": 11,
   "metrics": {
-    "totalExpected": 13,
-    "totalDetected": 13,
-    "truePositives": 13,
+    "totalExpected": 15,
+    "totalDetected": 15,
+    "truePositives": 15,
     "falseNegatives": 0,
     "falsePositives": 0,
     "accuracy": 100,
@@ -16,6 +16,15 @@
   },
   "perRule": {
     "COMPOSE_SERVICE_NOT_FOUND": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "COMPOSER_DEPS_NOT_INSTALLED": {
       "expected": 1,
       "detected": 1,
       "tp": 1,
@@ -43,6 +52,15 @@
       "recall": 100
     },
     "ENV_VAR_NAMES_MISSING": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
+    "LARAVEL_APP_KEY_MISSING": {
       "expected": 1,
       "detected": 1,
       "tp": 1,
@@ -185,6 +203,16 @@
       "passed": true
     },
     {
+      "name": "broken-php-project",
+      "sourceId": "FB-DRAFT-002 / Run 7E Baseline",
+      "expected": 2,
+      "detected": 2,
+      "tp": 2,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
       "name": "healthy-node-project",
       "sourceId": "Healthy Reference",
       "expected": 0,
@@ -196,6 +224,16 @@
     },
     {
       "name": "healthy-java-project",
+      "sourceId": "Healthy Reference",
+      "expected": 0,
+      "detected": 0,
+      "tp": 0,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "healthy-php-project",
       "sourceId": "Healthy Reference",
       "expected": 0,
       "detected": 0,

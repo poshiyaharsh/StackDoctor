@@ -18,14 +18,19 @@ async function runEval() {
   console.log("     StackDoctor Diagnostic Accuracy & Precision Eval ");
   console.log("======================================================\n");
 
+  const priorPhpEnv = process.env.STACKDOCTOR_PHP_VERSION;
+  process.env.STACKDOCTOR_PHP_VERSION = "8.2.14";
+
   const baselineFixtures = [
     { name: "broken-node-project", path: path.join(fixturesDir, "broken-node-project"), sourceId: "Phase 1 Baseline" },
     { name: "broken-django-project", path: path.join(fixturesDir, "broken-django-project"), sourceId: "Phase 2 Baseline" },
     { name: "broken-database-config", path: path.join(fixturesDir, "broken-database-config"), sourceId: "Phase 2 Baseline" },
     { name: "broken-postgres-config", path: path.join(fixturesDir, "broken-postgres-config"), sourceId: "FB-009 / Run 7D Baseline" },
     { name: "broken-java-project", path: path.join(fixturesDir, "broken-java-project"), sourceId: "FB-006 / Run 7E Baseline" },
+    { name: "broken-php-project", path: path.join(fixturesDir, "broken-php-project"), sourceId: "FB-DRAFT-002 / Run 7E Baseline" },
     { name: "healthy-node-project", path: path.join(fixturesDir, "healthy-node-project"), sourceId: "Healthy Reference" },
-    { name: "healthy-java-project", path: path.join(fixturesDir, "healthy-java-project"), sourceId: "Healthy Reference" }
+    { name: "healthy-java-project", path: path.join(fixturesDir, "healthy-java-project"), sourceId: "Healthy Reference" },
+    { name: "healthy-php-project", path: path.join(fixturesDir, "healthy-php-project"), sourceId: "Healthy Reference" }
   ];
 
   // Discover dynamic regression fixtures under examples/regressions/
@@ -86,7 +91,12 @@ async function runEval() {
     try {
       const raw = fs.readFileSync(expectedPath, "utf-8");
       const cleaned = raw.replace(/\/\/.*$/gm, "").trim();
-      expectedRuleIds = cleaned ? JSON.parse(cleaned) : [];
+      const parsed = cleaned ? JSON.parse(cleaned) : [];
+      if (Array.isArray(parsed)) {
+        expectedRuleIds = parsed.map((item) => (typeof item === "string" ? item : item.ruleId));
+      } else if (parsed && Array.isArray(parsed.expectedFindings)) {
+        expectedRuleIds = parsed.expectedFindings.map((item) => (typeof item === "string" ? item : item.ruleId));
+      }
     } catch {
       expectedRuleIds = [];
     }
@@ -298,6 +308,12 @@ This document records historical diagnostic accuracy, false positive, and recall
   console.log(`[INFO] Benchmark history updated in: docs/eval-history.md`);
 
   const passed = accuracy >= 80 && falsePositiveRate < 10 && !baselineRegression;
+
+  if (priorPhpEnv !== undefined) {
+    process.env.STACKDOCTOR_PHP_VERSION = priorPhpEnv;
+  } else {
+    delete process.env.STACKDOCTOR_PHP_VERSION;
+  }
 
   if (baselineRegression) {
     console.error("\n[FAIL] Accuracy Regression Detected vs Baseline:");

@@ -494,8 +494,8 @@ describe("StackDoctor Core API Resources (Run 3B)", () => {
       // 1. List all rules
       const allRulesRes = await agent.get("/api/v1/rules");
       expect(allRulesRes.status).toBe(200);
-      expect(allRulesRes.body.total).toBe(28);
-      expect(allRulesRes.body.rules.length).toBe(28);
+      expect(allRulesRes.body.total).toBe(32);
+      expect(allRulesRes.body.rules.length).toBe(32);
 
       // Verify rule structure
       const firstRule = allRulesRes.body.rules[0];

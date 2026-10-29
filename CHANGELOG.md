@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **PHP, Composer & Laravel Ecosystem Support (FB-DRAFT-002 / Run 7E Extension)**:
+  - Added PHP CLI runtime (`php -v`), project version constraints (`composer.json`, `.php-version`), Composer dependency status (`vendor/autoload.php`), and Laravel bootstrap configuration (`artisan`, `APP_KEY` in `.env`) static inspection in `@stackdoctor/adapters`.
+  - Added static detection for PHP, Composer, and Laravel projects in `@stackdoctor/core`.
+  - Added 4 new production-tested diagnostic rules (catalog expanded to 32 rules):
+    - `PHP_VERSION_MISMATCH`: Detects when active PHP CLI runtime does not satisfy the version constraint declared in `composer.json` (e.g. `^8.1`, `>=8.2`) or `.php-version`.
+    - `PHP_RUNTIME_MISSING`: Detects when PHP project files or `composer.json` are present but the `php` binary cannot be located or executed from PATH.
+    - `COMPOSER_DEPS_NOT_INSTALLED`: Detects when `composer.json` declares packages but `vendor/` or `vendor/autoload.php` is missing.
+    - `LARAVEL_APP_KEY_MISSING`: Statically detects when a Laravel application has an empty or unconfigured `APP_KEY` in `.env`, preventing fatal bootstrap decryption 500 crashes.
+  - Zero project execution guarantee: All PHP and Laravel diagnostics operate strictly on static file and runtime environment inspections without executing project PHP or Artisan code.
+  - Added allowlisted doc domains for `php.net`, `getcomposer.org`, and `laravel.com` in `@stackdoctor/schemas`.
+  - Added synthetic fixtures `examples/broken-php-project/` and `examples/healthy-php-project/` with full regression benchmarking in `npm run eval`.
 - **Java & Spring Boot Ecosystem Support (FB-006 / FB-DRAFT-001 / Run 7E)**:
   - Added Java runtime (`java -version`), project requirement (`pom.xml`, `build.gradle`, `.java-version`), and Spring Boot configuration (`application.properties`, `application.yml`, `application.yaml`) static inspection in `@stackdoctor/adapters`.
   - Added static detection for Java, Maven, Gradle, and Spring Boot projects in `@stackdoctor/core`.

@@ -140,6 +140,29 @@ export interface RuleEvaluationContext {
     serverPortDeclared: boolean;
     configFilePath?: string;
   };
+  php?: {
+    installed: boolean;
+    version?: string | null;
+    rawOutput?: string;
+    requirement?: {
+      declared: boolean;
+      requiredVersion?: string;
+      sourceFile?: string;
+    };
+  };
+  composer?: {
+    hasComposerJson: boolean;
+    hasVendor: boolean;
+    hasAutoload: boolean;
+    declaredDepsCount: number;
+    missingVendor: boolean;
+  };
+  laravel?: {
+    isLaravel: boolean;
+    hasArtisan: boolean;
+    hasAppKey: boolean;
+    keyIsMissingOrEmpty: boolean;
+  };
 }
 
 export interface Rule {

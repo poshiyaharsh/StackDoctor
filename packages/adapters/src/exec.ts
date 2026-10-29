@@ -13,6 +13,7 @@ export const ALLOWED_EXECUTABLES = new Set([
   "python3",
   "py",
   "java",
+  "php",
   "git",
   "docker",
   "docker-compose",

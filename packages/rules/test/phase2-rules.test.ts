@@ -231,7 +231,7 @@ describe("Phase 2 Rules", () => {
     it("registers all default rules", () => {
       const registry = createDefaultRuleRegistry();
       const rules = registry.list();
-      expect(rules.length).toBe(28);
+      expect(rules.length).toBe(32);
 
       const ruleIds = rules.map((r) => r.id);
       expect(ruleIds).toContain("NODE_DEPS_NOT_INSTALLED");

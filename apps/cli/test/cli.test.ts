@@ -118,7 +118,7 @@ describe("StackDoctor CLI (apps/cli)", () => {
     expect(parsed.summary.totalFindings).toBe(4);
   });
 
-  it("handles 'rules' command and prints all 28 rules in formatted output", async () => {
+  it("handles 'rules' command and prints all 32 rules in formatted output", async () => {
     let stdoutData = "";
     vi.spyOn(console, "log").mockImplementation((msg?: unknown) => {
       stdoutData += (msg ?? "") + "\n";
@@ -126,14 +126,14 @@ describe("StackDoctor CLI (apps/cli)", () => {
 
     const exitCode = await runCli(["rules", "--no-color"]);
     expect(exitCode).toBe(0);
-    expect(stdoutData).toContain("StackDoctor Diagnostic Rules (28 total)");
+    expect(stdoutData).toContain("StackDoctor Diagnostic Rules (32 total)");
     expect(stdoutData).toContain("NODE_DEPS_NOT_INSTALLED");
     expect(stdoutData).toContain("PYTHON_PACKAGES_MISSING");
     expect(stdoutData).toContain("DJANGO_SETTINGS_NOT_FOUND");
     expect(stdoutData).toContain("DJANGO_MIGRATIONS_PENDING");
   });
 
-  it("handles 'rules --json' and outputs array of 28 rules", async () => {
+  it("handles 'rules --json' and outputs array of 32 rules", async () => {
     let jsonOutput = "";
     vi.spyOn(console, "log").mockImplementation((msg?: unknown) => {
       jsonOutput += (msg ?? "") + "\n";
@@ -144,7 +144,7 @@ describe("StackDoctor CLI (apps/cli)", () => {
 
     const parsed = JSON.parse(jsonOutput.trim()) as Array<{ id: string; title: string }>;
     expect(Array.isArray(parsed)).toBe(true);
-    expect(parsed.length).toBe(28);
+    expect(parsed.length).toBe(32);
     expect(parsed.some((r) => r.id === "DJANGO_SETTINGS_NOT_FOUND")).toBe(true);
     expect(parsed.some((r) => r.id === "PYTHON_PACKAGE_VERSION_MISMATCH")).toBe(true);
   });

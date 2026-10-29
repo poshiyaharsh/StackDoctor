@@ -1,0 +1,11 @@
+{
+  "name": "example/broken-php-project",
+  "description": "Synthetic broken PHP and Laravel fixture for StackDoctor",
+  "type": "project",
+  "require": {
+    "php": "^8.1",
+    "laravel/framework": "^10.0",
+    "guzzlehttp/guzzle": "^7.8"
+  }
+}
+
