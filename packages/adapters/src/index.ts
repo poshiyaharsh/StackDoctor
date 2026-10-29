@@ -7,6 +7,7 @@ export * from "./config-scanner.js";
 export * from "./database.js";
 export * from "./python-deps.js";
 export * from "./django.js";
+export * from "./java.js";
 export * from "./operations.js";
 
 export const ADAPTERS_PACKAGE = "@stackdoctor/adapters";

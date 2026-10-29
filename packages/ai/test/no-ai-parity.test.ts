@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import net from "node:net";
 import { runCli } from "stackdoctor";
@@ -97,21 +98,16 @@ describe("No-AI Parity & Fallback Verification (Run 5F)", () => {
 
   it("CLI scan on broken-node-project yields exact baseline findings without AI", async () => {
     const fixturePath = path.join(fixturesDir, "broken-node-project");
+    const tempTestDir = fs.mkdtempSync(path.join(os.tmpdir(), "stk-node-parity-"));
+    fs.cpSync(fixturePath, tempTestDir, { recursive: true });
 
-    let server: net.Server | undefined;
-    for (let i = 0; i < 15; i++) {
-      try {
-        const s = net.createServer();
-        await new Promise<void>((resolve, reject) => {
-          s.once("error", reject);
-          s.listen(3000, "127.0.0.1", () => resolve());
-        });
-        server = s;
-        break;
-      } catch {
-        await new Promise((r) => setTimeout(r, 200));
-      }
-    }
+    // Use isolated port 3099 in .env.example to avoid colliding with other test runners on port 3000
+    const envExampleFile = path.join(tempTestDir, ".env.example");
+    const envContent = fs.readFileSync(envExampleFile, "utf-8").replace("PORT=3000", "PORT=3099");
+    fs.writeFileSync(envExampleFile, envContent, "utf-8");
+
+    const server = net.createServer();
+    await new Promise<void>((resolve) => server.listen(3099, "127.0.0.1", () => resolve()));
 
     let jsonOutput = "";
     vi.spyOn(console, "log").mockImplementation((msg?: unknown) => {
@@ -119,7 +115,7 @@ describe("No-AI Parity & Fallback Verification (Run 5F)", () => {
     });
 
     try {
-      await runCli(["scan", fixturePath, "--json"]);
+      await runCli(["scan", tempTestDir, "--json"]);
       const report = JSON.parse(jsonOutput.trim()) as Report;
       const actualRuleIds = report.findings.map((f) => f.ruleId).sort();
 
@@ -128,11 +124,10 @@ describe("No-AI Parity & Fallback Verification (Run 5F)", () => {
 
       expect(actualRuleIds).toEqual(expectedRuleIds);
     } finally {
-      if (server) {
-        await new Promise<void>((resolve) => server!.close(() => resolve()));
-      }
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      fs.rmSync(tempTestDir, { recursive: true, force: true });
     }
-  });
+  }, 15000);
 
   it("CLI scan on broken-django-project yields exact baseline findings without AI", async () => {
     const fixturePath = path.join(fixturesDir, "broken-django-project");

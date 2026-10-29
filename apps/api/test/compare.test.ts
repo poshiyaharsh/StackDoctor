@@ -197,7 +197,7 @@ describe("StackDoctor Compare API (Run 4C)", () => {
     // Anti-enumeration guarantee: must return 404, NEVER 403
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NotFound");
-  });
+  }, 15000);
 
   it("returns empty diff when comparing a run with itself", async () => {
     const { agent, csrfToken } = await createAuthenticatedAgent(

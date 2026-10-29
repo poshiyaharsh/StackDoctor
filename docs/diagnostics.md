@@ -6,7 +6,7 @@ To update or verify this document, run:
 npm run docs:rules
 ```
 
-Total Built-in Rules: **24**
+Total Built-in Rules: **28**
 
 ---
 
@@ -21,6 +21,8 @@ Total Built-in Rules: **24**
 | [`DJANGO_SETTINGS_NOT_FOUND`](#django-settings-not-found) | `configuration` | **high** | `confirmed` | Django | The DJANGO_SETTINGS_MODULE specified in manage.py does not correspond to an existing Python settings file. |
 | [`ENV_EXAMPLE_PRESENT_NO_ENV`](#env-example-present-no-env) | `configuration` | **medium** | `confirmed` | * | .env.example exists declaring required environment variables, but no .env file exists. |
 | [`ENV_VAR_NAMES_MISSING`](#env-var-names-missing) | `configuration` | **high** | `confirmed` | * | .env file exists, but one or more variable names documented in .env.example are missing. |
+| [`JAVA_RUNTIME_MISSING`](#java-runtime-missing) | `runtime` | **high** | `confirmed` | Java | A Java project build file was detected, but no Java executable (java) was found in the environment. |
+| [`JAVA_VERSION_MISMATCH`](#java-version-mismatch) | `runtime` | **high** | `confirmed` | Java | The active Java runtime does not satisfy the Java version required in the project build configuration. |
 | [`LOCKFILE_MISSING`](#lockfile-missing) | `dependencies` | **low** | `confirmed` | Node.js | package.json is present in the project root, but no lockfile (package-lock.json, pnpm-lock.yaml, yarn.lock) was found. |
 | [`MONGO_AUTH_FAILED`](#mongo-auth-failed) | `database` | **high** | `confirmed` | MongoDB | Network connection to MongoDB succeeded, but user authentication failed (invalid username, password, or authSource). |
 | [`MONGO_CONNECTION_REFUSED`](#mongo-connection-refused) | `database` | **high** | `confirmed` | MongoDB | TCP connection to the configured MongoDB endpoint was actively refused (ECONNREFUSED). |
@@ -38,6 +40,8 @@ Total Built-in Rules: **24**
 | [`PYTHON_PACKAGES_MISSING`](#python-packages-missing) | `dependencies` | **high** | `confirmed` | Python, Django | One or more packages declared in requirements.txt or pyproject.toml are not installed in the active Python environment. |
 | [`PYTHON_VENV_MISSING`](#python-venv-missing) | `environment` | **medium** | `confirmed` | Python, Django | Python project detected, but no virtual environment is active in the environment and no local venv directory exists. |
 | [`RUNTIME_DECLARATIONS_CONFLICT`](#runtime-declarations-conflict) | `configuration` | **medium** | `confirmed` | Node.js | The project contains mutually conflicting runtime version specifications across configuration files (e.g. .nvmrc conflicts with package.json engines.node). |
+| [`SPRING_BOOT_DATASOURCE_MISSING`](#spring-boot-datasource-missing) | `configuration` | **high** | `confirmed` | Spring Boot | Spring Data JPA or JDBC dependencies are present, but no database connection URL (spring.datasource.url) or embedded database is configured. |
+| [`SPRING_BOOT_PORT_IN_USE`](#spring-boot-port-in-use) | `network` | **high** | `confirmed` | Spring Boot | The configured Spring Boot server port is actively occupied by another process, which will cause startup failure with PortInUseException. |
 
 ---
 
@@ -283,8 +287,78 @@ Check .env to ensure all expected variable names are present.
 
 ---
 
+<a id="java-runtime-missing"></a>
+### 8. `JAVA_RUNTIME_MISSING`
+
+**Title**: Java runtime is not installed or not available on PATH
+
+- **Category**: `runtime`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Java`
+- **Evidence Types**: `file_presence`
+
+#### Description
+A Java project build file was detected, but no Java executable (java) was found in the environment.
+
+#### Diagnostic Checks
+- Verify whether a JDK or JRE is installed on your system
+- Ensure the `bin` directory of your Java installation is included in PATH
+- Verify `JAVA_HOME` environment variable points to a valid JDK directory
+
+#### Remediation Guidance
+- **Problem**: Java executable is not found in PATH.
+  - **Relevance**: Cannot compile or execute Java applications without a Java Development Kit.
+  - **Action**: `Install a modern JDK via SDKMAN (`sdk install java`), Homebrew (`brew install openjdk`), or download from Adoptium / OpenJDK.`
+  - **Expected Result**: `java -version` returns the installed JDK version.
+  - **Risks**: Installs JDK software package; does not affect application source files.
+  - **Verification**: `java -version && stackdoctor scan`
+
+#### Verification Principle
+Verify `java -version` executes successfully.
+
+#### Documentation References
+- [https://openjdk.org/install/](https://openjdk.org/install/)
+
+---
+
+<a id="java-version-mismatch"></a>
+### 9. `JAVA_VERSION_MISMATCH`
+
+**Title**: Installed Java version does not satisfy project requirement
+
+- **Category**: `runtime`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Java`
+- **Evidence Types**: `command_output`
+
+#### Description
+The active Java runtime does not satisfy the Java version required in the project build configuration.
+
+#### Diagnostic Checks
+- Check your active Java version with `java -version`
+- Verify the required Java version declared in pom.xml (<java.version>) or build.gradle (sourceCompatibility)
+- If using a version manager, activate the matching JDK (e.g., `sdk use java 17...` or set JAVA_HOME)
+
+#### Remediation Guidance
+- **Problem**: Installed Java version is incompatible with project requirements.
+  - **Relevance**: Java compilers and frameworks like Spring Boot refuse to build or run when targeting an incompatible JVM.
+  - **Action**: `Switch to a matching Java runtime via SDKMAN (`sdk use java <version>`) or update JAVA_HOME to point to an installed JDK of the required version.`
+  - **Expected Result**: Active Java version matches or satisfies the project build requirement.
+  - **Risks**: Environment variable change; does not modify source code.
+  - **Verification**: `java -version && stackdoctor scan`
+
+#### Verification Principle
+Verify active Java version satisfies project build configuration.
+
+#### Documentation References
+- [https://openjdk.org/projects/jdk/](https://openjdk.org/projects/jdk/)
+
+---
+
 <a id="lockfile-missing"></a>
-### 8. `LOCKFILE_MISSING`
+### 10. `LOCKFILE_MISSING`
 
 **Title**: Package lockfile missing
 
@@ -318,7 +392,7 @@ Confirm that a lockfile exists in the project root.
 ---
 
 <a id="mongo-auth-failed"></a>
-### 9. `MONGO_AUTH_FAILED`
+### 11. `MONGO_AUTH_FAILED`
 
 **Title**: MongoDB authentication failed
 
@@ -353,7 +427,7 @@ Verify MongoDB authentication succeeds.
 ---
 
 <a id="mongo-connection-refused"></a>
-### 10. `MONGO_CONNECTION_REFUSED`
+### 12. `MONGO_CONNECTION_REFUSED`
 
 **Title**: MongoDB connection refused on target endpoint
 
@@ -388,7 +462,7 @@ Verify that TCP connection to MongoDB endpoint succeeds.
 ---
 
 <a id="mysql-auth-failed"></a>
-### 11. `MYSQL_AUTH_FAILED`
+### 13. `MYSQL_AUTH_FAILED`
 
 **Title**: MySQL authentication failed
 
@@ -423,7 +497,7 @@ Verify MySQL authentication succeeds.
 ---
 
 <a id="mysql-connection-refused"></a>
-### 12. `MYSQL_CONNECTION_REFUSED`
+### 14. `MYSQL_CONNECTION_REFUSED`
 
 **Title**: MySQL connection refused on target endpoint
 
@@ -458,7 +532,7 @@ Verify that TCP connection to MySQL endpoint succeeds.
 ---
 
 <a id="node-deps-not-installed"></a>
-### 13. `NODE_DEPS_NOT_INSTALLED`
+### 15. `NODE_DEPS_NOT_INSTALLED`
 
 **Title**: Node.js dependencies not installed
 
@@ -492,7 +566,7 @@ Verify that node_modules directory exists after installation.
 ---
 
 <a id="node-version-mismatch"></a>
-### 14. `NODE_VERSION_MISMATCH`
+### 16. `NODE_VERSION_MISMATCH`
 
 **Title**: Installed Node.js version does not satisfy project requirement
 
@@ -526,7 +600,7 @@ Run `node -v` to confirm active version satisfies the declared range.
 ---
 
 <a id="port-in-use"></a>
-### 15. `PORT_IN_USE`
+### 17. `PORT_IN_USE`
 
 **Title**: Required network port is already in use
 
@@ -560,7 +634,7 @@ Verify that the port is free using TCP probe or netstat.
 ---
 
 <a id="port-invalid"></a>
-### 16. `PORT_INVALID`
+### 18. `PORT_INVALID`
 
 **Title**: Declared network port is invalid or out of range
 
@@ -594,7 +668,7 @@ Verify that all declared port numbers are valid integers in the 1-65535 range.
 ---
 
 <a id="postgres-auth-failed"></a>
-### 17. `POSTGRES_AUTH_FAILED`
+### 19. `POSTGRES_AUTH_FAILED`
 
 **Title**: PostgreSQL authentication failed
 
@@ -629,7 +703,7 @@ Verify PostgreSQL authentication succeeds.
 ---
 
 <a id="postgres-connection-refused"></a>
-### 18. `POSTGRES_CONNECTION_REFUSED`
+### 20. `POSTGRES_CONNECTION_REFUSED`
 
 **Title**: PostgreSQL connection refused on target endpoint
 
@@ -664,7 +738,7 @@ Verify that TCP connection to PostgreSQL endpoint succeeds.
 ---
 
 <a id="postgres-database-not-found"></a>
-### 19. `POSTGRES_DATABASE_NOT_FOUND`
+### 21. `POSTGRES_DATABASE_NOT_FOUND`
 
 **Title**: PostgreSQL database does not exist
 
@@ -699,7 +773,7 @@ Verify that PostgreSQL target database exists and accepts connections.
 ---
 
 <a id="postgres-ssl-required"></a>
-### 20. `POSTGRES_SSL_REQUIRED`
+### 22. `POSTGRES_SSL_REQUIRED`
 
 **Title**: PostgreSQL requires SSL/TLS connection
 
@@ -733,7 +807,7 @@ Verify that encrypted SSL/TLS connection to PostgreSQL succeeds.
 ---
 
 <a id="python-package-version-mismatch"></a>
-### 21. `PYTHON_PACKAGE_VERSION_MISMATCH`
+### 23. `PYTHON_PACKAGE_VERSION_MISMATCH`
 
 **Title**: Installed Python package version does not satisfy requirement
 
@@ -767,7 +841,7 @@ Verify that installed package versions satisfy declared requirements.
 ---
 
 <a id="python-packages-missing"></a>
-### 22. `PYTHON_PACKAGES_MISSING`
+### 24. `PYTHON_PACKAGES_MISSING`
 
 **Title**: Declared Python dependencies are not installed
 
@@ -801,7 +875,7 @@ Verify all declared packages are present in pip list.
 ---
 
 <a id="python-venv-missing"></a>
-### 23. `PYTHON_VENV_MISSING`
+### 25. `PYTHON_VENV_MISSING`
 
 **Title**: Python virtual environment missing
 
@@ -835,7 +909,7 @@ Confirm that .venv directory exists or VIRTUAL_ENV is active.
 ---
 
 <a id="runtime-declarations-conflict"></a>
-### 24. `RUNTIME_DECLARATIONS_CONFLICT`
+### 26. `RUNTIME_DECLARATIONS_CONFLICT`
 
 **Title**: Conflicting runtime version declarations between project files
 
@@ -865,6 +939,76 @@ Verify that .nvmrc satisfies the range specified in package.json engines.node.
 
 #### Documentation References
 - [https://docs.npmjs.com/cli/v10/configuring-npm/package-json#engines](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#engines)
+
+---
+
+<a id="spring-boot-datasource-missing"></a>
+### 27. `SPRING_BOOT_DATASOURCE_MISSING`
+
+**Title**: Spring Boot DataSource URL is not configured
+
+- **Category**: `configuration`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Spring Boot`
+- **Evidence Types**: `file_content`
+
+#### Description
+Spring Data JPA or JDBC dependencies are present, but no database connection URL (spring.datasource.url) or embedded database is configured.
+
+#### Diagnostic Checks
+- Check your `src/main/resources/application.properties` or `application.yml` for `spring.datasource.url`
+- If using a database, ensure username, password, and driverClassName are also set
+- If testing locally without an external database, consider adding an embedded database dependency like H2 (`com.h2database:h2`)
+
+#### Remediation Guidance
+- **Problem**: Missing database connection URL for Spring Data auto-configuration.
+  - **Relevance**: Spring Boot startup fails with `Failed to configure a DataSource: 'url' attribute is not specified`.
+  - **Action**: `Add `spring.datasource.url=jdbc:postgresql://localhost:5432/yourdb` (or corresponding database JDBC URL) to `application.properties`, or add an embedded database dependency (`h2`).`
+  - **Expected Result**: Spring Boot successfully initializes DataSource auto-configuration.
+  - **Risks**: Configuration change only; harmless to project code.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify `spring.datasource.url` is declared in application properties or environment.
+
+#### Documentation References
+- [https://spring.io/guides/gs/accessing-data-jpa](https://spring.io/guides/gs/accessing-data-jpa)
+
+---
+
+<a id="spring-boot-port-in-use"></a>
+### 28. `SPRING_BOOT_PORT_IN_USE`
+
+**Title**: Spring Boot server port is already in use by another process
+
+- **Category**: `network`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `Spring Boot`
+- **Evidence Types**: `network_probe`
+
+#### Description
+The configured Spring Boot server port is actively occupied by another process, which will cause startup failure with PortInUseException.
+
+#### Diagnostic Checks
+- Check which process is listening on the target port using `netstat -ano` or `lsof -i`
+- Verify the `server.port` configured in `src/main/resources/application.properties` or `application.yml`
+- Terminate the colliding process or configure an alternative port (e.g., `server.port=8081` or `server.port=0` for random)
+
+#### Remediation Guidance
+- **Problem**: Target Spring Boot port is occupied by another process.
+  - **Relevance**: Embedded Tomcat, Jetty, or Undertow server fails on startup with `PortInUseException: Web server failed to start. Port was already in use.`
+  - **Action**: `Terminate the existing process running on the port or set `server.port=8081` in `application.properties`.`
+  - **Expected Result**: Target port is released or application binds to an available alternative port.
+  - **Risks**: Port reassignment; harmless to application code.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify target Spring Boot port is free and available.
+
+#### Documentation References
+- [https://spring.io/guides/gs/spring-boot](https://spring.io/guides/gs/spring-boot)
 
 ---
 

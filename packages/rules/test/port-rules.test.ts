@@ -256,7 +256,7 @@ describe("Phase 2 Run 2B Rules (Ports & Config)", () => {
     it("contains all registered rules", () => {
       const registry = createDefaultRuleRegistry();
       const rules = registry.list();
-      expect(rules.length).toBe(24);
+      expect(rules.length).toBe(28);
 
       const ids = rules.map((r) => r.id);
       expect(ids).toContain("NODE_DEPS_NOT_INSTALLED");

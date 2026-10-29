@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Java & Spring Boot Ecosystem Support (FB-006 / FB-DRAFT-001 / Run 7E)**:
+  - Added Java runtime (`java -version`), project requirement (`pom.xml`, `build.gradle`, `.java-version`), and Spring Boot configuration (`application.properties`, `application.yml`, `application.yaml`) static inspection in `@stackdoctor/adapters`.
+  - Added static detection for Java, Maven, Gradle, and Spring Boot projects in `@stackdoctor/core`.
+  - Added 4 new production-tested diagnostic rules (catalog expanded to 28 rules):
+    - `JAVA_VERSION_MISMATCH`: Detects when active JDK/JRE version does not satisfy project requirements (e.g. `java.version` in `pom.xml`, `sourceCompatibility` in `build.gradle`).
+    - `JAVA_RUNTIME_MISSING`: Detects when Java project files are present but Java runtime is not found in `PATH`.
+    - `SPRING_BOOT_DATASOURCE_MISSING`: Statically detects when Spring Boot projects depend on `spring-boot-starter-data-jpa` or `spring-boot-starter-jdbc` without configuring a datasource URL or including an embedded database (H2, HSQLDB, Derby).
+    - `SPRING_BOOT_PORT_IN_USE`: Statically parses configured `server.port` from `application.properties`/`application.yml` and verifies socket availability before boot.
+  - Zero project execution guarantee: All Java and Spring Boot diagnostics are 100% static file/property evaluations with zero JVM or Maven/Gradle command execution.
+  - Added allowlisted doc domains for `spring.io`, `openjdk.org`, and `oracle.com` in `@stackdoctor/schemas`.
+  - Added synthetic fixtures `examples/broken-java-project/` and `examples/healthy-java-project/` with full regression benchmarking in `npm run eval`.
 - **PostgreSQL Support (FB-009 / Run 7D)**:
   - Staged PostgreSQL connectivity adapter (`checkAuthenticatedConnection`) using `pg` client with strict read-only `SELECT 1` ping.
   - Granular error categorization distinguishing network failure (`connection_refused`), authentication rejection (`auth_failed`), role authorization failure (`authorization_failed`), missing target database (`database_not_found`, error `3D000`), and mandatory SSL/TLS enforcement (`ssl_required`).

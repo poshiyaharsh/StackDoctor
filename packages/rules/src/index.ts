@@ -23,6 +23,10 @@ import { postgresConnectionRefusedRule } from "./rules/postgres-connection-refus
 import { postgresAuthFailedRule } from "./rules/postgres-auth-failed.js";
 import { postgresDatabaseNotFoundRule } from "./rules/postgres-database-not-found.js";
 import { postgresSslRequiredRule } from "./rules/postgres-ssl-required.js";
+import { javaVersionMismatchRule } from "./rules/java-version-mismatch.js";
+import { javaRuntimeMissingRule } from "./rules/java-runtime-missing.js";
+import { springBootDatasourceMissingRule } from "./rules/spring-boot-datasource-missing.js";
+import { springBootPortInUseRule } from "./rules/spring-boot-port-in-use.js";
 
 export * from "./types.js";
 export * from "./registry.js";
@@ -50,6 +54,10 @@ export * from "./rules/postgres-connection-refused.js";
 export * from "./rules/postgres-auth-failed.js";
 export * from "./rules/postgres-database-not-found.js";
 export * from "./rules/postgres-ssl-required.js";
+export * from "./rules/java-version-mismatch.js";
+export * from "./rules/java-runtime-missing.js";
+export * from "./rules/spring-boot-datasource-missing.js";
+export * from "./rules/spring-boot-port-in-use.js";
 
 export const RULES_PACKAGE = "@stackdoctor/rules";
 export const RULES_DEPENDENCY = "@stackdoctor/schemas";
@@ -83,5 +91,9 @@ export function createDefaultRuleRegistry(): RuleRegistry {
   registry.register(postgresAuthFailedRule);
   registry.register(postgresDatabaseNotFoundRule);
   registry.register(postgresSslRequiredRule);
+  registry.register(javaVersionMismatchRule);
+  registry.register(javaRuntimeMissingRule);
+  registry.register(springBootDatasourceMissingRule);
+  registry.register(springBootPortInUseRule);
   return registry;
 }

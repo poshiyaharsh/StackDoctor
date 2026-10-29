@@ -119,6 +119,27 @@ export interface RuleEvaluationContext {
       unappliedList?: string[];
     };
   };
+  java?: {
+    installed: boolean;
+    rawVersion?: string;
+    majorVersion?: number;
+    requirement?: {
+      declared: boolean;
+      requiredVersion?: string;
+      requiredMajor?: number;
+      sourceFile?: string;
+      sourceProperty?: string;
+    };
+  };
+  springBoot?: {
+    isSpringBoot: boolean;
+    hasDataDependency: boolean;
+    hasEmbeddedDatabase: boolean;
+    datasourceUrlConfigured: boolean;
+    serverPort?: number;
+    serverPortDeclared: boolean;
+    configFilePath?: string;
+  };
 }
 
 export interface Rule {

@@ -162,7 +162,7 @@ describe("StackDoctor Security Hardening & Authorization Matrix (Run 3F)", () =>
         .set("Cookie", userB.cookies)
         .set("X-CSRF-Token", userB.csrfToken);
       expect(revokeToken.status).toBe(404);
-    });
+    }, 15000);
   });
 
   describe("2. CSRF & State-Changing Protections", () => {

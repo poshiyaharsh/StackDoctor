@@ -23,7 +23,9 @@ async function runEval() {
     { name: "broken-django-project", path: path.join(fixturesDir, "broken-django-project"), sourceId: "Phase 2 Baseline" },
     { name: "broken-database-config", path: path.join(fixturesDir, "broken-database-config"), sourceId: "Phase 2 Baseline" },
     { name: "broken-postgres-config", path: path.join(fixturesDir, "broken-postgres-config"), sourceId: "FB-009 / Run 7D Baseline" },
-    { name: "healthy-node-project", path: path.join(fixturesDir, "healthy-node-project"), sourceId: "Healthy Reference" }
+    { name: "broken-java-project", path: path.join(fixturesDir, "broken-java-project"), sourceId: "FB-006 / Run 7E Baseline" },
+    { name: "healthy-node-project", path: path.join(fixturesDir, "healthy-node-project"), sourceId: "Healthy Reference" },
+    { name: "healthy-java-project", path: path.join(fixturesDir, "healthy-java-project"), sourceId: "Healthy Reference" }
   ];
 
   // Discover dynamic regression fixtures under examples/regressions/

@@ -1614,6 +1614,39 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 7, Run 7E: Next ecosystem or rule pack based on demand (Java/Spring Boot, PHP/Laravel, or .NET/C#).
 - **Status:** Done
 
+---
+
+### [2026-10-29] Phase 7, Run 7E: Java and Spring Boot Adapter and Diagnostic Rules
+- **Prompt used:** Phase 7, Run 7E: Java & Spring Boot Ecosystem Support (`FB-006` / `FB-DRAFT-001`)
+- **What was done:**
+  - Implemented static Java version parsing supporting both legacy (`1.8`) and modern semantic Java version numbers.
+  - Implemented staged Java runtime detection via `java -version` reading `stderr`.
+  - Implemented static requirement parsing across `pom.xml`, `build.gradle`, and `.java-version`.
+  - Implemented static Spring Boot configuration inspection for `application.properties`, `application.yml`, and `application.yaml` (`server.port`, `spring.datasource.url`).
+  - Implemented static project technology detection for Java, Maven, Gradle, and Spring Boot in `@stackdoctor/core`.
+  - Added 4 new production diagnostic rules:
+    - `JAVA_VERSION_MISMATCH`: Detects when active JDK/JRE does not satisfy project version requirement.
+    - `JAVA_RUNTIME_MISSING`: Detects when Java project files are present but Java runtime is not installed or not in PATH.
+    - `SPRING_BOOT_DATASOURCE_MISSING`: Statically detects Spring Boot projects depending on `spring-boot-starter-data-jpa` or `spring-boot-starter-jdbc` without a configured datasource URL or embedded database.
+    - `SPRING_BOOT_PORT_IN_USE`: Statically parses configured `server.port` and verifies socket availability before boot.
+  - Added allowlisted doc domains for `spring.io`, `openjdk.org`, and `oracle.com` in `@stackdoctor/schemas`.
+  - Added synthetic test fixtures `examples/broken-java-project/` and `examples/healthy-java-project/` to benchmark harness in `scripts/eval.js`.
+  - Synchronized rule documentation in `docs/diagnostics.md` (28 rules catalog).
+  - Increased `testTimeout: 15000` in `vitest.config.ts` for parallel worker stability on Windows.
+- **Files created/changed:**
+  - Created: `packages/adapters/src/java.ts`, `packages/adapters/test/java.test.ts`, `packages/rules/src/rules/java-version-mismatch.ts`, `packages/rules/src/rules/java-runtime-missing.ts`, `packages/rules/src/rules/spring-boot-datasource-missing.ts`, `packages/rules/src/rules/spring-boot-port-in-use.ts`, `packages/rules/test/java-rules.test.ts`, `examples/broken-java-project/`, `examples/healthy-java-project/`
+  - Modified: `packages/schemas/src/rules.ts`, `packages/adapters/src/index.ts`, `packages/adapters/src/exec.ts`, `packages/core/src/scanner.ts`, `packages/rules/src/types.ts`, `packages/rules/src/index.ts`, `apps/cli/src/collector.ts`, `scripts/eval.js`, `docs/diagnostics.md`, `README.md`, `CHANGELOG.md`, `docs/PHASE7.md`, `docs/LOG.md`, `vitest.config.ts`, `apps/cli/test/cli.test.ts`, `apps/cli/test/integration.test.ts`, `packages/rules/test/registry.test.ts`, `packages/ai/test/no-ai-parity.test.ts`
+- **Verification:**
+  - `npm run verify:release`: Passed (100% SUCCESS across all 13 gates in 102.1s)
+  - `npm run eval`: Passed (100.0% Detection Accuracy, 0.0% False Positive Rate, 0.0% Miss Rate across 9 fixtures)
+  - `npm test`: Passed (66 test files, 461/461 tests passed)
+  - `npm run docs:rules -- --check`: Passed (28 rules documented)
+- **Decisions made:**
+  - Zero project execution guarantee: All Java and Spring Boot diagnostics are 100% static file/property evaluations with zero JVM or Maven/Gradle command execution.
+  - Allowed `java` executable only for `java -version` runtime detection.
+- **Next step:** Phase 7, Run 7F (Team workspaces if demand met) or further ecosystem expansion (PHP/Laravel, .NET/C#) / v0.2.0 release preparation (Run 7G).
+- **Status:** Done
+
 
 
 

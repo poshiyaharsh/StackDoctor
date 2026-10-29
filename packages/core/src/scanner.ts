@@ -468,6 +468,66 @@ export async function scanProject(targetDir: string, options: ScanOptions = {}):
     }
   }
 
+  // 12. Java, Maven, Gradle & Spring Boot detection
+  const hasPom = files.some((f) => f.name === "pom.xml");
+  const hasGradle = files.some((f) => f.name === "build.gradle" || f.name === "build.gradle.kts");
+  const hasJavaVersionFile = files.some((f) => f.name === ".java-version" || f.name === ".sdkmanrc");
+
+  if (hasPom || hasGradle || hasJavaVersionFile) {
+    addTech("Java", "confirmed", {
+      id: "ev-tech-java",
+      kind: "file_presence",
+      description: "Java project configuration detected",
+      observed: hasPom ? "Found pom.xml" : hasGradle ? "Found Gradle build file" : "Found .java-version",
+      source: hasPom ? "pom.xml" : hasGradle ? "build.gradle" : ".java-version",
+      collectedAt: now
+    });
+  }
+
+  if (hasPom) {
+    addTech("Maven", "confirmed", {
+      id: "ev-tech-maven",
+      kind: "file_presence",
+      description: "Maven project configuration detected",
+      observed: "Found pom.xml in project root",
+      source: "pom.xml",
+      collectedAt: now
+    });
+  }
+
+  if (hasGradle) {
+    addTech("Gradle", "confirmed", {
+      id: "ev-tech-gradle",
+      kind: "file_presence",
+      description: "Gradle build configuration detected",
+      observed: "Found Gradle build file in project root",
+      source: "build.gradle",
+      collectedAt: now
+    });
+  }
+
+  // Check for Spring Boot
+  for (const f of files) {
+    if (["pom.xml", "build.gradle", "build.gradle.kts"].includes(f.name)) {
+      try {
+        const content = fs.readFileSync(f.absolutePath, "utf-8");
+        if (/org\.springframework\.boot/i.test(content) || /spring-boot/i.test(content)) {
+          addTech("Spring Boot", "confirmed", {
+            id: "ev-tech-spring-boot",
+            kind: "file_content",
+            description: `Detected Spring Boot configuration in ${f.relativePath}`,
+            observed: `Found Spring Boot dependencies/plugins in ${f.relativePath}`,
+            source: f.relativePath,
+            collectedAt: now
+          });
+          break;
+        }
+      } catch {
+        // Continue safely
+      }
+    }
+  }
+
   // Convert technology map to array
   const technologies: TechnologyDetection[] = Array.from(techMap.entries()).map(([name, val]) => ({
     name,

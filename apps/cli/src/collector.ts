@@ -17,7 +17,10 @@ import {
   comparePythonDependencies,
   isDjangoProject,
   discoverDjangoSettings,
-  checkDjangoMigrations
+  checkDjangoMigrations,
+  detectJavaRuntime,
+  detectJavaRequirement,
+  inspectSpringBootConfig
 } from "@stackdoctor/adapters";
 import type { CliOptions } from "./index.js";
 
@@ -297,6 +300,49 @@ export async function collectEvaluationContext(
     };
   }
 
+  // 6c. Java & Spring Boot Diagnostics
+  const isJava = scanResult.technologies.some((t) => t.name === "Java");
+  let javaContext: RuleEvaluationContext["java"];
+  let springBootContext: RuleEvaluationContext["springBoot"];
+
+  if (isJava) {
+    const javaRuntime = await detectJavaRuntime();
+    const javaReq = detectJavaRequirement(dir);
+    javaContext = {
+      installed: javaRuntime.installed,
+      rawVersion: javaRuntime.rawVersion,
+      majorVersion: javaRuntime.majorVersion,
+      requirement: javaReq
+    };
+
+    const springConfig = inspectSpringBootConfig(dir);
+    springBootContext = springConfig;
+
+    if (
+      springConfig.serverPort &&
+      !declaredPorts.some((dp) => dp.port === springConfig.serverPort)
+    ) {
+      declaredPorts.push({
+        port: springConfig.serverPort,
+        source: springConfig.configFilePath || "application.properties",
+        rawValue: String(springConfig.serverPort),
+        valid: true
+      });
+
+      const portCheck = await checkPort("127.0.0.1", springConfig.serverPort, 1000);
+      portChecks.push({
+        port: portCheck.port,
+        host: portCheck.host,
+        status: portCheck.status,
+        conclusive: portCheck.conclusive,
+        processInfo: portCheck.processInfo
+          ? { pid: portCheck.processInfo.pid, name: portCheck.processInfo.name }
+          : undefined,
+        error: portCheck.error
+      });
+    }
+  }
+
   // 7. Assemble full RuleEvaluationContext
   const evalCtx: RuleEvaluationContext = {
     dir,
@@ -355,7 +401,9 @@ export async function collectEvaluationContext(
       isDjangoProject: isDjango,
       settings: djangoSettings,
       migrations: djangoMigrations
-    }
+    },
+    java: javaContext,
+    springBoot: springBootContext
   };
 
   return evalCtx;

@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-29T15:51:54.132Z",
+  "timestamp": "2026-10-29T16:22:41.193Z",
   "os": "win32",
   "arch": "x64",
   "nodeVersion": "v24.13.0",
-  "totalFixtures": 7,
+  "totalFixtures": 9,
   "metrics": {
-    "totalExpected": 12,
-    "totalDetected": 12,
-    "truePositives": 12,
+    "totalExpected": 13,
+    "totalDetected": 13,
+    "truePositives": 13,
     "falseNegatives": 0,
     "falsePositives": 0,
     "accuracy": 100,
@@ -122,6 +122,15 @@
       "fn": 0,
       "precision": 100,
       "recall": 100
+    },
+    "SPRING_BOOT_DATASOURCE_MISSING": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
     }
   },
   "fixtures": [
@@ -166,7 +175,27 @@
       "passed": true
     },
     {
+      "name": "broken-java-project",
+      "sourceId": "FB-006 / Run 7E Baseline",
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
       "name": "healthy-node-project",
+      "sourceId": "Healthy Reference",
+      "expected": 0,
+      "detected": 0,
+      "tp": 0,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "healthy-java-project",
       "sourceId": "Healthy Reference",
       "expected": 0,
       "detected": 0,
