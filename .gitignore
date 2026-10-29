@@ -9,16 +9,55 @@ build/
 # Test and coverage
 coverage/
 
-# Environment files
+# Environment files and local secrets
 .env
 .env.*
+*.env
+*.env.*
+*.local
 !.env.example
+!apps/api/.env.example
 !examples/**/.env
 !examples/**/.env.*
+
+# Private Keys, Certificates, and Tokens
+*.pem
+*.key
+*.crt
+*.cert
+*.pfx
+*.p12
+*.csr
+id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
+
+# Credentials and Authentication
+credentials.json
+client_secret*.json
+service-account*.json
+google-services.json
+*.token
+*.secret
+*.auth
+.npmrc
+.yarnrc
+.yarnrc.yml
+.pypirc
+
+# Database and runtime data
+*.sqlite
+*.sqlite3
+*.db
+mongo_data/
+data/
 
 # StackDoctor local state
 .stackdoctor/
 .stackdoctor.json
+.ai-config.json
+.stackdoctor-config.json
 
 # Allow fixture dummy node_modules
 !examples/healthy-node-project/node_modules/
@@ -29,10 +68,21 @@ coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# System files
+# System and Editor files
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+*.sublime-*
+*.swp
+*.swo
+*~
+
+# Temporary and Scratch files
+tmp/
+temp/
+scratch/
 
