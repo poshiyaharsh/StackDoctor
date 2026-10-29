@@ -5,8 +5,9 @@ import type { Evidence } from "@stackdoctor/schemas";
 import { redactText } from "@stackdoctor/core";
 import { MongoClient } from "mongodb";
 import mysql from "mysql2/promise";
+import pg from "pg";
 
-export type DatabaseType = "mongodb" | "mysql" | "unknown";
+export type DatabaseType = "mongodb" | "mysql" | "postgresql" | "unknown";
 
 export type DatabaseErrorCategory =
   | "dns_failure"
@@ -16,6 +17,8 @@ export type DatabaseErrorCategory =
   | "tls_error"
   | "auth_failed"
   | "authorization_failed"
+  | "database_not_found"
+  | "ssl_required"
   | "protocol_error"
   | "unknown";
 
@@ -247,6 +250,81 @@ export async function checkAuthenticatedConnection(
       if (conn) {
         try {
           await conn.end();
+        } catch {
+          // Ignore
+        }
+      }
+    }
+  }
+
+  if (dbType === "postgresql") {
+    let client: pg.Client | null = null;
+    try {
+      client = new pg.Client({
+        connectionString: rawUrl,
+        connectionTimeoutMillis: timeoutMs,
+        statement_timeout: timeoutMs
+      });
+      await client.connect();
+      // Read-only query
+      await client.query("SELECT 1");
+      return { success: true };
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      const msg = (err as Error).message || "";
+
+      if (code === "3D000" || (msg.includes("does not exist") && msg.includes("database"))) {
+        return {
+          success: false,
+          errorCategory: "database_not_found",
+          error: redactText(`PostgreSQL database not found: ${msg}`)
+        };
+      }
+
+      if (code === "28P01" || code === "28000" || msg.includes("password authentication failed")) {
+        return {
+          success: false,
+          errorCategory: "auth_failed",
+          error: "PostgreSQL authentication failed (password authentication failed or role not authorized)"
+        };
+      }
+
+      if (code === "42501" || msg.includes("permission denied")) {
+        return {
+          success: false,
+          errorCategory: "authorization_failed",
+          error: redactText(`PostgreSQL authorization failed (insufficient privileges): ${msg}`)
+        };
+      }
+
+      if (
+        msg.toLowerCase().includes("ssl") ||
+        (msg.includes("pg_hba.conf") && (msg.includes("SSL") || msg.includes("encryption")))
+      ) {
+        return {
+          success: false,
+          errorCategory: "ssl_required",
+          error: redactText(`PostgreSQL SSL/TLS configuration error: ${msg}`)
+        };
+      }
+
+      if (code === "ECONNREFUSED" || msg.includes("ECONNREFUSED")) {
+        return {
+          success: false,
+          errorCategory: "connection_refused",
+          error: "PostgreSQL connection refused (ECONNREFUSED)"
+        };
+      }
+
+      return {
+        success: false,
+        errorCategory: "unknown",
+        error: redactText(`PostgreSQL connection error: ${msg}`)
+      };
+    } finally {
+      if (client) {
+        try {
+          await client.end();
         } catch {
           // Ignore
         }

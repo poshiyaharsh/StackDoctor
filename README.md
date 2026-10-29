@@ -138,9 +138,9 @@ stackdoctor scan
 
 ---
 
-## Diagnostic Rules Catalog (20 Built-In Rules)
+## Diagnostic Rules Catalog (24 Built-In Rules)
 
-StackDoctor includes 20 production-tested diagnostic rules across modern web stacks. For full rule specifications, see the [Complete Diagnostics Reference](docs/diagnostics.md).
+StackDoctor includes 24 production-tested diagnostic rules across modern web stacks. For full rule specifications, see the [Complete Diagnostics Reference](docs/diagnostics.md).
 
 | Category | Rule ID | Title | Severity |
 |---|---|---|:---:|
@@ -160,6 +160,10 @@ StackDoctor includes 20 production-tested diagnostic rules across modern web sta
 | **Database** | `MONGO_AUTH_FAILED` | MongoDB authentication failed | High |
 | **Database** | `MYSQL_CONNECTION_REFUSED` | MySQL connection refused | High |
 | **Database** | `MYSQL_AUTH_FAILED` | MySQL authentication failed | High |
+| **Database** | `POSTGRES_CONNECTION_REFUSED` | PostgreSQL connection refused | High |
+| **Database** | `POSTGRES_AUTH_FAILED` | PostgreSQL authentication failed | High |
+| **Database** | `POSTGRES_DATABASE_NOT_FOUND` | PostgreSQL database does not exist | High |
+| **Database** | `POSTGRES_SSL_REQUIRED` | PostgreSQL requires SSL/TLS connection | Medium |
 | **Database** | `DB_HOST_NOT_RESOLVED` | Database host could not be resolved | High |
 | **Database** | `DB_CONNECTION_TIMEOUT` | Database connection timed out | High |
 | **Framework** | `DJANGO_SETTINGS_NOT_FOUND` | Django settings module not found | High |
@@ -187,7 +191,7 @@ StackDoctor includes 20 production-tested diagnostic rules across modern web sta
 ## Documentation
 
 - **[Installation Guide](docs/installation.md)**: Platform support matrix, npx/npm/source installation, and troubleshooting common setup issues.
-- **[Diagnostics Reference](docs/diagnostics.md)**: In-depth documentation for all 20 rules, preconditions, evidence sources, and remediation steps.
+- **[Diagnostics Reference](docs/diagnostics.md)**: In-depth documentation for all 24 rules, preconditions, evidence sources, and remediation steps.
 - **[CI/CD Guide](docs/ci.md)**: Running StackDoctor in GitHub Actions, GitLab CI, or local pre-commit hooks with deterministic exit codes.
 - **[Privacy & Data Handling](docs/privacy.md)**: Full disclosure on secret redaction, local execution, and optional platform retention.
 - **[Self-Hosting Guide](docs/self-hosting.md)**: Deploying the web dashboard and API with Docker Compose.

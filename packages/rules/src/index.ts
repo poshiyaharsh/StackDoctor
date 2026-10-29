@@ -19,6 +19,10 @@ import { pythonPackagesMissingRule } from "./rules/python-packages-missing.js";
 import { pythonPackageVersionMismatchRule } from "./rules/python-package-version-mismatch.js";
 import { djangoSettingsNotFoundRule } from "./rules/django-settings-not-found.js";
 import { djangoMigrationsPendingRule } from "./rules/django-migrations-pending.js";
+import { postgresConnectionRefusedRule } from "./rules/postgres-connection-refused.js";
+import { postgresAuthFailedRule } from "./rules/postgres-auth-failed.js";
+import { postgresDatabaseNotFoundRule } from "./rules/postgres-database-not-found.js";
+import { postgresSslRequiredRule } from "./rules/postgres-ssl-required.js";
 
 export * from "./types.js";
 export * from "./registry.js";
@@ -42,6 +46,10 @@ export * from "./rules/python-packages-missing.js";
 export * from "./rules/python-package-version-mismatch.js";
 export * from "./rules/django-settings-not-found.js";
 export * from "./rules/django-migrations-pending.js";
+export * from "./rules/postgres-connection-refused.js";
+export * from "./rules/postgres-auth-failed.js";
+export * from "./rules/postgres-database-not-found.js";
+export * from "./rules/postgres-ssl-required.js";
 
 export const RULES_PACKAGE = "@stackdoctor/rules";
 export const RULES_DEPENDENCY = "@stackdoctor/schemas";
@@ -71,5 +79,9 @@ export function createDefaultRuleRegistry(): RuleRegistry {
   registry.register(pythonPackageVersionMismatchRule);
   registry.register(djangoSettingsNotFoundRule);
   registry.register(djangoMigrationsPendingRule);
+  registry.register(postgresConnectionRefusedRule);
+  registry.register(postgresAuthFailedRule);
+  registry.register(postgresDatabaseNotFoundRule);
+  registry.register(postgresSslRequiredRule);
   return registry;
 }

@@ -434,6 +434,40 @@ export async function scanProject(targetDir: string, options: ScanOptions = {}):
     }
   }
 
+  // 11. PostgreSQL detection
+  for (const f of files) {
+    if (
+      [
+        "docker-compose.yml",
+        "docker-compose.yaml",
+        "compose.yml",
+        "compose.yaml",
+        ".env",
+        ".env.example",
+        "package.json",
+        "requirements.txt",
+        "schema.prisma"
+      ].includes(f.name)
+    ) {
+      try {
+        const content = fs.readFileSync(f.absolutePath, "utf-8");
+        if (/\b(?:postgres|postgresql|psql|pg)\b/i.test(content) || /postgres(?:ql)?:\/\//i.test(content)) {
+          addTech("PostgreSQL", "likely", {
+            id: "ev-tech-postgresql",
+            kind: "file_content",
+            description: `Detected PostgreSQL reference in ${f.relativePath}`,
+            observed: `Found PostgreSQL keywords in ${f.relativePath}`,
+            source: f.relativePath,
+            collectedAt: now
+          });
+          break;
+        }
+      } catch {
+        // Continue safely
+      }
+    }
+  }
+
   // Convert technology map to array
   const technologies: TechnologyDetection[] = Array.from(techMap.entries()).map(([name, val]) => ({
     name,

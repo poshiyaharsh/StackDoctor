@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- **PostgreSQL Support (FB-009 / Run 7D)**:
+  - Staged PostgreSQL connectivity adapter (`checkAuthenticatedConnection`) using `pg` client with strict read-only `SELECT 1` ping.
+  - Granular error categorization distinguishing network failure (`connection_refused`), authentication rejection (`auth_failed`), role authorization failure (`authorization_failed`), missing target database (`database_not_found`, error `3D000`), and mandatory SSL/TLS enforcement (`ssl_required`).
+  - Added 4 new rules: `POSTGRES_CONNECTION_REFUSED`, `POSTGRES_AUTH_FAILED`, `POSTGRES_DATABASE_NOT_FOUND`, and `POSTGRES_SSL_REQUIRED`.
+  - Static PostgreSQL technology detection supporting `.env`, `.env.example`, `DATABASE_URL`, `POSTGRES_HOST`, `PGHOST`, Prisma schemas (`schema.prisma`), and Docker Compose services.
+  - Synthetic regression fixture `examples/broken-postgres-config/` integrated into `npm run eval` benchmark harness.
+  - Zero false-positive guarantee: connection refusal strictly avoids claiming PostgreSQL is not installed.
+- **Evaluation & Regression Framework (Run 7C)**:
+  - Automated regression fixtures with per-rule precision, recall, and miss-rate reporting in `scripts/eval.js`.
+  - Continuous benchmark regression protection in CI against `eval-results/baseline.json`.
+
+---
+
 ## [0.1.0] - 2026-10-27
 
 ### Added

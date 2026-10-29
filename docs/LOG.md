@@ -1563,6 +1563,57 @@ Newest entries at the bottom. One entry per work session or Antigravity run.
 - **Next step:** Phase 7, Run 7D: PostgreSQL support (gate: demand met with FB-003 and FB-009).
 - **Status:** Done
 
+---
+
+### [2026-10-29] Phase 7, Run 7D: PostgreSQL support (gate: demand met with FB-009)
+- **Prompt used:** PHASE7.md > Run 7D: PostgreSQL support
+- **What was done:**
+  - Added `"postgresql.org"` to `ALLOWED_DOC_DOMAINS` in `packages/schemas/src/rules.ts`.
+  - Implemented staged PostgreSQL connectivity check (`checkAuthenticatedConnection`) in `packages/adapters/src/database.ts` using `pg.Client` with read-only `SELECT 1` ping.
+  - Mapped PostgreSQL error categories: `3D000` (invalid_catalog_name) -> `database_not_found`, `28P01`/`28000` -> `auth_failed`, `42501` -> `authorization_failed`, SSL requirements -> `ssl_required`, and `ECONNREFUSED` -> `connection_refused`.
+  - Implemented static technology detection in `packages/core/src/scanner.ts` and `apps/cli/src/collector.ts` covering `.env`, `.env.example`, `DATABASE_URL`, `POSTGRES_HOST`, `PGHOST`, `schema.prisma`, and Docker Compose services.
+  - Authored 4 new PostgreSQL rules: `POSTGRES_CONNECTION_REFUSED`, `POSTGRES_AUTH_FAILED`, `POSTGRES_DATABASE_NOT_FOUND`, and `POSTGRES_SSL_REQUIRED`.
+  - Enforced zero false-positive invariant: `POSTGRES_CONNECTION_REFUSED` never claims PostgreSQL is uninstalled.
+  - Added unit tests for rules (`packages/rules/test/postgres-rules.test.ts`) and adapter error categorization & canary password leak protection (`packages/adapters/test/postgres.test.ts`).
+  - Created synthetic benchmark fixture `examples/broken-postgres-config/` and integrated it into `scripts/eval.js`.
+  - Synchronized rule catalog and updated `docs/diagnostics.md` (24 total rules).
+- **Files created/changed:**
+  - `packages/rules/src/rules/postgres-connection-refused.ts`
+  - `packages/rules/src/rules/postgres-auth-failed.ts`
+  - `packages/rules/src/rules/postgres-database-not-found.ts`
+  - `packages/rules/src/rules/postgres-ssl-required.ts`
+  - `packages/rules/test/postgres-rules.test.ts`
+  - `packages/adapters/test/postgres.test.ts`
+  - `examples/broken-postgres-config/.env`
+  - `examples/broken-postgres-config/.env.example`
+  - `examples/broken-postgres-config/expected.json`
+  - `examples/broken-postgres-config/README.md`
+  - `packages/schemas/src/rules.ts`
+  - `packages/adapters/src/database.ts`
+  - `packages/rules/src/types.ts`
+  - `packages/rules/src/index.ts`
+  - `packages/core/src/scanner.ts`
+  - `apps/cli/src/collector.ts`
+  - `scripts/eval.js`
+  - `docs/diagnostics.md`
+  - `README.md`
+  - `CHANGELOG.md`
+  - `docs/PHASE7.md`
+  - `docs/LOG.md`
+- **Verification:**
+  - `npm run verify:release`: Passed (100% SUCCESS across all 13 gates in 78.3s)
+  - `npm run eval`: Passed (100.0% Detection Accuracy, 0.0% False Positive Rate across 7 fixtures)
+  - `npm run test:docs`: Passed (51 Markdown files audited, 0 broken links, 3 CLI snippets verified)
+  - `npm run check:licenses`: Passed (100% compliant, all MIT-compatible)
+  - `npm run docs:rules -- --check`: Passed (synchronized with all 24 rules)
+  - `npm test`: Passed (all 64 test files passed)
+- **Decisions made:**
+  - Strict canary credential protection: passwords never appear in findings, logs, or error text.
+  - Single read-only query (`SELECT 1`) executed only when `--db-url-env` is provided.
+  - Zero false-positive policy: connection refusal clearly attributes to service stoppage, port mismatch, container stoppage, or firewall — never claiming "not installed".
+- **Next step:** Phase 7, Run 7E: Next ecosystem or rule pack based on demand (Java/Spring Boot, PHP/Laravel, or .NET/C#).
+- **Status:** Done
+
 
 
 

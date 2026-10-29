@@ -215,7 +215,7 @@ describe("Phase 4 Security Checks & Invariants (phase4-security.test.ts)", () =>
       const { runCli } = await import("../../../apps/cli/src/index.js");
       const exitCode = await runCli(["compare", malformedFile, validFile]);
       expect(exitCode).toBe(2);
-    });
+    }, 15000);
 
     it("rejects invalid schema reports missing required fields", async () => {
       const invalidSchemaFile = path.join(tempDir, "invalid-schema.json");

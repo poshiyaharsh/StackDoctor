@@ -55,7 +55,8 @@
   },
   "optionalDependencies": {
     "mongodb": "^7.7.0",
-    "mysql2": "^3.24.6"
+    "mysql2": "^3.24.6",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@stackdoctor/adapters": "*",

@@ -15,8 +15,10 @@
     "@stackdoctor/config": "*",
     "@stackdoctor/core": "*",
     "@stackdoctor/schemas": "*",
+    "@types/pg": "^8.23.1",
     "mongodb": "^7.7.0",
     "mysql2": "^3.24.6",
+    "pg": "^8.23.1",
     "semver": "^7.6.3",
     "yaml": "^2.9.1"
   },

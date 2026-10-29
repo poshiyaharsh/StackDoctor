@@ -22,6 +22,7 @@ async function runEval() {
     { name: "broken-node-project", path: path.join(fixturesDir, "broken-node-project"), sourceId: "Phase 1 Baseline" },
     { name: "broken-django-project", path: path.join(fixturesDir, "broken-django-project"), sourceId: "Phase 2 Baseline" },
     { name: "broken-database-config", path: path.join(fixturesDir, "broken-database-config"), sourceId: "Phase 2 Baseline" },
+    { name: "broken-postgres-config", path: path.join(fixturesDir, "broken-postgres-config"), sourceId: "FB-009 / Run 7D Baseline" },
     { name: "healthy-node-project", path: path.join(fixturesDir, "healthy-node-project"), sourceId: "Healthy Reference" }
   ];
 

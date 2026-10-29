@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-29T15:17:26.267Z",
+  "timestamp": "2026-10-29T15:51:54.132Z",
   "os": "win32",
   "arch": "x64",
   "nodeVersion": "v24.13.0",
-  "totalFixtures": 6,
+  "totalFixtures": 7,
   "metrics": {
-    "totalExpected": 11,
-    "totalDetected": 11,
-    "truePositives": 11,
+    "totalExpected": 12,
+    "totalDetected": 12,
+    "truePositives": 12,
     "falseNegatives": 0,
     "falsePositives": 0,
     "accuracy": 100,
@@ -96,6 +96,15 @@
       "precision": 100,
       "recall": 100
     },
+    "POSTGRES_CONNECTION_REFUSED": {
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100
+    },
     "PYTHON_PACKAGES_MISSING": {
       "expected": 1,
       "detected": 1,
@@ -142,6 +151,16 @@
       "expected": 3,
       "detected": 3,
       "tp": 3,
+      "fn": 0,
+      "fp": 0,
+      "passed": true
+    },
+    {
+      "name": "broken-postgres-config",
+      "sourceId": "FB-009 / Run 7D Baseline",
+      "expected": 1,
+      "detected": 1,
+      "tp": 1,
       "fn": 0,
       "fp": 0,
       "passed": true

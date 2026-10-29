@@ -70,7 +70,7 @@ export interface RuleEvaluationContext {
   };
   database?: {
     diagnostics?: Array<{
-      dbType: "mongodb" | "mysql" | "unknown";
+      dbType: "mongodb" | "mysql" | "postgresql" | "unknown";
       host: string;
       port: number;
       scheme?: string;
@@ -83,6 +83,8 @@ export interface RuleEvaluationContext {
         | "tls_error"
         | "auth_failed"
         | "authorization_failed"
+        | "database_not_found"
+        | "ssl_required"
         | "protocol_error"
         | "unknown";
       error?: string;

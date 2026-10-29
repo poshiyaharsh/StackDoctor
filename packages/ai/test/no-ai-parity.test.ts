@@ -99,11 +99,18 @@ describe("No-AI Parity & Fallback Verification (Run 5F)", () => {
     const fixturePath = path.join(fixturesDir, "broken-node-project");
 
     let server: net.Server | undefined;
-    try {
-      server = net.createServer();
-      await new Promise<void>((resolve) => server!.listen(3000, "127.0.0.1", () => resolve()));
-    } catch {
-      // Port might already be in use
+    for (let i = 0; i < 15; i++) {
+      try {
+        const s = net.createServer();
+        await new Promise<void>((resolve, reject) => {
+          s.once("error", reject);
+          s.listen(3000, "127.0.0.1", () => resolve());
+        });
+        server = s;
+        break;
+      } catch {
+        await new Promise((r) => setTimeout(r, 200));
+      }
     }
 
     let jsonOutput = "";
@@ -130,11 +137,15 @@ describe("No-AI Parity & Fallback Verification (Run 5F)", () => {
   it("CLI scan on broken-django-project yields exact baseline findings without AI", async () => {
     const fixturePath = path.join(fixturesDir, "broken-django-project");
     let jsonOutput = "";
-    vi.spyOn(console, "log").mockImplementation((msg?: unknown) => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation((msg?: unknown) => {
       jsonOutput += (msg ?? "") + "\n";
     });
 
-    await runCli(["scan", fixturePath, "--json"]);
+    try {
+      await runCli(["scan", fixturePath, "--json"]);
+    } finally {
+      logSpy.mockRestore();
+    }
     const report = JSON.parse(jsonOutput.trim()) as Report;
     const actualRuleIds = report.findings.map((f) => f.ruleId).sort();
 
@@ -142,16 +153,20 @@ describe("No-AI Parity & Fallback Verification (Run 5F)", () => {
     const expectedRuleIds = (JSON.parse(fs.readFileSync(expectedPath, "utf-8")) as string[]).sort();
 
     expect(actualRuleIds).toEqual(expectedRuleIds);
-  });
+  }, 15000);
 
   it("CLI scan on broken-database-config yields exact baseline findings without AI", async () => {
     const fixturePath = path.join(fixturesDir, "broken-database-config");
     let jsonOutput = "";
-    vi.spyOn(console, "log").mockImplementation((msg?: unknown) => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation((msg?: unknown) => {
       jsonOutput += (msg ?? "") + "\n";
     });
 
-    await runCli(["scan", fixturePath, "--json"]);
+    try {
+      await runCli(["scan", fixturePath, "--json"]);
+    } finally {
+      logSpy.mockRestore();
+    }
     const report = JSON.parse(jsonOutput.trim()) as Report;
     const actualRuleIds = report.findings.map((f) => f.ruleId).sort();
 
@@ -159,5 +174,5 @@ describe("No-AI Parity & Fallback Verification (Run 5F)", () => {
     const expectedRuleIds = (JSON.parse(fs.readFileSync(expectedPath, "utf-8")) as string[]).sort();
 
     expect(actualRuleIds).toEqual(expectedRuleIds);
-  });
+  }, 15000);
 });

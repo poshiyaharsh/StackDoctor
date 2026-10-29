@@ -12,9 +12,9 @@ This document lists all third-party dependencies used in StackDoctor, their lice
 
 | License | Count | Status |
 |---|---|---|
-| MIT | 365 | Permitted (:white_check_mark:) |
+| MIT | 378 | Permitted (:white_check_mark:) |
 | Apache-2.0 | 29 | Permitted (:white_check_mark:) |
-| ISC | 20 | Permitted (:white_check_mark:) |
+| ISC | 22 | Permitted (:white_check_mark:) |
 | BSD-2-Clause | 8 | Permitted (:white_check_mark:) |
 | BSD-3-Clause | 5 | Permitted (:white_check_mark:) |
 | MIT-0 | 1 | Permitted (:white_check_mark:) |
@@ -136,6 +136,7 @@ The following upstream vulnerabilities were identified during dependency audit (
 | `@types/json-schema` | 7.0.15 | MIT |
 | `@types/methods` | 1.1.4 | MIT |
 | `@types/node` | 22.20.5 | MIT |
+| `@types/pg` | 8.23.1 | MIT |
 | `@types/qs` | 6.15.1 | MIT |
 | `@types/range-parser` | 1.2.7 | MIT |
 | `@types/react` | 19.3.0 | MIT |
@@ -376,10 +377,22 @@ The following upstream vulnerabilities were identified during dependency audit (
 | `pathe` | 2.0.3 | MIT |
 | `pathval` | 2.0.1 | MIT |
 | `pend` | 1.2.0 | MIT |
+| `pg` | 8.23.1 | MIT |
+| `pg-cloudflare` | 1.4.1 | MIT |
+| `pg-connection-string` | 2.14.1 | MIT |
+| `pg-int8` | 1.0.1 | ISC |
+| `pg-pool` | 3.14.0 | MIT |
+| `pg-protocol` | 1.16.1 | MIT |
+| `pg-types` | 2.2.0 | MIT |
+| `pgpass` | 1.0.5 | MIT |
 | `picocolors` | 1.1.1 | ISC |
 | `picomatch` | 4.0.7 | MIT |
 | `pkg-dir` | 4.2.0 | MIT |
 | `postcss` | 8.5.31 | MIT |
+| `postgres-array` | 2.0.0 | MIT |
+| `postgres-bytea` | 1.0.1 | MIT |
+| `postgres-date` | 1.0.7 | MIT |
+| `postgres-interval` | 1.2.0 | MIT |
 | `prelude-ls` | 1.2.1 | MIT |
 | `pretty-format` | 27.5.1 | MIT |
 | `proxy-addr` | 2.0.8 | MIT |
@@ -418,6 +431,7 @@ The following upstream vulnerabilities were identified during dependency audit (
 | `siginfo` | 2.0.0 | ISC |
 | `source-map-js` | 1.2.2 | BSD-3-Clause |
 | `sparse-bitfield` | 3.0.3 | MIT |
+| `split2` | 4.2.0 | ISC |
 | `sql-escaper` | 1.5.2 | MIT |
 | `stackback` | 0.0.2 | MIT |
 | `stackdoctor` | 0.1.0 | MIT |
@@ -473,6 +487,7 @@ The following upstream vulnerabilities were identified during dependency audit (
 | `ws` | 8.22.0 | MIT |
 | `xml-name-validator` | 5.0.0 | Apache-2.0 |
 | `xmlchars` | 2.2.0 | MIT |
+| `xtend` | 4.0.2 | MIT |
 | `yallist` | 3.1.1 | ISC |
 | `yaml` | 2.9.1 | ISC |
 | `yauzl` | 3.4.0 | MIT |

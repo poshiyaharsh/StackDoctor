@@ -108,7 +108,11 @@ export async function collectEvaluationContext(
 
   // 5. Database Diagnostics
   const dbDiagnostics: NonNullable<RuleEvaluationContext["database"]>["diagnostics"] = [];
-  const dbEndpointsToCheck: Array<{ dbType: "mongodb" | "mysql"; host: string; port: number }> = [];
+  const dbEndpointsToCheck: Array<{
+    dbType: "mongodb" | "mysql" | "postgresql";
+    host: string;
+    port: number;
+  }> = [];
 
   const envFilesToScan = [envPath, envExamplePath];
   for (const ef of envFilesToScan) {
@@ -133,21 +137,60 @@ export async function collectEvaluationContext(
           }
         }
 
+        const pgMatch = content.match(/postgres(?:ql)?:\/\/(?:[^:@]+(?::[^@]+)?@)?([^:/]+)(?::(\d+))?/i);
+        if (pgMatch && pgMatch[1]) {
+          const host = pgMatch[1];
+          const port = pgMatch[2] ? parseInt(pgMatch[2], 10) : 5432;
+          if (!dbEndpointsToCheck.some((e) => e.host === host && e.port === port)) {
+            dbEndpointsToCheck.push({ dbType: "postgresql", host, port });
+          }
+        }
+
+        const pgHostMatch = content.match(/(?:POSTGRES_HOST|PGHOST)\s*=\s*([^\s#]+)/i);
+        if (pgHostMatch && pgHostMatch[1]) {
+          const host = pgHostMatch[1].trim();
+          const portMatch = content.match(/(?:POSTGRES_PORT|PGPORT)\s*=\s*(\d+)/i);
+          const port = portMatch && portMatch[1] ? parseInt(portMatch[1], 10) : 5432;
+          if (!dbEndpointsToCheck.some((e) => e.host === host && e.port === port)) {
+            dbEndpointsToCheck.push({ dbType: "postgresql", host, port });
+          }
+        }
+
         const hostVarMatch = content.match(/(?:MONGO_HOST|MYSQL_HOST|DB_HOST)\s*=\s*([^\s#]+)/i);
         if (hostVarMatch && hostVarMatch[1]) {
           const rawHost = hostVarMatch[1].trim();
           if (rawHost.endsWith(".invalid") || rawHost.includes("fail") || rawHost.includes("unresolvable")) {
             const isMongo = content.toLowerCase().includes("mongo");
+            const isPg =
+              content.toLowerCase().includes("postgres") ||
+              content.toLowerCase().includes("pgsql");
             dbEndpointsToCheck.push({
-              dbType: isMongo ? "mongodb" : "mysql",
+              dbType: isPg ? "postgresql" : isMongo ? "mongodb" : "mysql",
               host: rawHost,
-              port: isMongo ? 27017 : 3306
+              port: isPg ? 5432 : isMongo ? 27017 : 3306
             });
           }
         }
       } catch {
         // Ignore read errors
       }
+    }
+  }
+
+  // Check Prisma schema
+  const prismaSchemaPath = path.join(dir, "prisma", "schema.prisma");
+  let hasPgPrisma = false;
+  if (fs.existsSync(prismaSchemaPath)) {
+    try {
+      const prismaContent = fs.readFileSync(prismaSchemaPath, "utf-8");
+      if (
+        /provider\s*=\s*["']postgresql["']/i.test(prismaContent) ||
+        /provider\s*=\s*["']postgres["']/i.test(prismaContent)
+      ) {
+        hasPgPrisma = true;
+      }
+    } catch {
+      // Ignore
     }
   }
 
@@ -175,6 +218,19 @@ export async function collectEvaluationContext(
       }
     });
 
+  const hasPgEndpoint =
+    dbEndpointsToCheck.some((e) => e.dbType === "postgresql") ||
+    hasPgPrisma ||
+    envFilesToScan.some((ef) => {
+      if (!fs.existsSync(ef)) return false;
+      try {
+        const c = fs.readFileSync(ef, "utf-8");
+        return /POSTGRES_HOST|PGHOST|postgres(?:ql)?:\/\//i.test(c);
+      } catch {
+        return false;
+      }
+    });
+
   for (const s of composeServices) {
     if (s.includes("mongo") && !hasMongoEndpoint) {
       dbEndpointsToCheck.push({ dbType: "mongodb", host: "localhost", port: 27017 });
@@ -182,6 +238,13 @@ export async function collectEvaluationContext(
     if (s.includes("mysql") && !hasMysqlEndpoint) {
       dbEndpointsToCheck.push({ dbType: "mysql", host: "localhost", port: 3306 });
     }
+    if ((s.includes("postgres") || s.includes("psql")) && !hasPgEndpoint) {
+      dbEndpointsToCheck.push({ dbType: "postgresql", host: "localhost", port: 5432 });
+    }
+  }
+
+  if (hasPgPrisma && !dbEndpointsToCheck.some((e) => e.dbType === "postgresql")) {
+    dbEndpointsToCheck.push({ dbType: "postgresql", host: "localhost", port: 5432 });
   }
 
   for (const ep of dbEndpointsToCheck) {

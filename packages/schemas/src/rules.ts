@@ -9,6 +9,7 @@ export const ALLOWED_DOC_DOMAINS = [
   "djangoproject.com",
   "mongodb.com",
   "mysql.com",
+  "postgresql.org",
   "docker.com",
   "npmjs.com",
   "12factor.net",

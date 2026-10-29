@@ -6,7 +6,7 @@ To update or verify this document, run:
 npm run docs:rules
 ```
 
-Total Built-in Rules: **20**
+Total Built-in Rules: **24**
 
 ---
 
@@ -30,6 +30,10 @@ Total Built-in Rules: **20**
 | [`NODE_VERSION_MISMATCH`](#node-version-mismatch) | `runtime` | **high** | `confirmed` | Node.js | The active Node.js runtime version does not satisfy the version range explicitly declared by the project. |
 | [`PORT_IN_USE`](#port-in-use) | `network` | **high** | `confirmed` | * | A network port required by the application is already bound by another process or listener on this machine. |
 | [`PORT_INVALID`](#port-invalid) | `configuration` | **high** | `confirmed` | * | A network port specified in project configuration or scripts is not a valid TCP port number (must be an integer between 1 and 65535). |
+| [`POSTGRES_AUTH_FAILED`](#postgres-auth-failed) | `database` | **high** | `confirmed` | PostgreSQL | Network connection to PostgreSQL succeeded, but user authentication was rejected (password authentication failed or role not authorized). |
+| [`POSTGRES_CONNECTION_REFUSED`](#postgres-connection-refused) | `database` | **high** | `confirmed` | PostgreSQL | TCP connection to the configured PostgreSQL endpoint was actively refused (ECONNREFUSED). |
+| [`POSTGRES_DATABASE_NOT_FOUND`](#postgres-database-not-found) | `database` | **high** | `confirmed` | PostgreSQL | Connected to PostgreSQL and authenticated successfully, but the specified database was not found (error code 3D000: invalid_catalog_name). |
+| [`POSTGRES_SSL_REQUIRED`](#postgres-ssl-required) | `database` | **medium** | `confirmed` | PostgreSQL | PostgreSQL server rejected unencrypted connection because SSL/TLS encryption is enforced by server configuration. |
 | [`PYTHON_PACKAGE_VERSION_MISMATCH`](#python-package-version-mismatch) | `dependencies` | **high** | `confirmed` | Python, Django | An installed Python package version does not satisfy the parseable version constraint declared in requirements.txt or pyproject.toml. |
 | [`PYTHON_PACKAGES_MISSING`](#python-packages-missing) | `dependencies` | **high** | `confirmed` | Python, Django | One or more packages declared in requirements.txt or pyproject.toml are not installed in the active Python environment. |
 | [`PYTHON_VENV_MISSING`](#python-venv-missing) | `environment` | **medium** | `confirmed` | Python, Django | Python project detected, but no virtual environment is active in the environment and no local venv directory exists. |
@@ -589,8 +593,147 @@ Verify that all declared port numbers are valid integers in the 1-65535 range.
 
 ---
 
+<a id="postgres-auth-failed"></a>
+### 17. `POSTGRES_AUTH_FAILED`
+
+**Title**: PostgreSQL authentication failed
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `PostgreSQL`
+- **Evidence Types**: `command_output`
+
+#### Description
+Network connection to PostgreSQL succeeded, but user authentication was rejected (password authentication failed or role not authorized).
+
+#### Diagnostic Checks
+- Verify the database username and password in your environment variable or connection URL
+- Verify pg_hba.conf client authentication records for the host and user
+- Verify that the user role exists and has LOGIN privileges
+
+#### Remediation Guidance
+- **Problem**: PostgreSQL rejected the provided user credentials.
+  - **Relevance**: Application cannot execute queries or initialize schemas without successful authentication.
+  - **Action**: `Update the database credentials in your environment variable with a valid username and password.`
+  - **Expected Result**: PostgreSQL accepts authentication and authorizes access.
+  - **Risks**: Update credentials in local environment variable; never commit secrets to git.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify PostgreSQL authentication succeeds.
+
+#### Documentation References
+- [https://www.postgresql.org/docs/current/auth-pg-hba-conf.html](https://www.postgresql.org/docs/current/auth-pg-hba-conf.html)
+
+---
+
+<a id="postgres-connection-refused"></a>
+### 18. `POSTGRES_CONNECTION_REFUSED`
+
+**Title**: PostgreSQL connection refused on target endpoint
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `PostgreSQL`
+- **Evidence Types**: `network_probe`
+
+#### Description
+TCP connection to the configured PostgreSQL endpoint was actively refused (ECONNREFUSED).
+
+#### Diagnostic Checks
+- Check if PostgreSQL service or daemon is currently running
+- Verify target hostname and port in database configuration
+- If using Docker, verify PostgreSQL container status with `docker compose ps`
+
+#### Remediation Guidance
+- **Problem**: PostgreSQL service is not listening on the configured address and port.
+  - **Relevance**: Application crashes on startup when unable to establish connection to PostgreSQL.
+  - **Action**: `Start PostgreSQL service locally or start the database container (`docker compose up -d <service>`).`
+  - **Expected Result**: PostgreSQL starts listening on target port and accepts TCP connections.
+  - **Risks**: Starts database process or container; harmless to project code.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that TCP connection to PostgreSQL endpoint succeeds.
+
+#### Documentation References
+- [https://www.postgresql.org/docs/current/server-start.html](https://www.postgresql.org/docs/current/server-start.html)
+
+---
+
+<a id="postgres-database-not-found"></a>
+### 19. `POSTGRES_DATABASE_NOT_FOUND`
+
+**Title**: PostgreSQL database does not exist
+
+- **Category**: `database`
+- **Default Severity**: `high`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `PostgreSQL`
+- **Evidence Types**: `command_output`
+
+#### Description
+Connected to PostgreSQL and authenticated successfully, but the specified database was not found (error code 3D000: invalid_catalog_name).
+
+#### Diagnostic Checks
+- Verify the database name in your connection URL or environment variables
+- Check available databases on the PostgreSQL server using `\l` or `SELECT datname FROM pg_database;`
+- Ensure database migration or provisioning scripts have been executed
+
+#### Remediation Guidance
+- **Problem**: Target PostgreSQL database does not exist on the server.
+  - **Relevance**: Application cannot connect or execute schema migrations without the target database.
+  - **Action**: `Create the missing database using `createdb <database_name>` or `CREATE DATABASE <database_name>;`.`
+  - **Expected Result**: Target database is created and ready for connection.
+  - **Risks**: Database creation does not affect existing databases.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that PostgreSQL target database exists and accepts connections.
+
+#### Documentation References
+- [https://www.postgresql.org/docs/current/manage-ag-createdb.html](https://www.postgresql.org/docs/current/manage-ag-createdb.html)
+
+---
+
+<a id="postgres-ssl-required"></a>
+### 20. `POSTGRES_SSL_REQUIRED`
+
+**Title**: PostgreSQL requires SSL/TLS connection
+
+- **Category**: `database`
+- **Default Severity**: `medium`
+- **Confidence**: `confirmed`
+- **Target Technologies**: `PostgreSQL`
+- **Evidence Types**: `command_output`
+
+#### Description
+PostgreSQL server rejected unencrypted connection because SSL/TLS encryption is enforced by server configuration.
+
+#### Diagnostic Checks
+- Verify whether the PostgreSQL server requires SSL/TLS (e.g. hostssl in pg_hba.conf or cloud database requirement)
+- Check if your connection string or client configuration has sslmode specified (e.g., sslmode=require)
+
+#### Remediation Guidance
+- **Problem**: PostgreSQL connection rejected due to missing SSL/TLS encryption.
+  - **Relevance**: Application cannot communicate with the database when the server requires encrypted connections.
+  - **Action**: `Enable SSL in your PostgreSQL connection string by appending `?sslmode=require` or configure SSL options in your database client.`
+  - **Expected Result**: PostgreSQL establishes an encrypted TLS connection and accepts commands.
+  - **Risks**: Requires valid SSL/TLS certificates or appropriate sslmode setting.
+  - **Verification**: `stackdoctor scan`
+
+#### Verification Principle
+Verify that encrypted SSL/TLS connection to PostgreSQL succeeds.
+
+#### Documentation References
+- [https://www.postgresql.org/docs/current/ssl-tcp.html](https://www.postgresql.org/docs/current/ssl-tcp.html)
+
+---
+
 <a id="python-package-version-mismatch"></a>
-### 17. `PYTHON_PACKAGE_VERSION_MISMATCH`
+### 21. `PYTHON_PACKAGE_VERSION_MISMATCH`
 
 **Title**: Installed Python package version does not satisfy requirement
 
@@ -624,7 +767,7 @@ Verify that installed package versions satisfy declared requirements.
 ---
 
 <a id="python-packages-missing"></a>
-### 18. `PYTHON_PACKAGES_MISSING`
+### 22. `PYTHON_PACKAGES_MISSING`
 
 **Title**: Declared Python dependencies are not installed
 
@@ -658,7 +801,7 @@ Verify all declared packages are present in pip list.
 ---
 
 <a id="python-venv-missing"></a>
-### 19. `PYTHON_VENV_MISSING`
+### 23. `PYTHON_VENV_MISSING`
 
 **Title**: Python virtual environment missing
 
@@ -692,7 +835,7 @@ Confirm that .venv directory exists or VIRTUAL_ENV is active.
 ---
 
 <a id="runtime-declarations-conflict"></a>
-### 20. `RUNTIME_DECLARATIONS_CONFLICT`
+### 24. `RUNTIME_DECLARATIONS_CONFLICT`
 
 **Title**: Conflicting runtime version declarations between project files
 
