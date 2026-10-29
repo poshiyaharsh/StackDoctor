@@ -39,6 +39,9 @@ function getMarkdownFiles(dir) {
     if (entry.isDirectory()) {
       results.push(...getMarkdownFiles(fullPath));
     } else if (entry.isFile() && entry.name.endsWith(".md")) {
+      if (entry.name.startsWith("PHASE")) {
+        continue;
+      }
       results.push(fullPath);
     }
   }

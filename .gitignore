@@ -59,6 +59,10 @@ data/
 .ai-config.json
 .stackdoctor-config.json
 
+# Internal development phase specifications
+docs/PHASE*.md
+docs/PHASES.md
+
 # Allow fixture dummy node_modules
 !examples/healthy-node-project/node_modules/
 !examples/healthy-node-project/node_modules/**
