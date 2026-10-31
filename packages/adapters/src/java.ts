@@ -47,7 +47,7 @@ export function parseJavaMajorVersion(versionStr: string): number | null {
  * Never throws.
  */
 export async function detectJavaRuntime(): Promise<JavaRuntimeInfo> {
-  const res = await runCommand("java", ["-version"], { timeoutMs: 3000 });
+  const res = await runCommand("java", ["-version"], { timeoutMs: 10000 });
 
   if (res.notFound) {
     return {
@@ -63,11 +63,11 @@ export async function detectJavaRuntime(): Promise<JavaRuntimeInfo> {
   const majorVersion = rawVersion ? parseJavaMajorVersion(rawVersion) ?? undefined : undefined;
 
   return {
-    installed: res.exitCode === 0,
+    installed: (res.exitCode === 0 || Boolean(versionMatch)) && !res.notFound,
     rawVersion,
     majorVersion,
     rawOutput: combined,
-    error: res.exitCode === 0 ? undefined : res.stderr
+    error: res.exitCode === 0 || Boolean(versionMatch) ? undefined : res.stderr
   };
 }
 
