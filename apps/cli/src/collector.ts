@@ -124,7 +124,8 @@ export async function collectEvaluationContext(
     port: number;
   }> = [];
 
-  const envFilesToScan = [envPath, envExamplePath];
+  // Scan active environment files (.env, .env.local) - never probe unconfigured examples (.env.example)
+  const envFilesToScan = [envPath, path.join(dir, ".env.local")].filter((f) => fs.existsSync(f));
   for (const ef of envFilesToScan) {
     if (fs.existsSync(ef)) {
       try {
