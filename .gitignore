@@ -50,6 +50,9 @@ google-services.json
 *.sqlite
 *.sqlite3
 *.db
+!examples/**/*.db
+!examples/**/*.sqlite
+!examples/**/*.sqlite3
 mongo_data/
 data/
 
