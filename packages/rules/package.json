@@ -14,7 +14,7 @@
   "dependencies": {
     "@stackdoctor/config": "*",
     "@stackdoctor/schemas": "*",
-    "semver": "^7.6.3"
+    "semver": "^7.8.6"
   },
   "devDependencies": {
     "@types/semver": "^7.5.8"
